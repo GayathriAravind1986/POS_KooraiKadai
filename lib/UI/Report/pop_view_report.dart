@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
 import 'package:simple/ModelClass/Report/Get_report_model.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/space.dart';
@@ -102,7 +101,7 @@ class _ThermalReportReceiptDialogState
                       key: reportKey,
                       child: getReportReceiptWidget(
                         businessName: businessName,
-                        tamilTagline: "ஒரே ஒரு முறை சுவைத்து பாருங்கள்",
+                        tamilTagline: "",
                         address: address,
                         phone: phone,
                         reportDate: date,
@@ -130,8 +129,8 @@ class _ThermalReportReceiptDialogState
                               if (imageBytes != null) {
                                 await printerService.init();
                                 await printerService.printBitmap(imageBytes);
-                                await Future.delayed(
-                                    const Duration(seconds: 3));
+                                // await Future.delayed(
+                                //     const Duration(seconds: 2));
                                 await printerService.fullCut();
                                 Navigator.pop(context);
                               }

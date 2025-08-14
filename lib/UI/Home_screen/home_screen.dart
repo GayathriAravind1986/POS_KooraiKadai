@@ -184,7 +184,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
           child: CircularProgressIndicator(),
         ),
       );
-      printerService.init();
+      // printerService.init();
 
       List<Map<String, dynamic>> items = postGenerateOrderModel.order!.items!
           .map((e) => {
@@ -236,7 +236,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                       items: items,
                       tax: taxPercent,
                       paidBy: paymentMethod,
-                      tamilTagline: 'ஒரே ஒரு முறை சுவைத்து பாருங்கள்',
+                      tamilTagline: '',
                       phone: phone,
                       subtotal: subTotal,
                       total: total,
@@ -259,10 +259,11 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                             await WidgetsBinding.instance.endOfFrame;
                             Uint8List? imageBytes =
                                 await captureMonochromeReceipt(receiptKey);
-
                             if (imageBytes != null) {
+                              await printerService.init();
                               await printerService.printBitmap(imageBytes);
-                              await Future.delayed(Duration(seconds: 3));
+                              // await Future.delayed(
+                              //     const Duration(seconds: 2));
                               await printerService.fullCut();
                               Navigator.pop(context);
                             }
@@ -325,7 +326,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
           child: CircularProgressIndicator(),
         ),
       );
-      await printerService.init();
+      //  await printerService.init();
       List<Map<String, dynamic>> items = updateGenerateOrderModel.order!.items!
           .map((e) => {
                 'name': e.name,
@@ -378,7 +379,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                         items: items,
                         tax: taxPercent,
                         paidBy: paymentMethod,
-                        tamilTagline: 'ஒரே ஒரு முறை சுவைத்து பாருங்கள்',
+                        tamilTagline: '',
                         phone: phone,
                         subtotal: subTotal,
                         total: total,
@@ -402,8 +403,10 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                 await captureMonochromeReceipt(receiptKey);
 
                             if (imageBytes != null) {
+                              await printerService.init();
                               await printerService.printBitmap(imageBytes);
-                              await Future.delayed(Duration(seconds: 3));
+                              // await Future.delayed(
+                              //     const Duration(seconds: 2));
                               await printerService.fullCut();
                               Navigator.pop(context);
                             }
@@ -612,7 +615,8 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
         ...sortedCategories,
       ];
       final List<String> paidItemIds = widget.isEditingOrder == true &&
-              widget.existingOrder?.data?.orderStatus == "COMPLETED"
+              widget.existingOrder?.data?.orderStatus == "COMPLETED" &&
+              widget.existingOrder?.data?.orderStatus == "WAITLIST"
           ? widget.existingOrder!.data!.items!
               .map((i) => i.product?.id)
               .whereType<String>()
@@ -1006,7 +1010,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                                     final currentQtyInCart = billingItems.where((item) => item['_id'] == p.id).fold(0, (sum, item) => sum + (item['qty'] as int));
 
                                                                                                     bool canAdd;
-                                                                                                    if (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") {
+                                                                                                    if ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") || (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "WAITLIST")) {
                                                                                                       // For completed orders, get paid quantity
                                                                                                       final paidQty = widget.existingOrder?.data?.items?.firstWhereOrNull((item) => item.product?.id == p.id)?.quantity ?? 0;
                                                                                                       // Allow adding up to availableQuantity + paidQuantity
@@ -1092,10 +1096,9 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
 
                                                                         bool
                                                                             canAdd;
-                                                                        if (widget.isEditingOrder ==
-                                                                                true &&
-                                                                            widget.existingOrder?.data?.orderStatus ==
-                                                                                "COMPLETED") {
+                                                                        if ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") ||
+                                                                            (widget.isEditingOrder == true &&
+                                                                                widget.existingOrder?.data?.orderStatus == "WAITLIST")) {
                                                                           // For completed orders, get paid quantity
                                                                           final paidQty =
                                                                               widget.existingOrder?.data?.items?.firstWhereOrNull((item) => item.product?.id == p.id)?.quantity ?? 0;
@@ -1383,7 +1386,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                 final currentQtyInCart = billingItems.where((item) => item['_id'] == p.id).fold(0, (sum, item) => sum + (item['qty'] as int));
 
                                                                                 bool canAddMore;
-                                                                                if (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") {
+                                                                                if ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") || (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "WAITLIST")) {
                                                                                   // For completed orders, get paid quantity
                                                                                   final paidQty = widget.existingOrder?.data?.items?.firstWhereOrNull((item) => item.product?.id == p.id)?.quantity ?? 0;
                                                                                   // Allow adding up to availableQuantity + paidQuantity
@@ -2618,13 +2621,16 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                   e.availableQuantity ??
                                                                       0;
                                                               bool canAddMore;
-                                                              if (widget.isEditingOrder ==
-                                                                      true &&
-                                                                  widget
-                                                                          .existingOrder
-                                                                          ?.data
-                                                                          ?.orderStatus ==
-                                                                      "COMPLETED") {
+                                                              if ((widget.isEditingOrder ==
+                                                                          true &&
+                                                                      widget.existingOrder?.data
+                                                                              ?.orderStatus ==
+                                                                          "COMPLETED") ||
+                                                                  (widget.isEditingOrder ==
+                                                                          true &&
+                                                                      widget.existingOrder?.data
+                                                                              ?.orderStatus ==
+                                                                          "WAITLIST")) {
                                                                 canAddMore =
                                                                     currentQty <
                                                                         (availableQty +
@@ -2635,14 +2641,14 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                         availableQty;
                                                               }
 
-                                                              final bool disableDecrement = widget
-                                                                          .isEditingOrder ==
-                                                                      true &&
-                                                                  widget
-                                                                          .existingOrder
-                                                                          ?.data
-                                                                          ?.orderStatus ==
-                                                                      "COMPLETED" &&
+                                                              final bool disableDecrement = ((widget.isEditingOrder ==
+                                                                              true &&
+                                                                          widget.existingOrder?.data?.orderStatus ==
+                                                                              "COMPLETED") ||
+                                                                      (widget.isEditingOrder ==
+                                                                              true &&
+                                                                          widget.existingOrder?.data?.orderStatus ==
+                                                                              "WAITLIST")) &&
                                                                   paidItemIds
                                                                       .contains(e
                                                                           .id) &&
@@ -2709,7 +2715,13 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                   children: [
                                                                                     Text("${e.name}", style: MyTextStyle.f12(blackColor, weight: FontWeight.bold)),
                                                                                     Text("x ${e.qty}", style: MyTextStyle.f12(blackColor, weight: FontWeight.bold)),
-                                                                                    if (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") Text("Available: $availableQty (+ $paidQty paid)", style: MyTextStyle.f10(availableQty > 0 ? greyColor : redColor, weight: FontWeight.w400)) else Text("Available: $availableQty", style: MyTextStyle.f10(availableQty > 0 ? greyColor : redColor, weight: FontWeight.w400)),
+                                                                                    Text(
+                                                                                      (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") ? "Available: $availableQty (+ $paidQty paid)" : "Available: $availableQty",
+                                                                                      style: MyTextStyle.f10(
+                                                                                        availableQty > 0 ? greyColor : redColor,
+                                                                                        weight: FontWeight.w400,
+                                                                                      ),
+                                                                                    ),
                                                                                   ],
                                                                                 ),
                                                                               ),
@@ -2818,10 +2830,15 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                 color: Colors.orange.withOpacity(0.1),
                                                                                 borderRadius: BorderRadius.circular(4),
                                                                               ),
-                                                                              child: Text(
-                                                                                widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED" ? 'Maximum limit reached (Available: $availableQty + Paid: $paidQty)' : 'Maximum stock limit reached',
-                                                                                style: MyTextStyle.f10(Colors.orange, weight: FontWeight.bold),
-                                                                              ),
+                                                                              child: (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "WAITLIST")
+                                                                                  ? Text(
+                                                                                      'Maximum stock limit reached',
+                                                                                      style: MyTextStyle.f10(orangeColor, weight: FontWeight.bold),
+                                                                                    )
+                                                                                  : Text(
+                                                                                      ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED")) ? 'Maximum limit reached (Available: $availableQty + Paid: $paidQty)' : 'Maximum stock limit reached',
+                                                                                      style: MyTextStyle.f10(orangeColor, weight: FontWeight.bold),
+                                                                                    ),
                                                                             ),
                                                                           ],
                                                                           Column(
@@ -2909,7 +2926,6 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                               );
                                                             }).toList(),
                                                           ),
-                                                          // Rest of your cart page code remains the same...
                                                           Divider(
                                                               color:
                                                                   greyColor200,

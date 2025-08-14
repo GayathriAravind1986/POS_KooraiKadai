@@ -118,7 +118,7 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
                         items: items,
                         tax: taxAmount,
                         paidBy: paymentMethod,
-                        tamilTagline: 'ஒரே ஒரு முறை சுவைத்து பாருங்கள்',
+                        tamilTagline: '',
                         phone: phone,
                         subtotal: subTotal,
                         total: total,
@@ -147,8 +147,8 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
                               if (imageBytes != null) {
                                 await printerService.init();
                                 await printerService.printBitmap(imageBytes);
-                                await Future.delayed(
-                                    const Duration(seconds: 3));
+                                // await Future.delayed(
+                                //     const Duration(seconds: 2));
                                 await printerService.fullCut();
                                 Navigator.pop(context);
                               }

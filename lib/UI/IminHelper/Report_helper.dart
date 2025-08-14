@@ -26,16 +26,16 @@ Widget getReportReceiptWidget({
           Center(
             child: Column(
               children: [
-                Text(
-                  tamilTagline,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: blackColor,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
+                // Text(
+                //   tamilTagline,
+                //   style: const TextStyle(
+                //     fontSize: 20,
+                //     fontWeight: FontWeight.w600,
+                //     color: blackColor,
+                //   ),
+                //   textAlign: TextAlign.center,
+                // ),
+                // const SizedBox(height: 4),
                 Text(
                   businessName,
                   style: const TextStyle(
@@ -66,7 +66,7 @@ Widget getReportReceiptWidget({
           const SizedBox(height: 8),
 
           // Separator
-          Divider(thickness: 1, color: blackColor),
+          Divider(thickness: 4, color: blackColor),
 
           // Report Title
           const Center(
@@ -86,7 +86,7 @@ Widget getReportReceiptWidget({
           _buildThermalLabelRow("Taken By", takenBy),
           const SizedBox(height: 8),
 
-          Divider(thickness: 1, color: blackColor),
+          Divider(thickness: 4, color: blackColor),
 
           _buildThermalTotalRow("Total Quantity", totalQuantity.toDouble()),
           _buildThermalTotalRow(
@@ -94,7 +94,7 @@ Widget getReportReceiptWidget({
             totalAmount,
           ),
 
-          Divider(thickness: 1, color: blackColor),
+          Divider(thickness: 4, color: blackColor),
 
           const SizedBox(height: 8),
           const Center(
@@ -251,7 +251,7 @@ Future<Uint8List?> captureMonochromeReport(GlobalKey key) async {
 
     return finalByteData?.buffer.asUint8List();
   } catch (e) {
-    print("Error creating monochrome image: $e");
+    debugPrint("Error creating monochrome image: $e");
     return null;
   }
 }

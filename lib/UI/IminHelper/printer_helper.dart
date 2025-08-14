@@ -32,16 +32,16 @@ Widget getThermalReceiptWidget({
           Center(
             child: Column(
               children: [
-                Text(
-                  tamilTagline,
-                  style: const TextStyle(
-                    fontSize: 20, // Increased from 14
-                    fontWeight: FontWeight.w600,
-                    color: blackColor,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
+                // Text(
+                //   tamilTagline,
+                //   style: const TextStyle(
+                //     fontSize: 20, // Increased from 14
+                //     fontWeight: FontWeight.w600,
+                //     color: blackColor,
+                //   ),
+                //   textAlign: TextAlign.center,
+                // ),
+                // const SizedBox(height: 4),
                 Text(
                   businessName,
                   style: const TextStyle(
@@ -74,7 +74,7 @@ Widget getThermalReceiptWidget({
 
           // Separator line
           Container(
-            height: 1,
+            height: 4,
             color: blackColor,
             margin: const EdgeInsets.symmetric(vertical: 4),
           ),
@@ -88,7 +88,7 @@ Widget getThermalReceiptWidget({
             _buildThermalLabelRow(
                 "Table: ", orderType == 'DINE-IN' ? tableName : "N/A"),
           Container(
-            height: 1,
+            height: 4,
             color: blackColor,
             margin: const EdgeInsets.symmetric(vertical: 4),
           ),
@@ -98,7 +98,7 @@ Widget getThermalReceiptWidget({
 
           // Separator line
           Container(
-            height: 1,
+            height: 4,
             color: blackColor,
             margin: const EdgeInsets.symmetric(vertical: 2),
           ),
@@ -118,7 +118,7 @@ Widget getThermalReceiptWidget({
 
           // Separator line
           Container(
-            height: 1,
+            height: 4,
             color: blackColor,
             margin: const EdgeInsets.symmetric(vertical: 4),
           ),
@@ -130,7 +130,7 @@ Widget getThermalReceiptWidget({
 
           // Separator line
           Container(
-            height: 1,
+            height: 4,
             color: blackColor,
             margin: const EdgeInsets.symmetric(vertical: 4),
           ),
@@ -398,7 +398,7 @@ Future<Uint8List?> captureMonochromeReceipt(GlobalKey key) async {
 
     return finalByteData?.buffer.asUint8List();
   } catch (e) {
-    print("Error creating monochrome image: $e");
+    debugPrint("Error creating monochrome image: $e");
     return null;
   }
 }
