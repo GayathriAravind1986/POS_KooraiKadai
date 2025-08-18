@@ -143,6 +143,7 @@ class ApiProvider {
       );
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
+          debugPrint("✅ API Success Response: ${response.data}");
           GetProductByCatIdModel getProductByCatIdResponse =
               GetProductByCatIdModel.fromJson(response.data);
           return getProductByCatIdResponse;

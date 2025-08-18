@@ -614,6 +614,16 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
         Category(name: 'All', image: Images.all, id: ""),
         ...sortedCategories,
       ];
+      int _getAvailableQuantity(dynamic p) {
+        if (p.isStock == true) {
+          // Stock maintained → use given quantity (even 0)
+          return int.tryParse(p.availableQuantity.toString()) ?? 0;
+        } else {
+          // Stock not maintained → set as unlimited
+          return 999999;
+        }
+      }
+
       final List<String> paidItemIds = widget.isEditingOrder == true &&
               widget.existingOrder?.data?.orderStatus == "COMPLETED" &&
               widget.existingOrder?.data?.orderStatus == "WAITLIST"
@@ -856,903 +866,426 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                               orElse: () => {},
                                                             )['qty'] ??
                                                             0;
-                                                    return getProductByCatIdModel
-                                                                .stockMaintenance ==
-                                                            true
-                                                        ? InkWell(
-                                                            onTap: (p.availableQuantity ??
-                                                                        0) >
-                                                                    0
-                                                                ? () {
-                                                                    setState(
-                                                                        () {
-                                                                      p.counter =
-                                                                          1;
-                                                                      if (p
-                                                                          .addons!
-                                                                          .isNotEmpty) {
-                                                                        showDialog(
-                                                                          context:
-                                                                              context,
-                                                                          builder:
-                                                                              (context2) {
-                                                                            return BlocProvider(
-                                                                              create: (context) => FoodCategoryBloc(),
-                                                                              child: BlocProvider.value(
-                                                                                value: BlocProvider.of<FoodCategoryBloc>(context, listen: false),
-                                                                                child: StatefulBuilder(builder: (context, setState) {
-                                                                                  return Dialog(
-                                                                                    insetPadding: EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-                                                                                    shape: RoundedRectangleBorder(
-                                                                                      borderRadius: BorderRadius.circular(8),
-                                                                                    ),
-                                                                                    child: Container(
-                                                                                      constraints: BoxConstraints(
-                                                                                        maxWidth: size.width * 0.4,
-                                                                                        maxHeight: size.height * 0.6,
-                                                                                      ),
-                                                                                      padding: EdgeInsets.all(16),
-                                                                                      child: SingleChildScrollView(
-                                                                                        child: Column(
-                                                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                          mainAxisSize: MainAxisSize.min,
-                                                                                          children: [
-                                                                                            ClipRRect(
-                                                                                                borderRadius: BorderRadius.circular(15.0),
-                                                                                                child: CachedNetworkImage(
-                                                                                                  imageUrl: p.image!,
-                                                                                                  width: size.width * 0.5,
-                                                                                                  height: size.height * 0.2,
-                                                                                                  fit: BoxFit.cover,
-                                                                                                  errorWidget: (context, url, error) {
-                                                                                                    return const Icon(
-                                                                                                      Icons.error,
-                                                                                                      size: 30,
-                                                                                                      color: appHomeTextColor,
-                                                                                                    );
-                                                                                                  },
-                                                                                                  progressIndicatorBuilder: (context, url, downloadProgress) => const SpinKitCircle(color: appPrimaryColor, size: 30),
-                                                                                                )),
-                                                                                            SizedBox(height: 16),
-                                                                                            Text(
-                                                                                              'Choose Add‑Ons for ${p.name}',
-                                                                                              style: MyTextStyle.f16(
-                                                                                                weight: FontWeight.bold,
-                                                                                                blackColor,
-                                                                                              ),
-                                                                                              textAlign: TextAlign.left,
-                                                                                            ),
-                                                                                            SizedBox(height: 12),
-                                                                                            Column(
-                                                                                              children: p.addons!.map((e) {
-                                                                                                return Padding(
-                                                                                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                                                                                  child: Container(
-                                                                                                    padding: const EdgeInsets.all(8),
-                                                                                                    decoration: BoxDecoration(
-                                                                                                      border: Border.all(color: blackColor),
-                                                                                                      borderRadius: BorderRadius.circular(8),
-                                                                                                    ),
-                                                                                                    child: Row(
-                                                                                                      children: [
-                                                                                                        Expanded(
-                                                                                                          child: Column(
-                                                                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                                            children: [
-                                                                                                              Text(
-                                                                                                                e.name ?? '',
-                                                                                                                style: const TextStyle(fontWeight: FontWeight.bold),
-                                                                                                              ),
-                                                                                                              const SizedBox(height: 4),
-                                                                                                              Text(
-                                                                                                                e.isFree == true ? "Free (Max: ${e.maxQuantity})" : "₹ ${e.price?.toStringAsFixed(2) ?? '0.00'} (Max: ${e.maxQuantity})",
-                                                                                                                style: TextStyle(color: Colors.grey.shade600),
-                                                                                                              ),
-                                                                                                            ],
-                                                                                                          ),
-                                                                                                        ),
-                                                                                                        Row(
-                                                                                                          children: [
-                                                                                                            IconButton(
-                                                                                                              icon: const Icon(Icons.remove),
-                                                                                                              onPressed: (e.quantity) > 0
-                                                                                                                  ? () {
-                                                                                                                      setState(() {
-                                                                                                                        e.quantity = (e.quantity) - 1;
-                                                                                                                      });
-                                                                                                                    }
-                                                                                                                  : null,
-                                                                                                            ),
-                                                                                                            Text('${e.quantity}'),
-                                                                                                            IconButton(
-                                                                                                              icon: const Icon(Icons.add, color: Colors.brown),
-                                                                                                              onPressed: (e.quantity) < (e.maxQuantity ?? 1)
-                                                                                                                  ? () {
-                                                                                                                      setState(() {
-                                                                                                                        e.quantity = (e.quantity) + 1;
-                                                                                                                      });
-                                                                                                                    }
-                                                                                                                  : null,
-                                                                                                            ),
-                                                                                                          ],
-                                                                                                        )
-                                                                                                      ],
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                );
-                                                                                              }).toList(),
-                                                                                            ),
-                                                                                            SizedBox(height: 20),
-                                                                                            Row(
-                                                                                              mainAxisAlignment: MainAxisAlignment.end,
-                                                                                              children: [
-                                                                                                ElevatedButton(
-                                                                                                  onPressed: () {
-                                                                                                    setState(() {
-                                                                                                      if (counter > 1 || counter == 1) {
-                                                                                                        counter--;
-                                                                                                      }
-                                                                                                    });
-                                                                                                    Navigator.of(context).pop();
-                                                                                                  },
-                                                                                                  style: ElevatedButton.styleFrom(
-                                                                                                    backgroundColor: greyColor.shade400,
-                                                                                                    minimumSize: Size(80, 40),
-                                                                                                    padding: EdgeInsets.all(20),
-                                                                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                                                                  ),
-                                                                                                  child: Text('Cancel', style: MyTextStyle.f14(blackColor)),
-                                                                                                ),
-                                                                                                SizedBox(width: 8),
-                                                                                                ElevatedButton(
-                                                                                                  onPressed: () {
-                                                                                                    // Fixed logic: Check available quantity considering editing context
-                                                                                                    final currentQtyInCart = billingItems.where((item) => item['_id'] == p.id).fold(0, (sum, item) => sum + (item['qty'] as int));
-
-                                                                                                    bool canAdd;
-                                                                                                    if ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") || (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "WAITLIST")) {
-                                                                                                      // For completed orders, get paid quantity
-                                                                                                      final paidQty = widget.existingOrder?.data?.items?.firstWhereOrNull((item) => item.product?.id == p.id)?.quantity ?? 0;
-                                                                                                      // Allow adding up to availableQuantity + paidQuantity
-                                                                                                      canAdd = currentQtyInCart < ((p.availableQuantity ?? 0) + paidQty);
-                                                                                                    } else {
-                                                                                                      // Normal stock check for new orders or waitlist
-                                                                                                      canAdd = currentQtyInCart < (p.availableQuantity ?? 0);
-                                                                                                    }
-
-                                                                                                    if (!canAdd) {
-                                                                                                      showToast("Cannot add more items. Stock limit reached.", context, color: false);
-                                                                                                      return;
-                                                                                                    }
-
-                                                                                                    setState(() {
-                                                                                                      isSplitPayment = false;
-                                                                                                      if (widget.isEditingOrder != true) {
-                                                                                                        selectDineIn = true;
-                                                                                                      }
-                                                                                                      final index = billingItems.indexWhere((item) => item['_id'] == p.id);
-                                                                                                      if (index != -1) {
-                                                                                                        billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
-                                                                                                      } else {
-                                                                                                        billingItems.add({
-                                                                                                          "_id": p.id,
-                                                                                                          "basePrice": p.basePrice,
-                                                                                                          "image": p.image,
-                                                                                                          "qty": 1,
-                                                                                                          "name": p.name,
-                                                                                                          "availableQuantity": p.availableQuantity,
-                                                                                                          "selectedAddons": p.addons!
-                                                                                                              .where((addon) => addon.quantity > 0)
-                                                                                                              .map((addon) => {
-                                                                                                                    "_id": addon.id,
-                                                                                                                    "price": addon.price,
-                                                                                                                    "quantity": addon.quantity,
-                                                                                                                    "name": addon.name,
-                                                                                                                    "isAvailable": addon.isAvailable,
-                                                                                                                    "maxQuantity": addon.maxQuantity,
-                                                                                                                    "isFree": addon.isFree,
-                                                                                                                  })
-                                                                                                              .toList()
-                                                                                                        });
-                                                                                                      }
-                                                                                                      context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
-
-                                                                                                      setState(() {
-                                                                                                        for (var addon in p.addons!) {
-                                                                                                          addon.isSelected = false;
-                                                                                                          addon.quantity = 0;
-                                                                                                        }
-                                                                                                      });
-                                                                                                      Navigator.of(context).pop();
-                                                                                                    });
-                                                                                                  },
-                                                                                                  style: ElevatedButton.styleFrom(
-                                                                                                    backgroundColor: appPrimaryColor,
-                                                                                                    minimumSize: Size(80, 40),
-                                                                                                    padding: EdgeInsets.all(20),
-                                                                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                                                                  ),
-                                                                                                  child: Text('Add to Bill', style: MyTextStyle.f14(whiteColor)),
-                                                                                                ),
-                                                                                              ],
-                                                                                            ),
-                                                                                          ],
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  );
-                                                                                }),
-                                                                              ),
-                                                                            );
-                                                                          },
-                                                                        );
-                                                                      } else {
-                                                                        // Direct add without addons - Fixed stock check
-                                                                        final currentQtyInCart = billingItems
-                                                                            .where((item) =>
-                                                                                item['_id'] ==
-                                                                                p.id)
-                                                                            .fold(0, (sum, item) => sum + (item['qty'] as int));
-
-                                                                        bool
-                                                                            canAdd;
-                                                                        if ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") ||
-                                                                            (widget.isEditingOrder == true &&
-                                                                                widget.existingOrder?.data?.orderStatus == "WAITLIST")) {
-                                                                          // For completed orders, get paid quantity
-                                                                          final paidQty =
-                                                                              widget.existingOrder?.data?.items?.firstWhereOrNull((item) => item.product?.id == p.id)?.quantity ?? 0;
-                                                                          // Allow adding up to availableQuantity + paidQuantity
-                                                                          canAdd =
-                                                                              currentQtyInCart < ((p.availableQuantity ?? 0) + paidQty);
-                                                                        } else {
-                                                                          // Normal stock check for new orders or waitlist
-                                                                          canAdd =
-                                                                              currentQtyInCart < (p.availableQuantity ?? 0);
-                                                                        }
-
-                                                                        if (!canAdd) {
-                                                                          showToast(
-                                                                              "Cannot add more items. Stock limit reached.",
-                                                                              context,
-                                                                              color: false);
-                                                                          return;
-                                                                        }
-
-                                                                        setState(
-                                                                            () {
-                                                                          isSplitPayment =
-                                                                              false;
-                                                                          if (widget.isEditingOrder !=
-                                                                              true) {
-                                                                            selectDineIn =
-                                                                                true;
-                                                                          }
-                                                                          final index = billingItems.indexWhere((item) =>
-                                                                              item['_id'] ==
-                                                                              p.id);
-                                                                          if (index !=
-                                                                              -1) {
-                                                                            billingItems[index]['qty'] =
-                                                                                billingItems[index]['qty'] + 1;
-                                                                          } else {
-                                                                            billingItems.add({
-                                                                              "_id": p.id,
-                                                                              "basePrice": p.basePrice,
-                                                                              "image": p.image,
-                                                                              "qty": 1,
-                                                                              "name": p.name,
-                                                                              "availableQuantity": p.availableQuantity,
-                                                                              "selectedAddons": p.addons!
-                                                                                  .where((addon) => addon.quantity > 0)
-                                                                                  .map((addon) => {
-                                                                                        "_id": addon.id,
-                                                                                        "price": addon.price,
-                                                                                        "quantity": addon.quantity,
-                                                                                        "name": addon.name,
-                                                                                        "isAvailable": addon.isAvailable,
-                                                                                        "maxQuantity": addon.maxQuantity,
-                                                                                        "isFree": addon.isFree,
-                                                                                      })
-                                                                                  .toList()
-                                                                            });
-                                                                          }
-                                                                          context.read<FoodCategoryBloc>().add(AddToBilling(
-                                                                              List.from(billingItems),
-                                                                              isDiscountApplied));
-                                                                        });
-                                                                      }
-                                                                    });
-                                                                  }
-                                                                : null, // Disable tap if no stock
-                                                            child: Opacity(
-                                                              opacity: (p.availableQuantity ??
-                                                                          0) >
-                                                                      0
-                                                                  ? 1.0
-                                                                  : 0.5, // Blur effect for out of stock
-                                                              child: Card(
-                                                                color:
-                                                                    whiteColor,
-                                                                shadowColor:
-                                                                    greyColor,
-                                                                shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                            12)),
-                                                                child: Padding(
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                          .all(
-                                                                          12),
-                                                                  child: Column(
-                                                                    mainAxisSize:
-                                                                        MainAxisSize
-                                                                            .min,
-                                                                    children: [
-                                                                      SizedBox(
-                                                                        height: size.height *
-                                                                            0.12,
-                                                                        child: ClipRRect(
-                                                                            borderRadius: BorderRadius.circular(15.0),
-                                                                            child: CachedNetworkImage(
-                                                                              imageUrl: p.image ?? "",
-                                                                              width: size.width * 0.2,
-                                                                              height: size.height * 0.12,
-                                                                              fit: BoxFit.cover,
-                                                                              errorWidget: (context, url, error) {
-                                                                                return const Icon(
-                                                                                  Icons.error,
-                                                                                  size: 30,
-                                                                                  color: appHomeTextColor,
-                                                                                );
-                                                                              },
-                                                                              progressIndicatorBuilder: (context, url, downloadProgress) => const SpinKitCircle(color: appPrimaryColor, size: 30),
-                                                                            )),
-                                                                      ),
-                                                                      verticalSpace(
-                                                                          height:
-                                                                              5),
-                                                                      SizedBox(
-                                                                        width: size.width *
-                                                                            0.25,
-                                                                        child:
-                                                                            Text(
-                                                                          p.name ??
-                                                                              '',
-                                                                          style:
-                                                                              MyTextStyle.f13(
-                                                                            blackColor,
-                                                                            weight:
-                                                                                FontWeight.w500,
-                                                                          ),
-                                                                          maxLines:
-                                                                              3,
-                                                                          overflow:
-                                                                              TextOverflow.ellipsis,
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                        ),
-                                                                      ),
-                                                                      verticalSpace(
-                                                                          height:
-                                                                              5),
-                                                                      SizedBox(
-                                                                        width: size.width *
-                                                                            0.25,
-                                                                        child:
-                                                                            FittedBox(
-                                                                          fit: BoxFit
-                                                                              .scaleDown,
-                                                                          child:
-                                                                              Row(
-                                                                            children: [
-                                                                              Text(
-                                                                                'Available: ',
-                                                                                style: MyTextStyle.f12(greyColor, weight: FontWeight.w500),
-                                                                                maxLines: 1,
-                                                                                overflow: TextOverflow.ellipsis,
-                                                                              ),
-                                                                              Text(
-                                                                                '${p.availableQuantity ?? 0}',
-                                                                                style: MyTextStyle.f12((p.availableQuantity ?? 0) > 0 ? greyColor : redColor, weight: FontWeight.w500),
-                                                                                maxLines: 1,
-                                                                                overflow: TextOverflow.ellipsis,
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                      // Show "Out of Stock" message if no stock
-                                                                      if ((p.availableQuantity ??
-                                                                              0) <=
-                                                                          0) ...[
-                                                                        verticalSpace(
-                                                                            height:
-                                                                                5),
-                                                                        Container(
-                                                                          padding: EdgeInsets.symmetric(
-                                                                              horizontal: 8,
-                                                                              vertical: 4),
-                                                                          decoration:
-                                                                              BoxDecoration(
-                                                                            color:
-                                                                                redColor.withOpacity(0.1),
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(4),
-                                                                          ),
-                                                                          child:
-                                                                              Text(
-                                                                            'Out of Stock',
-                                                                            style:
-                                                                                MyTextStyle.f12(redColor, weight: FontWeight.bold),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                      if (counter ==
-                                                                              0 &&
-                                                                          (p.availableQuantity ?? 0) >
-                                                                              0)
-                                                                        verticalSpace(
-                                                                            height:
-                                                                                5),
-                                                                      if (counter ==
-                                                                              0 &&
-                                                                          (p.availableQuantity ?? 0) >
-                                                                              0)
-                                                                        SizedBox(
-                                                                          width:
-                                                                              size.width * 0.25,
-                                                                          child:
-                                                                              FittedBox(
-                                                                            fit:
-                                                                                BoxFit.scaleDown,
-                                                                            child:
-                                                                                Text(
-                                                                              '₹ ${p.basePrice}',
-                                                                              style: MyTextStyle.f14(blackColor, weight: FontWeight.w600),
-                                                                              maxLines: 1,
-                                                                              overflow: TextOverflow.ellipsis,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      if (counter !=
-                                                                              0 &&
-                                                                          (p.availableQuantity ?? 0) >
-                                                                              0)
-                                                                        verticalSpace(
-                                                                            height:
-                                                                                10),
-                                                                      if (counter !=
-                                                                              0 &&
-                                                                          (p.availableQuantity ?? 0) >
-                                                                              0)
-                                                                        Padding(
-                                                                          padding: const EdgeInsets
-                                                                              .only(
-                                                                              left: 5.0,
-                                                                              right: 5.0),
-                                                                          child:
-                                                                              Row(
-                                                                            mainAxisAlignment:
-                                                                                MainAxisAlignment.start,
-                                                                            children: [
-                                                                              Expanded(
-                                                                                child: Text(
-                                                                                  '₹ ${p.basePrice}',
-                                                                                  style: MyTextStyle.f14(blackColor, weight: FontWeight.w600),
-                                                                                  maxLines: 1,
-                                                                                  overflow: TextOverflow.ellipsis,
-                                                                                ),
-                                                                              ),
-                                                                              horizontalSpace(width: 5),
-                                                                              CircleAvatar(
-                                                                                radius: 16,
-                                                                                backgroundColor: greyColor200,
-                                                                                child: IconButton(
-                                                                                  icon: const Icon(Icons.remove, size: 16, color: blackColor),
-                                                                                  onPressed: () {
-                                                                                    setState(() {
-                                                                                      isSplitPayment = false;
-                                                                                      if (widget.isEditingOrder != true) {
-                                                                                        selectDineIn = true;
-                                                                                      }
-                                                                                      final index = billingItems.indexWhere((item) => item['_id'] == p.id);
-                                                                                      if (index != -1 && billingItems[index]['qty'] > 1) {
-                                                                                        billingItems[index]['qty'] = billingItems[index]['qty'] - 1;
-                                                                                      } else {
-                                                                                        billingItems.removeWhere((item) => item['_id'] == p.id);
-                                                                                        if (billingItems.isEmpty || billingItems == []) {
-                                                                                          isDiscountApplied = false;
-                                                                                          widget.isEditingOrder = false;
-                                                                                          tableId = null;
-                                                                                          selectedValue = null;
-                                                                                        }
-                                                                                      }
-                                                                                      context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
-                                                                                    });
-                                                                                  },
-                                                                                ),
-                                                                              ),
-                                                                              Padding(
-                                                                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                                                                child: Text(
-                                                                                  "$counter",
-                                                                                  style: MyTextStyle.f16(blackColor),
-                                                                                ),
-                                                                              ),
-                                                                              // Fixed: Check if we can add more based on available quantity and editing context
-                                                                              Builder(builder: (context) {
-                                                                                final currentQtyInCart = billingItems.where((item) => item['_id'] == p.id).fold(0, (sum, item) => sum + (item['qty'] as int));
-
-                                                                                bool canAddMore;
-                                                                                if ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") || (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "WAITLIST")) {
-                                                                                  // For completed orders, get paid quantity
-                                                                                  final paidQty = widget.existingOrder?.data?.items?.firstWhereOrNull((item) => item.product?.id == p.id)?.quantity ?? 0;
-                                                                                  // Allow adding up to availableQuantity + paidQuantity
-                                                                                  canAddMore = currentQtyInCart < ((p.availableQuantity ?? 0) + paidQty);
-                                                                                } else {
-                                                                                  // Normal stock check for new orders or waitlist
-                                                                                  canAddMore = currentQtyInCart < (p.availableQuantity ?? 0);
-                                                                                }
-
-                                                                                return CircleAvatar(
-                                                                                  radius: 16,
-                                                                                  backgroundColor: canAddMore ? appPrimaryColor : greyColor,
-                                                                                  child: IconButton(
-                                                                                    icon: Icon(
-                                                                                      Icons.add,
-                                                                                      size: 16,
-                                                                                      color: canAddMore ? whiteColor : blackColor,
-                                                                                    ),
-                                                                                    onPressed: canAddMore
-                                                                                        ? () {
-                                                                                            setState(() {
-                                                                                              isSplitPayment = false;
-                                                                                              if (widget.isEditingOrder != true) {
-                                                                                                selectDineIn = true;
-                                                                                              }
-                                                                                              final index = billingItems.indexWhere((item) => item['_id'] == p.id);
-                                                                                              if (index != -1) {
-                                                                                                billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
-                                                                                              } else {
-                                                                                                billingItems.add({
-                                                                                                  "_id": p.id,
-                                                                                                  "basePrice": p.basePrice,
-                                                                                                  "image": p.image,
-                                                                                                  "qty": 1,
-                                                                                                  "name": p.name,
-                                                                                                  "availableQuantity": p.availableQuantity,
-                                                                                                  "selectedAddons": p.addons!
-                                                                                                      .where((addon) => addon.quantity > 0)
-                                                                                                      .map((addon) => {
-                                                                                                            "_id": addon.id,
-                                                                                                            "price": addon.price,
-                                                                                                            "quantity": addon.quantity,
-                                                                                                            "name": addon.name,
-                                                                                                            "isAvailable": addon.isAvailable,
-                                                                                                            "maxQuantity": addon.maxQuantity,
-                                                                                                            "isFree": addon.isFree,
-                                                                                                          })
-                                                                                                      .toList()
-                                                                                                });
-                                                                                              }
-                                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
-                                                                                            });
-                                                                                          }
-                                                                                        : null,
-                                                                                  ),
-                                                                                );
-                                                                              }),
-                                                                            ],
-                                                                          ),
-                                                                        ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          )
-                                                        : InkWell(
-                                                            onTap: () {
-                                                              setState(() {
-                                                                p.counter = 1;
-                                                                if (p.addons!
-                                                                    .isNotEmpty) {
-                                                                  showDialog(
-                                                                    context:
+                                                    debugPrint(
+                                                        "uantity staus:${p.isStock}");
+                                                    for (var p
+                                                        in getProductByCatIdModel
+                                                            .rows!) {
+                                                      debugPrint(
+                                                          "👉 Product: ${p.name}, isStock: ${p.isStock}, qty: ${p.availableQuantity}");
+                                                    }
+                                                    debugPrint(
+                                                        "uantity staus:${p.availableQuantity}");
+                                                    return
+                                                        // getProductByCatIdModel
+                                                        //           .stockMaintenance ==
+                                                        //       true
+                                                        //   ?
+                                                        InkWell(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          p.counter = 1;
+                                                          if (p.addons!
+                                                              .isNotEmpty) {
+                                                            showDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (context2) {
+                                                                return BlocProvider(
+                                                                  create: (context) =>
+                                                                      FoodCategoryBloc(),
+                                                                  child:
+                                                                      BlocProvider
+                                                                          .value(
+                                                                    value: BlocProvider.of<
+                                                                            FoodCategoryBloc>(
                                                                         context,
-                                                                    builder:
-                                                                        (context2) {
-                                                                      return BlocProvider(
-                                                                        create: (context) =>
-                                                                            FoodCategoryBloc(),
-                                                                        child: BlocProvider
-                                                                            .value(
-                                                                          value: BlocProvider.of<FoodCategoryBloc>(
-                                                                              context,
-                                                                              listen: false),
+                                                                        listen:
+                                                                            false),
+                                                                    child: StatefulBuilder(builder:
+                                                                        (context,
+                                                                            setState) {
+                                                                      return Dialog(
+                                                                        insetPadding: EdgeInsets.symmetric(
+                                                                            horizontal:
+                                                                                40,
+                                                                            vertical:
+                                                                                24),
+                                                                        shape:
+                                                                            RoundedRectangleBorder(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(8),
+                                                                        ),
+                                                                        child:
+                                                                            Container(
+                                                                          constraints:
+                                                                              BoxConstraints(
+                                                                            maxWidth:
+                                                                                size.width * 0.4,
+                                                                            maxHeight:
+                                                                                size.height * 0.6,
+                                                                          ),
+                                                                          padding:
+                                                                              EdgeInsets.all(16),
                                                                           child:
-                                                                              StatefulBuilder(builder: (context, setState) {
-                                                                            return Dialog(
-                                                                              insetPadding: EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-                                                                              shape: RoundedRectangleBorder(
-                                                                                borderRadius: BorderRadius.circular(8),
-                                                                              ),
-                                                                              child: Container(
-                                                                                constraints: BoxConstraints(
-                                                                                  maxWidth: size.width * 0.4,
-                                                                                  maxHeight: size.height * 0.6,
+                                                                              SingleChildScrollView(
+                                                                            child:
+                                                                                Column(
+                                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                                              mainAxisSize: MainAxisSize.min,
+                                                                              children: [
+                                                                                ClipRRect(
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                    child: CachedNetworkImage(
+                                                                                      imageUrl: p.image!,
+                                                                                      width: size.width * 0.5,
+                                                                                      height: size.height * 0.2,
+                                                                                      fit: BoxFit.cover,
+                                                                                      errorWidget: (context, url, error) {
+                                                                                        return const Icon(
+                                                                                          Icons.error,
+                                                                                          size: 30,
+                                                                                          color: appHomeTextColor,
+                                                                                        );
+                                                                                      },
+                                                                                      progressIndicatorBuilder: (context, url, downloadProgress) => const SpinKitCircle(color: appPrimaryColor, size: 30),
+                                                                                    )),
+                                                                                SizedBox(height: 16),
+                                                                                Text(
+                                                                                  'Choose Add‑Ons for ${p.name}',
+                                                                                  style: MyTextStyle.f16(
+                                                                                    weight: FontWeight.bold,
+                                                                                    blackColor,
+                                                                                  ),
+                                                                                  textAlign: TextAlign.left,
                                                                                 ),
-                                                                                padding: EdgeInsets.all(16),
-                                                                                child: SingleChildScrollView(
-                                                                                  child: Column(
-                                                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    children: [
-                                                                                      ClipRRect(
-                                                                                          borderRadius: BorderRadius.circular(15.0),
-                                                                                          child: CachedNetworkImage(
-                                                                                            imageUrl: p.image!,
-                                                                                            width: size.width * 0.5,
-                                                                                            height: size.height * 0.2,
-                                                                                            fit: BoxFit.cover,
-                                                                                            errorWidget: (context, url, error) {
-                                                                                              return const Icon(
-                                                                                                Icons.error,
-                                                                                                size: 30,
-                                                                                                color: appHomeTextColor,
-                                                                                              );
-                                                                                            },
-                                                                                            progressIndicatorBuilder: (context, url, downloadProgress) => const SpinKitCircle(color: appPrimaryColor, size: 30),
-                                                                                          )),
-                                                                                      SizedBox(height: 16),
-                                                                                      Text(
-                                                                                        'Choose Add‑Ons for ${p.name}',
-                                                                                        style: MyTextStyle.f16(
-                                                                                          weight: FontWeight.bold,
-                                                                                          blackColor,
+                                                                                SizedBox(height: 12),
+                                                                                Column(
+                                                                                  children: p.addons!.map((e) {
+                                                                                    return Padding(
+                                                                                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                                                                      child: Container(
+                                                                                        padding: const EdgeInsets.all(8),
+                                                                                        decoration: BoxDecoration(
+                                                                                          border: Border.all(color: blackColor),
+                                                                                          borderRadius: BorderRadius.circular(8),
                                                                                         ),
-                                                                                        textAlign: TextAlign.left,
-                                                                                      ),
-                                                                                      SizedBox(height: 12),
-                                                                                      Column(
-                                                                                        children: p.addons!.map((e) {
-                                                                                          return Padding(
-                                                                                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                                                                            child: Container(
-                                                                                              padding: const EdgeInsets.all(8),
-                                                                                              decoration: BoxDecoration(
-                                                                                                border: Border.all(color: blackColor),
-                                                                                                borderRadius: BorderRadius.circular(8),
-                                                                                              ),
-                                                                                              child: Row(
+                                                                                        child: Row(
+                                                                                          children: [
+                                                                                            Expanded(
+                                                                                              child: Column(
+                                                                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                                                                 children: [
-                                                                                                  // Addon title & price/free label
-                                                                                                  Expanded(
-                                                                                                    child: Column(
-                                                                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                                      children: [
-                                                                                                        Text(
-                                                                                                          e.name ?? '',
-                                                                                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                                                                                        ),
-                                                                                                        const SizedBox(height: 4),
-                                                                                                        Text(
-                                                                                                          e.isFree == true ? "Free (Max: ${e.maxQuantity})" : "₹ ${e.price?.toStringAsFixed(2) ?? '0.00'} (Max: ${e.maxQuantity})",
-                                                                                                          style: TextStyle(color: Colors.grey.shade600),
-                                                                                                        ),
-                                                                                                      ],
-                                                                                                    ),
+                                                                                                  Text(
+                                                                                                    e.name ?? '',
+                                                                                                    style: const TextStyle(fontWeight: FontWeight.bold),
                                                                                                   ),
-
-                                                                                                  // Quantity selector
-                                                                                                  Row(
-                                                                                                    children: [
-                                                                                                      IconButton(
-                                                                                                        icon: const Icon(Icons.remove),
-                                                                                                        onPressed: (e.quantity) > 0
-                                                                                                            ? () {
-                                                                                                                setState(() {
-                                                                                                                  e.quantity = (e.quantity) - 1;
-                                                                                                                });
-                                                                                                              }
-                                                                                                            : null,
-                                                                                                      ),
-                                                                                                      Text('${e.quantity}'),
-                                                                                                      IconButton(
-                                                                                                        icon: const Icon(Icons.add, color: Colors.brown),
-                                                                                                        onPressed: (e.quantity) < (e.maxQuantity ?? 1)
-                                                                                                            ? () {
-                                                                                                                setState(() {
-                                                                                                                  e.quantity = (e.quantity) + 1;
-                                                                                                                });
-                                                                                                              }
-                                                                                                            : null,
-                                                                                                      ),
-                                                                                                    ],
-                                                                                                  )
+                                                                                                  const SizedBox(height: 4),
+                                                                                                  Text(
+                                                                                                    e.isFree == true ? "Free (Max: ${e.maxQuantity})" : "₹ ${e.price?.toStringAsFixed(2) ?? '0.00'} (Max: ${e.maxQuantity})",
+                                                                                                    style: TextStyle(color: Colors.grey.shade600),
+                                                                                                  ),
                                                                                                 ],
                                                                                               ),
                                                                                             ),
-                                                                                          );
-                                                                                        }).toList(),
+                                                                                            Row(
+                                                                                              children: [
+                                                                                                IconButton(
+                                                                                                  icon: const Icon(Icons.remove),
+                                                                                                  onPressed: (e.quantity) > 0
+                                                                                                      ? () {
+                                                                                                          setState(() {
+                                                                                                            e.quantity = (e.quantity) - 1;
+                                                                                                          });
+                                                                                                        }
+                                                                                                      : null,
+                                                                                                ),
+                                                                                                Text('${e.quantity}'),
+                                                                                                IconButton(
+                                                                                                  icon: const Icon(Icons.add, color: Colors.brown),
+                                                                                                  onPressed: (e.quantity) < (e.maxQuantity ?? 1)
+                                                                                                      ? () {
+                                                                                                          setState(() {
+                                                                                                            e.quantity = (e.quantity) + 1;
+                                                                                                          });
+                                                                                                        }
+                                                                                                      : null,
+                                                                                                ),
+                                                                                              ],
+                                                                                            )
+                                                                                          ],
+                                                                                        ),
                                                                                       ),
-                                                                                      SizedBox(height: 20),
-                                                                                      Row(
-                                                                                        mainAxisAlignment: MainAxisAlignment.end,
-                                                                                        children: [
-                                                                                          ElevatedButton(
-                                                                                            onPressed: () {
-                                                                                              setState(() {
-                                                                                                if (counter > 1 || counter == 1) {
-                                                                                                  counter--;
-                                                                                                }
-                                                                                              });
-
-                                                                                              Navigator.of(context).pop();
-                                                                                            },
-                                                                                            style: ElevatedButton.styleFrom(
-                                                                                              backgroundColor: greyColor.shade400,
-                                                                                              minimumSize: Size(80, 40),
-                                                                                              padding: EdgeInsets.all(20),
-                                                                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                                                            ),
-                                                                                            child: Text('Cancel', style: MyTextStyle.f14(blackColor)),
-                                                                                          ),
-                                                                                          SizedBox(width: 8),
-                                                                                          ElevatedButton(
-                                                                                            onPressed: () {
-                                                                                              setState(() {
-                                                                                                isSplitPayment = false;
-                                                                                                if (widget.isEditingOrder != true) {
-                                                                                                  selectDineIn = true;
-                                                                                                }
-                                                                                                final index = billingItems.indexWhere((item) => item['_id'] == p.id);
-                                                                                                if (index != -1) {
-                                                                                                  billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
-                                                                                                } else {
-                                                                                                  billingItems.add({
-                                                                                                    "_id": p.id,
-                                                                                                    "basePrice": p.basePrice,
-                                                                                                    "image": p.image,
-                                                                                                    "qty": 1,
-                                                                                                    "name": p.name,
-                                                                                                    "selectedAddons": p.addons!
-                                                                                                        .where((addon) => addon.quantity > 0) // Simple condition - only check quantity
-                                                                                                        .map((addon) => {
-                                                                                                              "_id": addon.id,
-                                                                                                              "price": addon.price,
-                                                                                                              "quantity": addon.quantity,
-                                                                                                              "name": addon.name,
-                                                                                                              "isAvailable": addon.isAvailable,
-                                                                                                              "maxQuantity": addon.maxQuantity,
-                                                                                                              "isFree": addon.isFree,
-                                                                                                            })
-                                                                                                        .toList()
-                                                                                                  });
-                                                                                                }
-                                                                                                context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
-
-                                                                                                setState(() {
-                                                                                                  for (var addon in p.addons!) {
-                                                                                                    addon.isSelected = false;
-                                                                                                    addon.quantity = 0;
-                                                                                                  }
-                                                                                                });
-                                                                                                Navigator.of(context).pop();
-                                                                                              });
-                                                                                            },
-                                                                                            style: ElevatedButton.styleFrom(
-                                                                                              backgroundColor: appPrimaryColor,
-                                                                                              minimumSize: Size(80, 40),
-                                                                                              padding: EdgeInsets.all(20),
-                                                                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                                                            ),
-                                                                                            child: Text('Add to Bill', style: MyTextStyle.f14(whiteColor)),
-                                                                                          ),
-                                                                                        ],
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
+                                                                                    );
+                                                                                  }).toList(),
                                                                                 ),
-                                                                              ),
-                                                                            );
-                                                                          }),
+                                                                                SizedBox(height: 20),
+                                                                                Row(
+                                                                                  mainAxisAlignment: MainAxisAlignment.end,
+                                                                                  children: [
+                                                                                    ElevatedButton(
+                                                                                      onPressed: () {
+                                                                                        setState(() {
+                                                                                          if (counter > 1 || counter == 1) {
+                                                                                            counter--;
+                                                                                          }
+                                                                                        });
+                                                                                        Navigator.of(context).pop();
+                                                                                      },
+                                                                                      style: ElevatedButton.styleFrom(
+                                                                                        backgroundColor: greyColor.shade400,
+                                                                                        minimumSize: Size(80, 40),
+                                                                                        padding: EdgeInsets.all(20),
+                                                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                                                      ),
+                                                                                      child: Text('Cancel', style: MyTextStyle.f14(blackColor)),
+                                                                                    ),
+                                                                                    SizedBox(width: 8),
+                                                                                    ElevatedButton(
+                                                                                      onPressed: () {
+                                                                                        // Fixed logic: Check available quantity considering editing context
+                                                                                        final currentQtyInCart = billingItems.where((item) => item['_id'] == p.id).fold(0, (sum, item) => sum + (item['qty'] as int));
+
+                                                                                        bool canAdd;
+                                                                                        if ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") || (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "WAITLIST")) {
+                                                                                          // For completed orders, get paid quantity
+                                                                                          final paidQty = widget.existingOrder?.data?.items?.firstWhereOrNull((item) => item.product?.id == p.id)?.quantity ?? 0;
+                                                                                          // Allow adding up to availableQuantity + paidQuantity
+                                                                                          canAdd = currentQtyInCart < ((p.availableQuantity ?? 0) + paidQty);
+                                                                                        } else {
+                                                                                          // Normal stock check for new orders or waitlist
+                                                                                          canAdd = currentQtyInCart < (p.availableQuantity ?? 0);
+                                                                                        }
+
+                                                                                        if (!canAdd) {
+                                                                                          showToast("Cannot add more items. Stock limit reached.", context, color: false);
+                                                                                          return;
+                                                                                        }
+
+                                                                                        setState(() {
+                                                                                          isSplitPayment = false;
+                                                                                          if (widget.isEditingOrder != true) {
+                                                                                            selectDineIn = true;
+                                                                                          }
+                                                                                          final index = billingItems.indexWhere((item) => item['_id'] == p.id);
+                                                                                          if (index != -1) {
+                                                                                            billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
+                                                                                          } else {
+                                                                                            billingItems.add({
+                                                                                              "_id": p.id,
+                                                                                              "basePrice": p.basePrice,
+                                                                                              "image": p.image,
+                                                                                              "qty": 1,
+                                                                                              "name": p.name,
+                                                                                              "availableQuantity": p.availableQuantity,
+                                                                                              "selectedAddons": p.addons!
+                                                                                                  .where((addon) => addon.quantity > 0)
+                                                                                                  .map((addon) => {
+                                                                                                        "_id": addon.id,
+                                                                                                        "price": addon.price,
+                                                                                                        "quantity": addon.quantity,
+                                                                                                        "name": addon.name,
+                                                                                                        "isAvailable": addon.isAvailable,
+                                                                                                        "maxQuantity": addon.maxQuantity,
+                                                                                                        "isFree": addon.isFree,
+                                                                                                      })
+                                                                                                  .toList()
+                                                                                            });
+                                                                                          }
+                                                                                          context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
+
+                                                                                          setState(() {
+                                                                                            for (var addon in p.addons!) {
+                                                                                              addon.isSelected = false;
+                                                                                              addon.quantity = 0;
+                                                                                            }
+                                                                                          });
+                                                                                          Navigator.of(context).pop();
+                                                                                        });
+                                                                                      },
+                                                                                      style: ElevatedButton.styleFrom(
+                                                                                        backgroundColor: appPrimaryColor,
+                                                                                        minimumSize: Size(80, 40),
+                                                                                        padding: EdgeInsets.all(20),
+                                                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                                                      ),
+                                                                                      child: Text('Add to Bill', style: MyTextStyle.f14(whiteColor)),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                          ),
                                                                         ),
                                                                       );
-                                                                    },
-                                                                  );
-                                                                } else {
-                                                                  setState(() {
-                                                                    isSplitPayment =
-                                                                        false;
-                                                                    if (widget
-                                                                            .isEditingOrder !=
-                                                                        true) {
-                                                                      selectDineIn =
-                                                                          true;
-                                                                    }
-                                                                    final index =
-                                                                        billingItems.indexWhere((item) =>
-                                                                            item['_id'] ==
-                                                                            p.id);
-                                                                    if (index !=
-                                                                        -1) {
-                                                                      billingItems[
-                                                                              index]
-                                                                          [
-                                                                          'qty'] = billingItems[index]
-                                                                              [
-                                                                              'qty'] +
-                                                                          1;
-                                                                    } else {
-                                                                      billingItems
-                                                                          .add({
-                                                                        "_id": p
-                                                                            .id,
-                                                                        "basePrice":
-                                                                            p.basePrice,
-                                                                        "image":
-                                                                            p.image,
-                                                                        "qty":
-                                                                            1,
-                                                                        "name":
-                                                                            p.name,
-                                                                        "selectedAddons": p
-                                                                            .addons!
-                                                                            .where((addon) =>
-                                                                                addon.quantity >
-                                                                                0) // Simple condition - only check quantity
-                                                                            .map((addon) =>
-                                                                                {
-                                                                                  "_id": addon.id,
-                                                                                  "price": addon.price,
-                                                                                  "quantity": addon.quantity,
-                                                                                  "name": addon.name,
-                                                                                  "isAvailable": addon.isAvailable,
-                                                                                  "maxQuantity": addon.maxQuantity,
-                                                                                  "isFree": addon.isFree,
-                                                                                })
-                                                                            .toList()
-                                                                      });
-                                                                    }
-                                                                    context
-                                                                        .read<
-                                                                            FoodCategoryBloc>()
-                                                                        .add(AddToBilling(
-                                                                            List.from(billingItems),
-                                                                            isDiscountApplied));
-                                                                  });
-                                                                }
-                                                              });
-                                                            },
-                                                            child: Card(
-                                                              color: whiteColor,
-                                                              shadowColor:
-                                                                  greyColor,
-                                                              shape: RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              12)),
-                                                              child: Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .all(
-                                                                        12),
-                                                                child: Column(
-                                                                  mainAxisSize:
-                                                                      MainAxisSize
-                                                                          .min,
-                                                                  children: [
-                                                                    SizedBox(
-                                                                      height: size
-                                                                              .height *
+                                                                    }),
+                                                                  ),
+                                                                );
+                                                              },
+                                                            );
+                                                          } else {
+                                                            // Direct add without addons - Fixed stock check
+                                                            final currentQtyInCart = billingItems
+                                                                .where((item) =>
+                                                                    item[
+                                                                        '_id'] ==
+                                                                    p.id)
+                                                                .fold(
+                                                                    0,
+                                                                    (sum, item) =>
+                                                                        sum +
+                                                                        (item['qty']
+                                                                            as int));
+
+                                                            bool canAdd;
+                                                            if ((widget.isEditingOrder ==
+                                                                        true &&
+                                                                    widget
+                                                                            .existingOrder
+                                                                            ?.data
+                                                                            ?.orderStatus ==
+                                                                        "COMPLETED") ||
+                                                                (widget.isEditingOrder ==
+                                                                        true &&
+                                                                    widget
+                                                                            .existingOrder
+                                                                            ?.data
+                                                                            ?.orderStatus ==
+                                                                        "WAITLIST")) {
+                                                              // For completed orders, get paid quantity
+                                                              final paidQty = widget
+                                                                      .existingOrder
+                                                                      ?.data
+                                                                      ?.items
+                                                                      ?.firstWhereOrNull((item) =>
+                                                                          item.product
+                                                                              ?.id ==
+                                                                          p.id)
+                                                                      ?.quantity ??
+                                                                  0;
+                                                              // Allow adding up to availableQuantity + paidQuantity
+                                                              canAdd = currentQtyInCart <
+                                                                  ((p.availableQuantity ??
+                                                                          0) +
+                                                                      paidQty);
+                                                            } else {
+                                                              // Normal stock check for new orders or waitlist
+                                                              canAdd =
+                                                                  currentQtyInCart <
+                                                                      (p.availableQuantity ??
+                                                                          0);
+                                                            }
+
+                                                            if (!canAdd) {
+                                                              showToast(
+                                                                  "Cannot add more items. Stock limit reached.",
+                                                                  context,
+                                                                  color: false);
+                                                              return;
+                                                            }
+
+                                                            setState(() {
+                                                              isSplitPayment =
+                                                                  false;
+                                                              if (widget
+                                                                      .isEditingOrder !=
+                                                                  true) {
+                                                                selectDineIn =
+                                                                    true;
+                                                              }
+                                                              final index = billingItems
+                                                                  .indexWhere(
+                                                                      (item) =>
+                                                                          item[
+                                                                              '_id'] ==
+                                                                          p.id);
+                                                              if (index != -1) {
+                                                                billingItems[
+                                                                        index][
+                                                                    'qty'] = billingItems[
+                                                                            index]
+                                                                        [
+                                                                        'qty'] +
+                                                                    1;
+                                                              } else {
+                                                                billingItems
+                                                                    .add({
+                                                                  "_id": p.id,
+                                                                  "basePrice": p
+                                                                      .basePrice,
+                                                                  "image":
+                                                                      p.image,
+                                                                  "qty": 1,
+                                                                  "name":
+                                                                      p.name,
+                                                                  "availableQuantity":
+                                                                      p.availableQuantity,
+                                                                  "selectedAddons": p
+                                                                      .addons!
+                                                                      .where((addon) =>
+                                                                          addon
+                                                                              .quantity >
+                                                                          0)
+                                                                      .map(
+                                                                          (addon) =>
+                                                                              {
+                                                                                "_id": addon.id,
+                                                                                "price": addon.price,
+                                                                                "quantity": addon.quantity,
+                                                                                "name": addon.name,
+                                                                                "isAvailable": addon.isAvailable,
+                                                                                "maxQuantity": addon.maxQuantity,
+                                                                                "isFree": addon.isFree,
+                                                                              })
+                                                                      .toList()
+                                                                });
+                                                              }
+                                                              context
+                                                                  .read<
+                                                                      FoodCategoryBloc>()
+                                                                  .add(AddToBilling(
+                                                                      List.from(
+                                                                          billingItems),
+                                                                      isDiscountApplied));
+                                                            });
+                                                          }
+                                                        });
+                                                      },
+                                                      child: Opacity(
+                                                        opacity:
+                                                            (p.availableQuantity ??
+                                                                        0) >
+                                                                    0
+                                                                ? 1.0
+                                                                : 0.5, // Blur effect for out of stock
+                                                        child: Card(
+                                                          color: whiteColor,
+                                                          shadowColor:
+                                                              greyColor,
+                                                          shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12)),
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(12),
+                                                            child: Column(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: [
+                                                                SizedBox(
+                                                                  height:
+                                                                      size.height *
                                                                           0.12,
-                                                                      child: ClipRRect(
-                                                                          borderRadius: BorderRadius.circular(15.0),
-                                                                          child: CachedNetworkImage(
+                                                                  child:
+                                                                      ClipRRect(
+                                                                          borderRadius: BorderRadius.circular(
+                                                                              15.0),
+                                                                          child:
+                                                                              CachedNetworkImage(
                                                                             imageUrl:
                                                                                 p.image ?? "",
                                                                             width:
@@ -1773,44 +1306,160 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                             progressIndicatorBuilder: (context, url, downloadProgress) =>
                                                                                 const SpinKitCircle(color: appPrimaryColor, size: 30),
                                                                           )),
-                                                                    ),
-                                                                    verticalSpace(
-                                                                        height:
-                                                                            5),
-                                                                    SizedBox(
-                                                                      width: size
-                                                                              .width *
+                                                                ),
+                                                                verticalSpace(
+                                                                    height: 5),
+                                                                SizedBox(
+                                                                  width:
+                                                                      size.width *
                                                                           0.25,
+                                                                  child: Text(
+                                                                    p.name ??
+                                                                        '',
+                                                                    style:
+                                                                        MyTextStyle
+                                                                            .f13(
+                                                                      blackColor,
+                                                                      weight: FontWeight
+                                                                          .w500,
+                                                                    ),
+                                                                    maxLines: 3,
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                  ),
+                                                                ),
+                                                                verticalSpace(
+                                                                    height: 5),
+                                                                SizedBox(
+                                                                  width:
+                                                                      size.width *
+                                                                          0.25,
+                                                                  child:
+                                                                      FittedBox(
+                                                                    fit: BoxFit
+                                                                        .scaleDown,
+                                                                    child: Row(
+                                                                      children: [
+                                                                        Text(
+                                                                          'Available: ',
+                                                                          style: MyTextStyle.f12(
+                                                                              greyColor,
+                                                                              weight: FontWeight.w500),
+                                                                          maxLines:
+                                                                              1,
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                        ),
+                                                                        Text(
+                                                                          '${p.availableQuantity ?? 0}',
+                                                                          style: MyTextStyle.f12(
+                                                                              (p.availableQuantity ?? 0) > 0 ? greyColor : redColor,
+                                                                              weight: FontWeight.w500),
+                                                                          maxLines:
+                                                                              1,
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                // Show "Out of Stock" message if no stock
+                                                                if ((p.availableQuantity ??
+                                                                        0) <=
+                                                                    0) ...[
+                                                                  verticalSpace(
+                                                                      height:
+                                                                          5),
+                                                                  Container(
+                                                                    padding: EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            8,
+                                                                        vertical:
+                                                                            4),
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      color: redColor
+                                                                          .withOpacity(
+                                                                              0.1),
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              4),
+                                                                    ),
+                                                                    child: Text(
+                                                                      'Out of Stock',
+                                                                      style: MyTextStyle.f12(
+                                                                          redColor,
+                                                                          weight:
+                                                                              FontWeight.bold),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                                if (counter ==
+                                                                        0 &&
+                                                                    (p.availableQuantity ??
+                                                                            0) >
+                                                                        0)
+                                                                  verticalSpace(
+                                                                      height:
+                                                                          5),
+                                                                if (counter ==
+                                                                        0 &&
+                                                                    (p.availableQuantity ??
+                                                                            0) >
+                                                                        0)
+                                                                  SizedBox(
+                                                                    width: size
+                                                                            .width *
+                                                                        0.25,
+                                                                    child:
+                                                                        FittedBox(
+                                                                      fit: BoxFit
+                                                                          .scaleDown,
                                                                       child:
                                                                           Text(
-                                                                        p.name ??
-                                                                            '',
-                                                                        style: MyTextStyle
-                                                                            .f13(
-                                                                          blackColor,
-                                                                          weight:
-                                                                              FontWeight.w500,
-                                                                        ),
+                                                                        '₹ ${p.basePrice}',
+                                                                        style: MyTextStyle.f14(
+                                                                            blackColor,
+                                                                            weight:
+                                                                                FontWeight.w600),
                                                                         maxLines:
-                                                                            3,
+                                                                            1,
                                                                         overflow:
                                                                             TextOverflow.ellipsis,
-                                                                        textAlign:
-                                                                            TextAlign.center,
                                                                       ),
                                                                     ),
-                                                                    verticalSpace(
-                                                                        height:
-                                                                            5),
-                                                                    if (counter ==
+                                                                  ),
+                                                                if (counter !=
+                                                                        0 &&
+                                                                    (p.availableQuantity ??
+                                                                            0) >
                                                                         0)
-                                                                      SizedBox(
-                                                                        width: size.width *
-                                                                            0.25,
-                                                                        child:
-                                                                            FittedBox(
-                                                                          fit: BoxFit
-                                                                              .scaleDown,
+                                                                  verticalSpace(
+                                                                      height:
+                                                                          10),
+                                                                if (counter !=
+                                                                        0 &&
+                                                                    (p.availableQuantity ??
+                                                                            0) >
+                                                                        0)
+                                                                  Padding(
+                                                                    padding: const EdgeInsets
+                                                                        .only(
+                                                                        left:
+                                                                            5.0,
+                                                                        right:
+                                                                            5.0),
+                                                                    child: Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .start,
+                                                                      children: [
+                                                                        Expanded(
                                                                           child:
                                                                               Text(
                                                                             '₹ ${p.basePrice}',
@@ -1822,121 +1471,622 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                 TextOverflow.ellipsis,
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                    verticalSpace(
-                                                                        height:
-                                                                            10),
-                                                                    if (counter !=
-                                                                        0)
-                                                                      Padding(
-                                                                        padding: const EdgeInsets
-                                                                            .only(
-                                                                            left:
-                                                                                5.0,
-                                                                            right:
-                                                                                5.0),
-                                                                        child:
-                                                                            Row(
-                                                                          mainAxisAlignment:
-                                                                              MainAxisAlignment.start,
-                                                                          children: [
-                                                                            Expanded(
-                                                                              child: Text(
-                                                                                '₹ ${p.basePrice}',
-                                                                                style: MyTextStyle.f14(blackColor, weight: FontWeight.w600),
-                                                                                maxLines: 1,
-                                                                                overflow: TextOverflow.ellipsis,
-                                                                              ),
-                                                                            ),
-                                                                            horizontalSpace(width: 5),
-                                                                            CircleAvatar(
-                                                                              radius: 16,
-                                                                              backgroundColor: greyColor200,
-                                                                              child: IconButton(
-                                                                                icon: const Icon(Icons.remove, size: 16, color: blackColor),
-                                                                                onPressed
-                                                                                    // :
-                                                                                    // disableDecrement
-                                                                                    //     ? null
-                                                                                    : () {
-                                                                                  setState(() {
-                                                                                    isSplitPayment = false;
-                                                                                    if (widget.isEditingOrder != true) {
-                                                                                      selectDineIn = true;
-                                                                                    }
-                                                                                    final index = billingItems.indexWhere((item) => item['_id'] == p.id);
-                                                                                    if (index != -1 && billingItems[index]['qty'] > 1) {
-                                                                                      billingItems[index]['qty'] = billingItems[index]['qty'] - 1;
-                                                                                    } else {
-                                                                                      billingItems.removeWhere((item) => item['_id'] == p.id);
-                                                                                      if (billingItems.isEmpty || billingItems == []) {
-                                                                                        isDiscountApplied = false;
-                                                                                        widget.isEditingOrder = false;
-                                                                                        tableId = null;
-                                                                                        selectedValue = null;
-                                                                                      }
-                                                                                    }
+                                                                        horizontalSpace(
+                                                                            width:
+                                                                                5),
+                                                                        CircleAvatar(
+                                                                          radius:
+                                                                              16,
+                                                                          backgroundColor:
+                                                                              greyColor200,
+                                                                          child:
+                                                                              IconButton(
+                                                                            icon: const Icon(Icons.remove,
+                                                                                size: 16,
+                                                                                color: blackColor),
+                                                                            onPressed:
+                                                                                () {
+                                                                              setState(() {
+                                                                                isSplitPayment = false;
+                                                                                if (widget.isEditingOrder != true) {
+                                                                                  selectDineIn = true;
+                                                                                }
+                                                                                final index = billingItems.indexWhere((item) => item['_id'] == p.id);
+                                                                                if (index != -1 && billingItems[index]['qty'] > 1) {
+                                                                                  billingItems[index]['qty'] = billingItems[index]['qty'] - 1;
+                                                                                } else {
+                                                                                  billingItems.removeWhere((item) => item['_id'] == p.id);
+                                                                                  if (billingItems.isEmpty || billingItems == []) {
+                                                                                    isDiscountApplied = false;
+                                                                                    widget.isEditingOrder = false;
+                                                                                    tableId = null;
+                                                                                    selectedValue = null;
+                                                                                  }
+                                                                                }
+                                                                                context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
+                                                                              });
+                                                                            },
+                                                                          ),
+                                                                        ),
+                                                                        Padding(
+                                                                          padding: const EdgeInsets
+                                                                              .symmetric(
+                                                                              horizontal: 12),
+                                                                          child:
+                                                                              Text(
+                                                                            "$counter",
+                                                                            style:
+                                                                                MyTextStyle.f16(blackColor),
+                                                                          ),
+                                                                        ),
+                                                                        // Fixed: Check if we can add more based on available quantity and editing context
+                                                                        Builder(builder:
+                                                                            (context) {
+                                                                          final currentQtyInCart = billingItems.where((item) => item['_id'] == p.id).fold(
+                                                                              0,
+                                                                              (sum, item) => sum + (item['qty'] as int));
 
-                                                                                    context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
-                                                                                  });
-                                                                                },
+                                                                          bool
+                                                                              canAddMore;
+                                                                          if ((widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "COMPLETED") ||
+                                                                              (widget.isEditingOrder == true && widget.existingOrder?.data?.orderStatus == "WAITLIST")) {
+                                                                            // For completed orders, get paid quantity
+                                                                            final paidQty =
+                                                                                widget.existingOrder?.data?.items?.firstWhereOrNull((item) => item.product?.id == p.id)?.quantity ?? 0;
+                                                                            // Allow adding up to availableQuantity + paidQuantity
+                                                                            canAddMore =
+                                                                                currentQtyInCart < ((p.availableQuantity ?? 0) + paidQty);
+                                                                          } else {
+                                                                            // Normal stock check for new orders or waitlist
+                                                                            canAddMore =
+                                                                                currentQtyInCart < (p.availableQuantity ?? 0);
+                                                                          }
+
+                                                                          return CircleAvatar(
+                                                                            radius:
+                                                                                16,
+                                                                            backgroundColor: canAddMore
+                                                                                ? appPrimaryColor
+                                                                                : greyColor,
+                                                                            child:
+                                                                                IconButton(
+                                                                              icon: Icon(
+                                                                                Icons.add,
+                                                                                size: 16,
+                                                                                color: canAddMore ? whiteColor : blackColor,
                                                                               ),
-                                                                            ),
-                                                                            Padding(
-                                                                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                                                                              child: Text(
-                                                                                "$counter",
-                                                                                style: MyTextStyle.f16(blackColor),
-                                                                              ),
-                                                                            ),
-                                                                            CircleAvatar(
-                                                                              radius: 16,
-                                                                              backgroundColor: appPrimaryColor,
-                                                                              child: IconButton(
-                                                                                icon: const Icon(Icons.add, size: 16, color: whiteColor),
-                                                                                onPressed: () {
-                                                                                  setState(() {
-                                                                                    isSplitPayment = false;
-                                                                                    if (widget.isEditingOrder != true) {
-                                                                                      selectDineIn = true;
-                                                                                    }
-                                                                                    final index = billingItems.indexWhere((item) => item['_id'] == p.id);
-                                                                                    if (index != -1) {
-                                                                                      billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
-                                                                                    } else {
-                                                                                      billingItems.add({
-                                                                                        "_id": p.id,
-                                                                                        "basePrice": p.basePrice,
-                                                                                        "image": p.image,
-                                                                                        "qty": 1,
-                                                                                        "name": p.name,
-                                                                                        "selectedAddons": p.addons!
-                                                                                            .where((addon) => addon.quantity > 0) // Simple condition - only check quantity
-                                                                                            .map((addon) => {
-                                                                                                  "_id": addon.id,
-                                                                                                  "price": addon.price,
-                                                                                                  "quantity": addon.quantity,
-                                                                                                  "name": addon.name,
-                                                                                                  "isAvailable": addon.isAvailable,
-                                                                                                  "maxQuantity": addon.maxQuantity,
-                                                                                                  "isFree": addon.isFree,
-                                                                                                })
-                                                                                            .toList()
+                                                                              onPressed: canAddMore
+                                                                                  ? () {
+                                                                                      setState(() {
+                                                                                        isSplitPayment = false;
+                                                                                        if (widget.isEditingOrder != true) {
+                                                                                          selectDineIn = true;
+                                                                                        }
+                                                                                        final index = billingItems.indexWhere((item) => item['_id'] == p.id);
+                                                                                        if (index != -1) {
+                                                                                          billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
+                                                                                        } else {
+                                                                                          billingItems.add({
+                                                                                            "_id": p.id,
+                                                                                            "basePrice": p.basePrice,
+                                                                                            "image": p.image,
+                                                                                            "qty": 1,
+                                                                                            "name": p.name,
+                                                                                            "availableQuantity": p.availableQuantity,
+                                                                                            "selectedAddons": p.addons!
+                                                                                                .where((addon) => addon.quantity > 0)
+                                                                                                .map((addon) => {
+                                                                                                      "_id": addon.id,
+                                                                                                      "price": addon.price,
+                                                                                                      "quantity": addon.quantity,
+                                                                                                      "name": addon.name,
+                                                                                                      "isAvailable": addon.isAvailable,
+                                                                                                      "maxQuantity": addon.maxQuantity,
+                                                                                                      "isFree": addon.isFree,
+                                                                                                    })
+                                                                                                .toList()
+                                                                                          });
+                                                                                        }
+                                                                                        context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
                                                                                       });
                                                                                     }
-                                                                                    context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
-                                                                                  });
-                                                                                },
-                                                                              ),
+                                                                                  : null,
                                                                             ),
-                                                                          ],
-                                                                        ),
-                                                                      )
-                                                                  ],
-                                                                ),
-                                                              ),
+                                                                          );
+                                                                        }),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                              ],
                                                             ),
-                                                          );
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                    // : InkWell(
+                                                    //     onTap: () {
+                                                    //       setState(() {
+                                                    //         p.counter = 1;
+                                                    //         if (p.addons!
+                                                    //             .isNotEmpty) {
+                                                    //           showDialog(
+                                                    //             context:
+                                                    //                 context,
+                                                    //             builder:
+                                                    //                 (context2) {
+                                                    //               return BlocProvider(
+                                                    //                 create: (context) =>
+                                                    //                     FoodCategoryBloc(),
+                                                    //                 child: BlocProvider
+                                                    //                     .value(
+                                                    //                   value: BlocProvider.of<FoodCategoryBloc>(
+                                                    //                       context,
+                                                    //                       listen: false),
+                                                    //                   child:
+                                                    //                       StatefulBuilder(builder: (context, setState) {
+                                                    //                     return Dialog(
+                                                    //                       insetPadding: EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                                                    //                       shape: RoundedRectangleBorder(
+                                                    //                         borderRadius: BorderRadius.circular(8),
+                                                    //                       ),
+                                                    //                       child: Container(
+                                                    //                         constraints: BoxConstraints(
+                                                    //                           maxWidth: size.width * 0.4,
+                                                    //                           maxHeight: size.height * 0.6,
+                                                    //                         ),
+                                                    //                         padding: EdgeInsets.all(16),
+                                                    //                         child: SingleChildScrollView(
+                                                    //                           child: Column(
+                                                    //                             crossAxisAlignment: CrossAxisAlignment.start,
+                                                    //                             mainAxisSize: MainAxisSize.min,
+                                                    //                             children: [
+                                                    //                               ClipRRect(
+                                                    //                                   borderRadius: BorderRadius.circular(15.0),
+                                                    //                                   child: CachedNetworkImage(
+                                                    //                                     imageUrl: p.image!,
+                                                    //                                     width: size.width * 0.5,
+                                                    //                                     height: size.height * 0.2,
+                                                    //                                     fit: BoxFit.cover,
+                                                    //                                     errorWidget: (context, url, error) {
+                                                    //                                       return const Icon(
+                                                    //                                         Icons.error,
+                                                    //                                         size: 30,
+                                                    //                                         color: appHomeTextColor,
+                                                    //                                       );
+                                                    //                                     },
+                                                    //                                     progressIndicatorBuilder: (context, url, downloadProgress) => const SpinKitCircle(color: appPrimaryColor, size: 30),
+                                                    //                                   )),
+                                                    //                               SizedBox(height: 16),
+                                                    //                               Text(
+                                                    //                                 'Choose Add‑Ons for ${p.name}',
+                                                    //                                 style: MyTextStyle.f16(
+                                                    //                                   weight: FontWeight.bold,
+                                                    //                                   blackColor,
+                                                    //                                 ),
+                                                    //                                 textAlign: TextAlign.left,
+                                                    //                               ),
+                                                    //                               SizedBox(height: 12),
+                                                    //                               Column(
+                                                    //                                 children: p.addons!.map((e) {
+                                                    //                                   return Padding(
+                                                    //                                     padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                                    //                                     child: Container(
+                                                    //                                       padding: const EdgeInsets.all(8),
+                                                    //                                       decoration: BoxDecoration(
+                                                    //                                         border: Border.all(color: blackColor),
+                                                    //                                         borderRadius: BorderRadius.circular(8),
+                                                    //                                       ),
+                                                    //                                       child: Row(
+                                                    //                                         children: [
+                                                    //                                           // Addon title & price/free label
+                                                    //                                           Expanded(
+                                                    //                                             child: Column(
+                                                    //                                               crossAxisAlignment: CrossAxisAlignment.start,
+                                                    //                                               children: [
+                                                    //                                                 Text(
+                                                    //                                                   e.name ?? '',
+                                                    //                                                   style: const TextStyle(fontWeight: FontWeight.bold),
+                                                    //                                                 ),
+                                                    //                                                 const SizedBox(height: 4),
+                                                    //                                                 Text(
+                                                    //                                                   e.isFree == true ? "Free (Max: ${e.maxQuantity})" : "₹ ${e.price?.toStringAsFixed(2) ?? '0.00'} (Max: ${e.maxQuantity})",
+                                                    //                                                   style: TextStyle(color: Colors.grey.shade600),
+                                                    //                                                 ),
+                                                    //                                               ],
+                                                    //                                             ),
+                                                    //                                           ),
+                                                    //
+                                                    //                                           // Quantity selector
+                                                    //                                           Row(
+                                                    //                                             children: [
+                                                    //                                               IconButton(
+                                                    //                                                 icon: const Icon(Icons.remove),
+                                                    //                                                 onPressed: (e.quantity) > 0
+                                                    //                                                     ? () {
+                                                    //                                                         setState(() {
+                                                    //                                                           e.quantity = (e.quantity) - 1;
+                                                    //                                                         });
+                                                    //                                                       }
+                                                    //                                                     : null,
+                                                    //                                               ),
+                                                    //                                               Text('${e.quantity}'),
+                                                    //                                               IconButton(
+                                                    //                                                 icon: const Icon(Icons.add, color: Colors.brown),
+                                                    //                                                 onPressed: (e.quantity) < (e.maxQuantity ?? 1)
+                                                    //                                                     ? () {
+                                                    //                                                         setState(() {
+                                                    //                                                           e.quantity = (e.quantity) + 1;
+                                                    //                                                         });
+                                                    //                                                       }
+                                                    //                                                     : null,
+                                                    //                                               ),
+                                                    //                                             ],
+                                                    //                                           )
+                                                    //                                         ],
+                                                    //                                       ),
+                                                    //                                     ),
+                                                    //                                   );
+                                                    //                                 }).toList(),
+                                                    //                               ),
+                                                    //                               SizedBox(height: 20),
+                                                    //                               Row(
+                                                    //                                 mainAxisAlignment: MainAxisAlignment.end,
+                                                    //                                 children: [
+                                                    //                                   ElevatedButton(
+                                                    //                                     onPressed: () {
+                                                    //                                       setState(() {
+                                                    //                                         if (counter > 1 || counter == 1) {
+                                                    //                                           counter--;
+                                                    //                                         }
+                                                    //                                       });
+                                                    //
+                                                    //                                       Navigator.of(context).pop();
+                                                    //                                     },
+                                                    //                                     style: ElevatedButton.styleFrom(
+                                                    //                                       backgroundColor: greyColor.shade400,
+                                                    //                                       minimumSize: Size(80, 40),
+                                                    //                                       padding: EdgeInsets.all(20),
+                                                    //                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                    //                                     ),
+                                                    //                                     child: Text('Cancel', style: MyTextStyle.f14(blackColor)),
+                                                    //                                   ),
+                                                    //                                   SizedBox(width: 8),
+                                                    //                                   ElevatedButton(
+                                                    //                                     onPressed: () {
+                                                    //                                       setState(() {
+                                                    //                                         isSplitPayment = false;
+                                                    //                                         if (widget.isEditingOrder != true) {
+                                                    //                                           selectDineIn = true;
+                                                    //                                         }
+                                                    //                                         final index = billingItems.indexWhere((item) => item['_id'] == p.id);
+                                                    //                                         if (index != -1) {
+                                                    //                                           billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
+                                                    //                                         } else {
+                                                    //                                           billingItems.add({
+                                                    //                                             "_id": p.id,
+                                                    //                                             "basePrice": p.basePrice,
+                                                    //                                             "image": p.image,
+                                                    //                                             "qty": 1,
+                                                    //                                             "name": p.name,
+                                                    //                                             "selectedAddons": p.addons!
+                                                    //                                                 .where((addon) => addon.quantity > 0) // Simple condition - only check quantity
+                                                    //                                                 .map((addon) => {
+                                                    //                                                       "_id": addon.id,
+                                                    //                                                       "price": addon.price,
+                                                    //                                                       "quantity": addon.quantity,
+                                                    //                                                       "name": addon.name,
+                                                    //                                                       "isAvailable": addon.isAvailable,
+                                                    //                                                       "maxQuantity": addon.maxQuantity,
+                                                    //                                                       "isFree": addon.isFree,
+                                                    //                                                     })
+                                                    //                                                 .toList()
+                                                    //                                           });
+                                                    //                                         }
+                                                    //                                         context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
+                                                    //
+                                                    //                                         setState(() {
+                                                    //                                           for (var addon in p.addons!) {
+                                                    //                                             addon.isSelected = false;
+                                                    //                                             addon.quantity = 0;
+                                                    //                                           }
+                                                    //                                         });
+                                                    //                                         Navigator.of(context).pop();
+                                                    //                                       });
+                                                    //                                     },
+                                                    //                                     style: ElevatedButton.styleFrom(
+                                                    //                                       backgroundColor: appPrimaryColor,
+                                                    //                                       minimumSize: Size(80, 40),
+                                                    //                                       padding: EdgeInsets.all(20),
+                                                    //                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                    //                                     ),
+                                                    //                                     child: Text('Add to Bill', style: MyTextStyle.f14(whiteColor)),
+                                                    //                                   ),
+                                                    //                                 ],
+                                                    //                               ),
+                                                    //                             ],
+                                                    //                           ),
+                                                    //                         ),
+                                                    //                       ),
+                                                    //                     );
+                                                    //                   }),
+                                                    //                 ),
+                                                    //               );
+                                                    //             },
+                                                    //           );
+                                                    //         } else {
+                                                    //           setState(() {
+                                                    //             isSplitPayment =
+                                                    //                 false;
+                                                    //             if (widget
+                                                    //                     .isEditingOrder !=
+                                                    //                 true) {
+                                                    //               selectDineIn =
+                                                    //                   true;
+                                                    //             }
+                                                    //             final index =
+                                                    //                 billingItems.indexWhere((item) =>
+                                                    //                     item['_id'] ==
+                                                    //                     p.id);
+                                                    //             if (index !=
+                                                    //                 -1) {
+                                                    //               billingItems[
+                                                    //                       index]
+                                                    //                   [
+                                                    //                   'qty'] = billingItems[index]
+                                                    //                       [
+                                                    //                       'qty'] +
+                                                    //                   1;
+                                                    //             } else {
+                                                    //               billingItems
+                                                    //                   .add({
+                                                    //                 "_id": p
+                                                    //                     .id,
+                                                    //                 "basePrice":
+                                                    //                     p.basePrice,
+                                                    //                 "image":
+                                                    //                     p.image,
+                                                    //                 "qty":
+                                                    //                     1,
+                                                    //                 "name":
+                                                    //                     p.name,
+                                                    //                 "selectedAddons": p
+                                                    //                     .addons!
+                                                    //                     .where((addon) =>
+                                                    //                         addon.quantity >
+                                                    //                         0) // Simple condition - only check quantity
+                                                    //                     .map((addon) =>
+                                                    //                         {
+                                                    //                           "_id": addon.id,
+                                                    //                           "price": addon.price,
+                                                    //                           "quantity": addon.quantity,
+                                                    //                           "name": addon.name,
+                                                    //                           "isAvailable": addon.isAvailable,
+                                                    //                           "maxQuantity": addon.maxQuantity,
+                                                    //                           "isFree": addon.isFree,
+                                                    //                         })
+                                                    //                     .toList()
+                                                    //               });
+                                                    //             }
+                                                    //             context
+                                                    //                 .read<
+                                                    //                     FoodCategoryBloc>()
+                                                    //                 .add(AddToBilling(
+                                                    //                     List.from(billingItems),
+                                                    //                     isDiscountApplied));
+                                                    //           });
+                                                    //         }
+                                                    //       });
+                                                    //     },
+                                                    //     child: Card(
+                                                    //       color: whiteColor,
+                                                    //       shadowColor:
+                                                    //           greyColor,
+                                                    //       shape: RoundedRectangleBorder(
+                                                    //           borderRadius:
+                                                    //               BorderRadius
+                                                    //                   .circular(
+                                                    //                       12)),
+                                                    //       child: Padding(
+                                                    //         padding:
+                                                    //             const EdgeInsets
+                                                    //                 .all(
+                                                    //                 12),
+                                                    //         child: Column(
+                                                    //           mainAxisSize:
+                                                    //               MainAxisSize
+                                                    //                   .min,
+                                                    //           children: [
+                                                    //             SizedBox(
+                                                    //               height: size
+                                                    //                       .height *
+                                                    //                   0.12,
+                                                    //               child: ClipRRect(
+                                                    //                   borderRadius: BorderRadius.circular(15.0),
+                                                    //                   child: CachedNetworkImage(
+                                                    //                     imageUrl:
+                                                    //                         p.image ?? "",
+                                                    //                     width:
+                                                    //                         size.width * 0.2,
+                                                    //                     height:
+                                                    //                         size.height * 0.12,
+                                                    //                     fit:
+                                                    //                         BoxFit.cover,
+                                                    //                     errorWidget: (context,
+                                                    //                         url,
+                                                    //                         error) {
+                                                    //                       return const Icon(
+                                                    //                         Icons.error,
+                                                    //                         size: 30,
+                                                    //                         color: appHomeTextColor,
+                                                    //                       );
+                                                    //                     },
+                                                    //                     progressIndicatorBuilder: (context, url, downloadProgress) =>
+                                                    //                         const SpinKitCircle(color: appPrimaryColor, size: 30),
+                                                    //                   )),
+                                                    //             ),
+                                                    //             verticalSpace(
+                                                    //                 height:
+                                                    //                     5),
+                                                    //             SizedBox(
+                                                    //               width: size
+                                                    //                       .width *
+                                                    //                   0.25,
+                                                    //               child:
+                                                    //                   Text(
+                                                    //                 p.name ??
+                                                    //                     '',
+                                                    //                 style: MyTextStyle
+                                                    //                     .f13(
+                                                    //                   blackColor,
+                                                    //                   weight:
+                                                    //                       FontWeight.w500,
+                                                    //                 ),
+                                                    //                 maxLines:
+                                                    //                     3,
+                                                    //                 overflow:
+                                                    //                     TextOverflow.ellipsis,
+                                                    //                 textAlign:
+                                                    //                     TextAlign.center,
+                                                    //               ),
+                                                    //             ),
+                                                    //             verticalSpace(
+                                                    //                 height:
+                                                    //                     5),
+                                                    //             if (counter ==
+                                                    //                 0)
+                                                    //               SizedBox(
+                                                    //                 width: size.width *
+                                                    //                     0.25,
+                                                    //                 child:
+                                                    //                     FittedBox(
+                                                    //                   fit: BoxFit
+                                                    //                       .scaleDown,
+                                                    //                   child:
+                                                    //                       Text(
+                                                    //                     '₹ ${p.basePrice}',
+                                                    //                     style:
+                                                    //                         MyTextStyle.f14(blackColor, weight: FontWeight.w600),
+                                                    //                     maxLines:
+                                                    //                         1,
+                                                    //                     overflow:
+                                                    //                         TextOverflow.ellipsis,
+                                                    //                   ),
+                                                    //                 ),
+                                                    //               ),
+                                                    //             verticalSpace(
+                                                    //                 height:
+                                                    //                     10),
+                                                    //             if (counter !=
+                                                    //                 0)
+                                                    //               Padding(
+                                                    //                 padding: const EdgeInsets
+                                                    //                     .only(
+                                                    //                     left:
+                                                    //                         5.0,
+                                                    //                     right:
+                                                    //                         5.0),
+                                                    //                 child:
+                                                    //                     Row(
+                                                    //                   mainAxisAlignment:
+                                                    //                       MainAxisAlignment.start,
+                                                    //                   children: [
+                                                    //                     Expanded(
+                                                    //                       child: Text(
+                                                    //                         '₹ ${p.basePrice}',
+                                                    //                         style: MyTextStyle.f14(blackColor, weight: FontWeight.w600),
+                                                    //                         maxLines: 1,
+                                                    //                         overflow: TextOverflow.ellipsis,
+                                                    //                       ),
+                                                    //                     ),
+                                                    //                     horizontalSpace(width: 5),
+                                                    //                     CircleAvatar(
+                                                    //                       radius: 16,
+                                                    //                       backgroundColor: greyColor200,
+                                                    //                       child: IconButton(
+                                                    //                         icon: const Icon(Icons.remove, size: 16, color: blackColor),
+                                                    //                         onPressed
+                                                    //                             // :
+                                                    //                             // disableDecrement
+                                                    //                             //     ? null
+                                                    //                             : () {
+                                                    //                           setState(() {
+                                                    //                             isSplitPayment = false;
+                                                    //                             if (widget.isEditingOrder != true) {
+                                                    //                               selectDineIn = true;
+                                                    //                             }
+                                                    //                             final index = billingItems.indexWhere((item) => item['_id'] == p.id);
+                                                    //                             if (index != -1 && billingItems[index]['qty'] > 1) {
+                                                    //                               billingItems[index]['qty'] = billingItems[index]['qty'] - 1;
+                                                    //                             } else {
+                                                    //                               billingItems.removeWhere((item) => item['_id'] == p.id);
+                                                    //                               if (billingItems.isEmpty || billingItems == []) {
+                                                    //                                 isDiscountApplied = false;
+                                                    //                                 widget.isEditingOrder = false;
+                                                    //                                 tableId = null;
+                                                    //                                 selectedValue = null;
+                                                    //                               }
+                                                    //                             }
+                                                    //
+                                                    //                             context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
+                                                    //                           });
+                                                    //                         },
+                                                    //                       ),
+                                                    //                     ),
+                                                    //                     Padding(
+                                                    //                       padding: const EdgeInsets.symmetric(horizontal: 12),
+                                                    //                       child: Text(
+                                                    //                         "$counter",
+                                                    //                         style: MyTextStyle.f16(blackColor),
+                                                    //                       ),
+                                                    //                     ),
+                                                    //                     CircleAvatar(
+                                                    //                       radius: 16,
+                                                    //                       backgroundColor: appPrimaryColor,
+                                                    //                       child: IconButton(
+                                                    //                         icon: const Icon(Icons.add, size: 16, color: whiteColor),
+                                                    //                         onPressed: () {
+                                                    //                           setState(() {
+                                                    //                             isSplitPayment = false;
+                                                    //                             if (widget.isEditingOrder != true) {
+                                                    //                               selectDineIn = true;
+                                                    //                             }
+                                                    //                             final index = billingItems.indexWhere((item) => item['_id'] == p.id);
+                                                    //                             if (index != -1) {
+                                                    //                               billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
+                                                    //                             } else {
+                                                    //                               billingItems.add({
+                                                    //                                 "_id": p.id,
+                                                    //                                 "basePrice": p.basePrice,
+                                                    //                                 "image": p.image,
+                                                    //                                 "qty": 1,
+                                                    //                                 "name": p.name,
+                                                    //                                 "selectedAddons": p.addons!
+                                                    //                                     .where((addon) => addon.quantity > 0) // Simple condition - only check quantity
+                                                    //                                     .map((addon) => {
+                                                    //                                           "_id": addon.id,
+                                                    //                                           "price": addon.price,
+                                                    //                                           "quantity": addon.quantity,
+                                                    //                                           "name": addon.name,
+                                                    //                                           "isAvailable": addon.isAvailable,
+                                                    //                                           "maxQuantity": addon.maxQuantity,
+                                                    //                                           "isFree": addon.isFree,
+                                                    //                                         })
+                                                    //                                     .toList()
+                                                    //                               });
+                                                    //                             }
+                                                    //                             context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied));
+                                                    //                           });
+                                                    //                         },
+                                                    //                       ),
+                                                    //                     ),
+                                                    //                   ],
+                                                    //                 ),
+                                                    //               )
+                                                    //           ],
+                                                    //         ),
+                                                    //       ),
+                                                    //     ),
+                                                    //   );
                                                   },
                                                 ),
                                     ),
