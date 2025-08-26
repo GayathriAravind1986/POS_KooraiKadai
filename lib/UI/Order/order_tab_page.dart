@@ -61,8 +61,6 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   bool tableLoad = false;
   bool isLoadingOrders = false;
   final todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-  final yesterdayDate = DateFormat('yyyy-MM-dd')
-      .format(DateTime.now().subtract(Duration(days: 1)));
   String? fromDate;
 
   final List<GlobalKey<OrderViewViewState>> _tabKeys =
@@ -71,7 +69,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadInitialData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_tabController.index == 0 && widget.orderAllKey != null) {
@@ -102,8 +100,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
       isLoadingOrders = true;
     });
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(
-              yesterdayDate, todayDate, tableId ?? "", waiterId ?? ""),
+          OrderTodayList(todayDate, todayDate, tableId ?? "", waiterId ?? ""),
         );
     context.read<OrderTodayBloc>().add(TableDine());
     context.read<OrderTodayBloc>().add(WaiterDine());
@@ -117,7 +114,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
     });
     debugPrint("refreshTab");
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(yesterdayDate, todayDate, "", ""),
+          OrderTodayList(todayDate, todayDate, "", ""),
         );
     refreshNotifier.value = !refreshNotifier.value;
   }
@@ -129,18 +126,16 @@ class OrderTabViewViewState extends State<OrderTabViewView>
       tableId = null;
       waiterId = null;
       hasRefreshedOrder = false;
-      isLoadingOrders = true; // Set loading state
+      isLoadingOrders = true;
     });
     context.read<OrderTodayBloc>().add(TableDine());
     context.read<OrderTodayBloc>().add(WaiterDine());
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(
-              yesterdayDate, todayDate, tableId ?? "", waiterId ?? ""),
+          OrderTodayList(todayDate, todayDate, tableId ?? "", waiterId ?? ""),
         );
   }
 
   void _onFilterChanged() {
-    // When filter changes, refresh with new parameters
     _refreshAllTabs();
   }
 
@@ -155,7 +150,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   Widget build(BuildContext context) {
     Widget mainContainer() {
       return DefaultTabController(
-        length: 6,
+        length: 4,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -338,8 +333,8 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                 Tab(text: "Line"),
                 Tab(text: "Parcel"),
                 Tab(text: "AC"),
-                Tab(text: "HD"),
-                Tab(text: "SWIGGY"),
+                // Tab(text: "HD"),
+                // Tab(text: "SWIGGY"),
               ],
             ),
             Expanded(
@@ -379,22 +374,22 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     sharedOrderData: getOrderListTodayModel,
                     isLoading: isLoadingOrders,
                   ),
-                  OrderViewView(
-                    key: _tabKeys[4],
-                    type: 'HD',
-                    selectedTableName: tableId,
-                    selectedWaiterName: waiterId,
-                    sharedOrderData: getOrderListTodayModel,
-                    isLoading: isLoadingOrders,
-                  ),
-                  OrderViewView(
-                    key: _tabKeys[5],
-                    type: 'SWIGGY',
-                    selectedTableName: tableId,
-                    selectedWaiterName: waiterId,
-                    sharedOrderData: getOrderListTodayModel,
-                    isLoading: isLoadingOrders,
-                  ),
+                  // OrderViewView(
+                  //   key: _tabKeys[4],
+                  //   type: 'HD',
+                  //   selectedTableName: tableId,
+                  //   selectedWaiterName: waiterId,
+                  //   sharedOrderData: getOrderListTodayModel,
+                  //   isLoading: isLoadingOrders,
+                  // ),
+                  // OrderViewView(
+                  //   key: _tabKeys[5],
+                  //   type: 'SWIGGY',
+                  //   selectedTableName: tableId,
+                  //   selectedWaiterName: waiterId,
+                  //   sharedOrderData: getOrderListTodayModel,
+                  //   isLoading: isLoadingOrders,
+                  // ),
                 ],
               ),
             ),
@@ -412,7 +407,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
             return true;
           }
           setState(() {
-            isLoadingOrders = false; // Always set loading to false
+            isLoadingOrders = false;
             tableLoad = false;
           });
           return true;

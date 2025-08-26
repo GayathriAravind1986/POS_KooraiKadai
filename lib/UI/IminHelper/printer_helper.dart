@@ -16,6 +16,7 @@ Widget getThermalReceiptWidget({
   required double total,
   required String orderNumber,
   required String tableName,
+  required String waiterName,
   required String orderType,
   required String paidBy,
   required String date,
@@ -33,16 +34,6 @@ Widget getThermalReceiptWidget({
           Center(
             child: Column(
               children: [
-                // Text(
-                //   tamilTagline,
-                //   style: const TextStyle(
-                //     fontSize: 20, // Increased from 14
-                //     fontWeight: FontWeight.w600,
-                //     color: blackColor,
-                //   ),
-                //   textAlign: TextAlign.center,
-                // ),
-                // const SizedBox(height: 4),
                 Text(
                   businessName,
                   style: const TextStyle(
@@ -93,9 +84,12 @@ Widget getThermalReceiptWidget({
           _buildThermalLabelRow("Date: ", date),
           _buildThermalLabelRow("Type: ", orderType),
           _buildThermalLabelRow("Status: ", status),
-          if (orderType == 'DINE-IN')
-            _buildThermalLabelRow(
-                "Table: ", orderType == 'DINE-IN' ? tableName : "N/A"),
+          if (orderType == 'LINE' || orderType == 'AC')
+            _buildThermalLabelRow("Table: ",
+                orderType == 'LINE' || orderType == 'AC' ? tableName : "N/A"),
+          if (orderType == 'LINE' || orderType == 'AC')
+            _buildThermalLabelRow("Waiter: ",
+                orderType == 'LINE' || orderType == 'AC' ? waiterName : "N/A"),
           Container(
             height: 4,
             color: blackColor,
@@ -113,6 +107,7 @@ Widget getThermalReceiptWidget({
           ),
 
           // Items
+
           ...items.map((item) => Column(
                 children: [
                   _buildThermalItemRow(
