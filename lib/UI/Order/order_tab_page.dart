@@ -6,6 +6,7 @@ import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Order/order_list_bloc.dart';
 import 'package:simple/ModelClass/Order/get_order_list_today_model.dart';
 import 'package:simple/ModelClass/Table/Get_table_model.dart';
+import 'package:simple/ModelClass/User/getUserModel.dart';
 import 'package:simple/ModelClass/Waiter/getWaiterModel.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
@@ -15,10 +16,12 @@ import 'package:simple/UI/Order/order_list.dart';
 class OrdersTabbedScreen extends StatelessWidget {
   final VoidCallback? onRefresh;
   final GlobalKey<OrderViewViewState>? orderAllKey;
+  final GlobalKey<OrderTabViewViewState>? orderResetKey;
   const OrdersTabbedScreen({
     super.key,
     this.onRefresh,
     this.orderAllKey,
+    this.orderResetKey,
   });
 
   @override
@@ -27,6 +30,7 @@ class OrdersTabbedScreen extends StatelessWidget {
     return BlocProvider(
       create: (_) => OrderTodayBloc(),
       child: OrderTabViewView(
+        key: orderResetKey,
         onRefresh: onRefresh,
         orderAllKey: orderAllKey,
       ),
@@ -37,11 +41,7 @@ class OrdersTabbedScreen extends StatelessWidget {
 class OrderTabViewView extends StatefulWidget {
   final VoidCallback? onRefresh;
   final GlobalKey<OrderViewViewState>? orderAllKey;
-  const OrderTabViewView({
-    super.key,
-    this.onRefresh,
-    this.orderAllKey,
-  });
+  const OrderTabViewView({super.key, this.onRefresh, this.orderAllKey});
 
   @override
   OrderTabViewViewState createState() => OrderTabViewViewState();
@@ -53,32 +53,47 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   late TabController _tabController;
   GetTableModel getTableModel = GetTableModel();
   GetWaiterModel getWaiterModel = GetWaiterModel();
+  GetUserModel getUserModel = GetUserModel();
   GetOrderListTodayModel getOrderListTodayModel = GetOrderListTodayModel();
   dynamic selectedValue;
   dynamic selectedValueWaiter;
+  dynamic selectedValueUser;
   dynamic tableId;
   dynamic waiterId;
+  dynamic userId;
+  dynamic operatorId;
   bool tableLoad = false;
   bool isLoadingOrders = false;
   final todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   String? fromDate;
 
-  final List<GlobalKey<OrderViewViewState>> _tabKeys =
-      List.generate(6, (index) => GlobalKey<OrderViewViewState>());
-  final ValueNotifier<bool> refreshNotifier = ValueNotifier<bool>(false);
+  final List<GlobalKey<OrderViewViewState>> _tabKeys = List.generate(
+    6,
+    (index) => GlobalKey<OrderViewViewState>(),
+  );
+
+  Future<void> getOperatorId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      operatorId = prefs.getString("userId");
+    });
+    debugPrint("operatorId: $operatorId");
+  }
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _loadInitialData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_tabController.index == 0 && widget.orderAllKey != null) {
-        debugPrint("welcomeOrderkey");
         setState(() {
           selectedValue = null;
           selectedValueWaiter = null;
+          selectedValueUser = null;
           tableId = null;
           waiterId = null;
+          userId = null;
           hasRefreshedOrder = false;
           isLoadingOrders = true;
         });
@@ -88,22 +103,42 @@ class OrderTabViewViewState extends State<OrderTabViewView>
     });
   }
 
-  void _loadInitialData() {
-    if (isLoadingOrders) return; // Prevent multiple calls
-
+  void resetSelections() {
     setState(() {
       selectedValue = null;
       selectedValueWaiter = null;
+      selectedValueUser = null;
       tableId = null;
       waiterId = null;
+      userId = null;
       hasRefreshedOrder = false;
       isLoadingOrders = true;
     });
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(todayDate, todayDate, tableId ?? "", waiterId ?? ""),
+          OrderTodayList(todayDate, todayDate, "", "", ""),
+        );
+  }
+
+  void _loadInitialData() {
+    if (isLoadingOrders) return;
+    debugPrint("tableIntialLoad:$selectedValue");
+    getOperatorId();
+    setState(() {
+      selectedValue = null;
+      selectedValueWaiter = null;
+      selectedValueUser = null;
+      tableId = null;
+      waiterId = null;
+      userId = null;
+      hasRefreshedOrder = false;
+      isLoadingOrders = true;
+    });
+    context.read<OrderTodayBloc>().add(
+          OrderTodayList(todayDate, todayDate, "", "", ""),
         );
     context.read<OrderTodayBloc>().add(TableDine());
     context.read<OrderTodayBloc>().add(WaiterDine());
+    context.read<OrderTodayBloc>().add(UserDetails());
   }
 
   void _refreshAllTabs() {
@@ -114,24 +149,39 @@ class OrderTabViewViewState extends State<OrderTabViewView>
     });
     debugPrint("refreshTab");
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(todayDate, todayDate, "", ""),
+          OrderTodayList(
+            todayDate,
+            todayDate,
+            tableId ?? "",
+            waiterId ?? "",
+            userId ?? "",
+          ),
         );
-    refreshNotifier.value = !refreshNotifier.value;
   }
 
   void _refreshData() {
     setState(() {
       selectedValue = null;
       selectedValueWaiter = null;
+      selectedValueUser = null;
       tableId = null;
       waiterId = null;
+      userId = null;
       hasRefreshedOrder = false;
-      isLoadingOrders = true;
+      isLoadingOrders = true; // Set loading state
     });
+    _tabController.animateTo(0);
     context.read<OrderTodayBloc>().add(TableDine());
     context.read<OrderTodayBloc>().add(WaiterDine());
+    context.read<OrderTodayBloc>().add(UserDetails());
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(todayDate, todayDate, tableId ?? "", waiterId ?? ""),
+          OrderTodayList(
+            todayDate,
+            todayDate,
+            tableId ?? "",
+            waiterId ?? "",
+            userId ?? "",
+          ),
         );
   }
 
@@ -142,7 +192,6 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   @override
   void dispose() {
     _tabController.dispose();
-    refreshNotifier.dispose();
     super.dispose();
   }
 
@@ -150,7 +199,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   Widget build(BuildContext context) {
     Widget mainContainer() {
       return DefaultTabController(
-        length: 4,
+        length: 6,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -207,6 +256,18 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     ),
                   ),
                 ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Text(
+                      'Select Operator',
+                      style: MyTextStyle.f14(
+                        blackColor,
+                        weight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
             Row(
@@ -215,8 +276,9 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                   child: Container(
                     margin: const EdgeInsets.all(10),
                     child: DropdownButtonFormField<String>(
-                      value: (getTableModel.data
-                                  ?.any((item) => item.name == selectedValue) ??
+                      value: (getTableModel.data?.any(
+                                (item) => item.name == selectedValue,
+                              ) ??
                               false)
                           ? selectedValue
                           : null,
@@ -228,9 +290,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: appPrimaryColor,
-                          ),
+                          borderSide: const BorderSide(color: appPrimaryColor),
                         ),
                       ),
                       items: getTableModel.data?.map((item) {
@@ -249,8 +309,9 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                         if (newValue != null) {
                           setState(() {
                             selectedValue = newValue;
-                            final selectedItem = getTableModel.data
-                                ?.firstWhere((item) => item.name == newValue);
+                            final selectedItem = getTableModel.data?.firstWhere(
+                              (item) => item.name == newValue,
+                            );
                             tableId = selectedItem?.id.toString();
                           });
                           _onFilterChanged();
@@ -271,7 +332,8 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     margin: const EdgeInsets.all(10),
                     child: DropdownButtonFormField<String>(
                       value: (getWaiterModel.data?.any(
-                                  (item) => item.name == selectedValueWaiter) ??
+                                (item) => item.name == selectedValueWaiter,
+                              ) ??
                               false)
                           ? selectedValueWaiter
                           : null,
@@ -283,9 +345,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: appPrimaryColor,
-                          ),
+                          borderSide: const BorderSide(color: appPrimaryColor),
                         ),
                       ),
                       items: getWaiterModel.data?.map((item) {
@@ -321,6 +381,62 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     ),
                   ),
                 ),
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.all(10),
+                    child: DropdownButtonFormField<String>(
+                      value: (getUserModel.data?.any(
+                                (item) => item.name == selectedValueUser,
+                              ) ??
+                              false)
+                          ? selectedValueUser
+                          : null,
+                      icon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: appPrimaryColor,
+                      ),
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: appPrimaryColor),
+                        ),
+                      ),
+                      items: getUserModel.data?.map((item) {
+                        return DropdownMenuItem<String>(
+                          value: item.name,
+                          child: Text(
+                            "${item.name}",
+                            style: MyTextStyle.f14(
+                              blackColor,
+                              weight: FontWeight.normal,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedValueUser = newValue;
+                            final selectedItem = getUserModel.data?.firstWhere(
+                              (item) => item.name == newValue,
+                            );
+                            userId = selectedItem?.id.toString();
+                          });
+                          debugPrint("operatorSelectr:$userId");
+                          _onFilterChanged();
+                        }
+                      },
+                      hint: Text(
+                        '-- Select Operator --',
+                        style: MyTextStyle.f14(
+                          blackColor,
+                          weight: FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
             TabBar(
@@ -333,8 +449,8 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                 Tab(text: "Line"),
                 Tab(text: "Parcel"),
                 Tab(text: "AC"),
-                // Tab(text: "HD"),
-                // Tab(text: "SWIGGY"),
+                Tab(text: "HD"),
+                Tab(text: "SWIGGY"),
               ],
             ),
             Expanded(
@@ -346,15 +462,18 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     type: 'All',
                     selectedTableName: tableId,
                     selectedWaiterName: waiterId,
+                    selectOperator: userId,
+                    operatorShared: operatorId,
                     sharedOrderData: getOrderListTodayModel,
                     isLoading: isLoadingOrders,
-                    refreshNotifier: refreshNotifier,
                   ),
                   OrderViewView(
                     key: _tabKeys[1],
                     type: 'Line',
                     selectedTableName: tableId,
                     selectedWaiterName: waiterId,
+                    selectOperator: userId,
+                    operatorShared: operatorId,
                     sharedOrderData: getOrderListTodayModel,
                     isLoading: isLoadingOrders,
                   ),
@@ -363,6 +482,8 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     type: 'Parcel',
                     selectedTableName: tableId,
                     selectedWaiterName: waiterId,
+                    selectOperator: userId,
+                    operatorShared: operatorId,
                     sharedOrderData: getOrderListTodayModel,
                     isLoading: isLoadingOrders,
                   ),
@@ -371,25 +492,31 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     type: 'AC',
                     selectedTableName: tableId,
                     selectedWaiterName: waiterId,
+                    selectOperator: userId,
+                    operatorShared: operatorId,
                     sharedOrderData: getOrderListTodayModel,
                     isLoading: isLoadingOrders,
                   ),
-                  // OrderViewView(
-                  //   key: _tabKeys[4],
-                  //   type: 'HD',
-                  //   selectedTableName: tableId,
-                  //   selectedWaiterName: waiterId,
-                  //   sharedOrderData: getOrderListTodayModel,
-                  //   isLoading: isLoadingOrders,
-                  // ),
-                  // OrderViewView(
-                  //   key: _tabKeys[5],
-                  //   type: 'SWIGGY',
-                  //   selectedTableName: tableId,
-                  //   selectedWaiterName: waiterId,
-                  //   sharedOrderData: getOrderListTodayModel,
-                  //   isLoading: isLoadingOrders,
-                  // ),
+                  OrderViewView(
+                    key: _tabKeys[4],
+                    type: 'HD',
+                    selectedTableName: tableId,
+                    selectedWaiterName: waiterId,
+                    selectOperator: userId,
+                    operatorShared: operatorId,
+                    sharedOrderData: getOrderListTodayModel,
+                    isLoading: isLoadingOrders,
+                  ),
+                  OrderViewView(
+                    key: _tabKeys[5],
+                    type: 'SWIGGY',
+                    selectedTableName: tableId,
+                    selectedWaiterName: waiterId,
+                    selectOperator: userId,
+                    operatorShared: operatorId,
+                    sharedOrderData: getOrderListTodayModel,
+                    isLoading: isLoadingOrders,
+                  ),
                 ],
               ),
             ),
@@ -445,6 +572,24 @@ class OrderTabViewViewState extends State<OrderTabViewView>
               tableLoad = false;
             });
             showToast("No Waiter found", context, color: false);
+          }
+          return true;
+        }
+        if (current is GetUserModel) {
+          getUserModel = current;
+          if (getUserModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getUserModel.success == true) {
+            setState(() {
+              tableLoad = false;
+            });
+          } else {
+            setState(() {
+              tableLoad = false;
+            });
+            showToast("No Operator found", context, color: false);
           }
           return true;
         }
