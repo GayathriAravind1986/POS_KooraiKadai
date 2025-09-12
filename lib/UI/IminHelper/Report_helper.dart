@@ -163,27 +163,27 @@ Widget getReportReceiptWidget({
               ),
             ),
           ),
-          const SizedBox(height: 4),
-          const Center(
-            child: Text(
-              "Powered By",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: blackColor,
-              ),
-            ),
-          ),
-          const Center(
-            child: Text(
-              "www.sentinixtechsolutions.com",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: blackColor,
-              ),
-            ),
-          ),
+          // const SizedBox(height: 4),
+          // const Center(
+          //   child: Text(
+          //     "Powered By",
+          //     style: TextStyle(
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 14,
+          //       color: blackColor,
+          //     ),
+          //   ),
+          // ),
+          // const Center(
+          //   child: Text(
+          //     "www.sentinixtechsolutions.com",
+          //     style: TextStyle(
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 14,
+          //       color: blackColor,
+          //     ),
+          //   ),
+          // ),
           const SizedBox(height: 80), // Footer padding
         ],
       ),

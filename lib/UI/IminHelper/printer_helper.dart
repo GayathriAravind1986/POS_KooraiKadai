@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:simple/Reusable/color.dart';
+import 'package:simple/Reusable/image.dart';
 
 Widget getThermalReceiptWidget({
   required String businessName,
@@ -31,6 +32,17 @@ Widget getThermalReceiptWidget({
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header section
+          Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15.0),
+              child: Image.asset(
+                Images.logoWithName,
+                width: 120, // circle size
+                height: 90,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
           Center(
             child: Column(
               children: [
@@ -157,28 +169,28 @@ Widget getThermalReceiptWidget({
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          const Center(
-            child: Text(
-              "Powered By",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14, // Keep smaller for footer
-                color: blackColor,
-              ),
-            ),
-          ),
-          const Center(
-            child: Text(
-              "www.sentinixtechsolutions.com",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: blackColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 80),
+          // const SizedBox(height: 8),
+          // const Center(
+          //   child: Text(
+          //     "Powered By",
+          //     style: TextStyle(
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 14, // Keep smaller for footer
+          //       color: blackColor,
+          //     ),
+          //   ),
+          // ),
+          // const Center(
+          //   child: Text(
+          //     "www.sentinixtechsolutions.com",
+          //     style: TextStyle(
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 14,
+          //       color: blackColor,
+          //     ),
+          //   ),
+          // ),
+          const SizedBox(height: 30),
         ],
       ),
     ),
@@ -292,7 +304,7 @@ Widget _buildThermalItemRow(String name, int qty, double price, double total) {
         Expanded(
           flex: 3,
           child: Text(
-            '₹${price.toStringAsFixed(2)}',
+            price.toStringAsFixed(2),
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 18, // Increased from 12
@@ -303,7 +315,7 @@ Widget _buildThermalItemRow(String name, int qty, double price, double total) {
         Expanded(
           flex: 3,
           child: Text(
-            '₹${total.toStringAsFixed(2)}',
+            total.toStringAsFixed(2),
             textAlign: TextAlign.end,
             style: const TextStyle(
               fontSize: 18, // Increased from 12

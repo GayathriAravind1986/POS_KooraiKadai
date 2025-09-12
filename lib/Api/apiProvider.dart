@@ -134,15 +134,15 @@ class ApiProvider {
 
   /// product - Fetch API Integration
   Future<GetProductByCatIdModel> getProductItemAPI(
-      String? catId, String? searchKey) async {
+      String? catId, String? searchKey, String? searchCode) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
     debugPrint(
-        "baseUrlProdOrder:${Constants.baseUrl}api/products/pos/category-products?filter=false&categoryId=$catId&search=$searchKey");
+        "baseUrlProdOrder:${Constants.baseUrl}api/products/pos/category-products?filter=false&categoryId=$catId&search=$searchKey&searchcode=$searchCode");
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/products/pos/category-products?filter=false&categoryId=$catId&search=$searchKey',
+        '${Constants.baseUrl}api/products/pos/category-products?filter=false&categoryId=$catId&search=$searchKey&searchcode=$searchCode',
         options: Options(
           method: 'GET',
           headers: {
