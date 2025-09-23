@@ -493,7 +493,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
       List<Map<String, dynamic>> items =
           postGenerateOrderModel.invoice!.invoiceItems!
               .map((e) => {
-                    'name': e.tamilname,
+                    'name': e.tamilname ?? e.name,
                     'qty': e.qty,
                     'price': (e.basePrice ?? 0).toDouble(),
                     'total': ((e.qty ?? 0) * (e.basePrice ?? 0)).toDouble(),
@@ -528,115 +528,124 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
           backgroundColor: Colors.transparent,
           insetPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-          child: SingleChildScrollView(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.4,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: whiteColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  // Normal Bill Receipt
-                  RepaintBoundary(
-                    key: normalReceiptKey,
-                    child: getThermalReceiptWidget(
-                      businessName: businessName,
-                      address: address,
-                      gst: gst,
-                      items: items,
-                      // finalTax: finalTax,
-                      tax: taxPercent,
-                      paidBy: paymentMethod,
-                      tamilTagline: '',
-                      phone: phone,
-                      subtotal: subTotal,
-                      total: total,
-                      orderNumber: orderNumber,
-                      tableName: tableName,
-                      waiterName: waiterName,
-                      orderType: orderType,
-                      date: date,
-                      status: orderStatus,
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 80),
+                child: SingleChildScrollView(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: whiteColor,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // KOT Receipt (for kitchen)
-                  if (postGenerateOrderModel.order!.orderType == "PARCEL")
-                    RepaintBoundary(
-                      key: kotReceiptKey,
-                      child: getThermalReceiptKOTWidget(
-                        businessName: businessName,
-                        address: address,
-                        gst: gst,
-                        items: items,
-                        paidBy: paymentMethod,
-                        tamilTagline: '',
-                        phone: phone,
-                        subtotal: subTotal,
-                        tax: taxPercent,
-                        total: total,
-                        orderNumber: orderNumber,
-                        tableName: tableName,
-                        waiterName: waiterName,
-                        orderType: orderType,
-                        date: date,
-                        status: orderStatus,
-                      ),
-                    ),
-
-                  const SizedBox(height: 20),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (postGenerateOrderModel.order!.orderType == "PARCEL")
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            _selectBluetoothPrinter(context);
-                          },
-                          icon: const Icon(Icons.bluetooth),
-                          label: const Text("KOT(BT)"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: greenColor,
-                            foregroundColor: whiteColor,
+                    child: Column(
+                      children: [
+                        // Normal Bill Receipt
+                        RepaintBoundary(
+                          key: normalReceiptKey,
+                          child: getThermalReceiptWidget(
+                            businessName: businessName,
+                            address: address,
+                            gst: gst,
+                            items: items,
+                            tax: taxPercent,
+                            paidBy: paymentMethod,
+                            tamilTagline: '',
+                            phone: phone,
+                            subtotal: subTotal,
+                            total: total,
+                            orderNumber: orderNumber,
+                            tableName: tableName,
+                            waiterName: waiterName,
+                            orderType: orderType,
+                            date: date,
+                            status: orderStatus,
                           ),
                         ),
-                      horizontalSpace(width: 10),
+
+                        const SizedBox(height: 20),
+
+                        // KOT Receipt (for kitchen)
+                        if (postGenerateOrderModel.order!.orderType == "PARCEL")
+                          RepaintBoundary(
+                            key: kotReceiptKey,
+                            child: getThermalReceiptKOTWidget(
+                              businessName: businessName,
+                              address: address,
+                              gst: gst,
+                              items: items,
+                              paidBy: paymentMethod,
+                              tamilTagline: '',
+                              phone: phone,
+                              subtotal: subTotal,
+                              tax: taxPercent,
+                              total: total,
+                              orderNumber: orderNumber,
+                              tableName: tableName,
+                              waiterName: waiterName,
+                              orderType: orderType,
+                              date: date,
+                              status: orderStatus,
+                            ),
+                          ),
+
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (postGenerateOrderModel.order!.orderType == "PARCEL")
                       ElevatedButton.icon(
-                        onPressed: () async {
-                          WidgetsBinding.instance
-                              .addPostFrameCallback((_) async {
-                            await _ensureIminServiceReady();
-                            await _printBillToIminOnly(context);
-                          });
+                        onPressed: () {
+                          _selectBluetoothPrinter(context);
                         },
-                        icon: const Icon(Icons.print),
-                        label: const Text("Print Bill"),
+                        icon: const Icon(Icons.bluetooth),
+                        label: const Text("KOT(BT)"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: greenColor,
                           foregroundColor: whiteColor,
                         ),
                       ),
-                      horizontalSpace(width: 10),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.09,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            "CLOSE",
-                            style: TextStyle(color: appPrimaryColor),
-                          ),
-                        ),
+                    horizontalSpace(width: 10),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          await _ensureIminServiceReady();
+                          await _printBillToIminOnly(context);
+                        });
+                      },
+                      icon: const Icon(Icons.print),
+                      label: const Text("Print Bill"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: greenColor,
+                        foregroundColor: whiteColor,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    horizontalSpace(width: 10),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      label: const Text("CLOSE"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: appPrimaryColor,
+                        foregroundColor: whiteColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       );
@@ -660,7 +669,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
       List<Map<String, dynamic>> items =
           updateGenerateOrderModel.invoice!.invoiceItems!
               .map((e) => {
-                    'name': e.tamilname,
+                    'name': e.tamilname ?? e.name,
                     'qty': e.qty,
                     'price': (e.basePrice ?? 0).toDouble(),
                     'total': ((e.qty ?? 0) * (e.basePrice ?? 0)).toDouble(),
@@ -696,108 +705,122 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
           backgroundColor: Colors.transparent,
           insetPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-          child: SingleChildScrollView(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.4,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: whiteColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  RepaintBoundary(
-                    key: normalReceiptKey,
-                    child: getThermalReceiptWidget(
-                        businessName: businessName,
-                        address: address,
-                        gst: gst,
-                        items: items,
-                        // finalTax: finalTax,
-                        tax: taxPercent,
-                        paidBy: paymentMethod,
-                        tamilTagline: '',
-                        phone: phone,
-                        subtotal: subTotal,
-                        total: total,
-                        orderNumber: orderNumber,
-                        tableName: tableName,
-                        waiterName: waiterName,
-                        orderType: orderType,
-                        date: date,
-                        status: orderStatus),
-                  ),
-                  const SizedBox(height: 20),
-                  if (updateGenerateOrderModel.order!.orderType == "PARCEL")
-                    RepaintBoundary(
-                      key: kotReceiptKey,
-                      child: getThermalReceiptKOTWidget(
-                        businessName: businessName,
-                        address: address,
-                        gst: gst,
-                        items: items,
-                        paidBy: paymentMethod,
-                        tamilTagline: '',
-                        phone: phone,
-                        subtotal: subTotal,
-                        tax: taxPercent,
-                        total: total,
-                        orderNumber: orderNumber,
-                        tableName: tableName,
-                        waiterName: waiterName,
-                        orderType: orderType,
-                        date: date,
-                        status: orderStatus,
-                      ),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 80),
+                child: SingleChildScrollView(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: whiteColor,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (updateGenerateOrderModel.order!.orderType == "PARCEL")
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            _selectBluetoothPrinter(context);
-                          },
-                          icon: const Icon(Icons.bluetooth),
-                          label: const Text("KOT(BT)"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: greenColor,
-                            foregroundColor: whiteColor,
+                    child:
+                        // Receipt widgets
+                        Column(
+                      children: [
+                        RepaintBoundary(
+                          key: normalReceiptKey,
+                          child: getThermalReceiptWidget(
+                            businessName: businessName,
+                            address: address,
+                            gst: gst,
+                            items: items,
+                            tax: taxPercent,
+                            paidBy: paymentMethod,
+                            tamilTagline: '',
+                            phone: phone,
+                            subtotal: subTotal,
+                            total: total,
+                            orderNumber: orderNumber,
+                            tableName: tableName,
+                            waiterName: waiterName,
+                            orderType: orderType,
+                            date: date,
+                            status: orderStatus,
                           ),
                         ),
-                      horizontalSpace(width: 10),
+                        const SizedBox(height: 20),
+                        if (updateGenerateOrderModel.order!.orderType ==
+                            "PARCEL")
+                          RepaintBoundary(
+                            key: kotReceiptKey,
+                            child: getThermalReceiptKOTWidget(
+                              businessName: businessName,
+                              address: address,
+                              gst: gst,
+                              items: items,
+                              paidBy: paymentMethod,
+                              tamilTagline: '',
+                              phone: phone,
+                              subtotal: subTotal,
+                              tax: taxPercent,
+                              total: total,
+                              orderNumber: orderNumber,
+                              tableName: tableName,
+                              waiterName: waiterName,
+                              orderType: orderType,
+                              date: date,
+                              status: orderStatus,
+                            ),
+                          ),
+                        const SizedBox(height: 80), // space for buttons
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (updateGenerateOrderModel.order!.orderType == "PARCEL")
                       ElevatedButton.icon(
-                        onPressed: () async {
-                          WidgetsBinding.instance
-                              .addPostFrameCallback((_) async {
-                            await _ensureIminServiceReady();
-                            await _printBillToIminOnly(context);
-                          });
+                        onPressed: () {
+                          _selectBluetoothPrinter(context);
                         },
-                        icon: const Icon(Icons.print),
-                        label: const Text("Print Bills"),
+                        icon: const Icon(Icons.bluetooth),
+                        label: const Text("KOT(BT)"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: greenColor,
                           foregroundColor: whiteColor,
                         ),
                       ),
-                      horizontalSpace(width: 10),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.09,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            "CLOSE",
-                            style: TextStyle(color: appPrimaryColor),
-                          ),
-                        ),
+                    const SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          await _ensureIminServiceReady();
+                          await _printBillToIminOnly(context);
+                        });
+                      },
+                      icon: const Icon(Icons.print),
+                      label: const Text("Print Bills"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: greenColor,
+                        foregroundColor: whiteColor,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      label: const Text("CLOSE"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: appPrimaryColor,
+                        foregroundColor: whiteColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       );
@@ -5820,7 +5843,6 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                             ? SpinKitCircle(color: appPrimaryColor, size: 30)
                                                                             : ElevatedButton(
                                                                                 onPressed: () {
-                                                                                  debugPrint("save orderInit");
                                                                                   // if ((selectedValue == null && selectedOrderType == OrderType.line) || (selectedValue == null && selectedOrderType == OrderType.ac)) {
                                                                                   //   setState(() {
                                                                                   //     isCompleteOrder = false;
@@ -5835,7 +5857,6 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                   //   return;
                                                                                   // } else
                                                                                   if (((widget.isEditingOrder == null || widget.isEditingOrder == false)) || (widget.isEditingOrder == true && ((postAddToBillingModel.total != widget.existingOrder?.data!.total || haveAddonsChanged()) && widget.existingOrder?.data!.orderStatus == "WAITLIST"))) {
-                                                                                    debugPrint("save order");
                                                                                     setState(() {
                                                                                       isCompleteOrder = false;
                                                                                     });

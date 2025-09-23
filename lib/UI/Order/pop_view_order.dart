@@ -382,9 +382,10 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
     final order = widget.getViewOrderModel.data!;
     final invoice = order.invoice!;
     var size = MediaQuery.of(context).size;
+
     List<Map<String, dynamic>> items = invoice.invoiceItems!
         .map((e) => {
-              'name': e.tamilname,
+              'name': e.tamilname ?? e.name,
               'qty': e.qty,
               'price': (e.basePrice ?? 0).toDouble(),
               'total': ((e.qty ?? 0) * (e.basePrice ?? 0)).toDouble(),
@@ -394,7 +395,6 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
     String businessName = invoice.businessName ?? '';
     String address = invoice.address ?? '';
     String gst = invoice.gstNumber ?? '';
-    debugPrint("gst:$gst");
     double taxAmount = (order.tax ?? 0.0).toDouble();
     String orderNumber = order.orderNumber ?? 'N/A';
     String paymentMethod = invoice.paidBy ?? '';
@@ -412,22 +412,14 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
     String date = DateFormat('dd/MM/yyyy hh:mm a').format(
         DateFormat('M/d/yyyy, h:mm:ss a').parse(invoice.date.toString()));
 
-    return widget.getViewOrderModel.data == null
-        ? Container(
-            padding:
-                EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
-            alignment: Alignment.center,
-            child: Text(
-              "No Orders found",
-              style: MyTextStyle.f16(
-                greyColor,
-                weight: FontWeight.w500,
-              ),
-            ))
-        : Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      child: Stack(
+        children: [
+          // Scrollable content
+          Padding(
+            padding: const EdgeInsets.only(bottom: 80), // space for buttons
             child: SingleChildScrollView(
               child: Container(
                 width: size.width * 0.4,
@@ -442,13 +434,11 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Center(
-                          child: const Text(
-                            "Order Receipt",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        const Text(
+                          "Order Receipt",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         IconButton(
@@ -502,73 +492,61 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
                           status: orderStatus,
                         ),
                       ),
-                    const SizedBox(height: 20),
-                    // Action Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // if (order.orderType == "PARCEL")
-                        //   ElevatedButton.icon(
-                        //     onPressed: () {
-                        //       _startKOTPrintingThermalOnly(
-                        //         context,
-                        //         ipController.text.trim(),
-                        //       );
-                        //     },
-                        //     icon: const Icon(Icons.print),
-                        //     label: const Text("KOT(LAN)"),
-                        //     style: ElevatedButton.styleFrom(
-                        //       backgroundColor: greenColor,
-                        //       foregroundColor: whiteColor,
-                        //     ),
-                        //   ),
-                        // horizontalSpace(width: 10),
-                        if (order.orderType == "PARCEL")
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              _selectBluetoothPrinter(context);
-                            },
-                            icon: const Icon(Icons.bluetooth),
-                            label: const Text("KOT(BT)"),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: greenColor,
-                              foregroundColor: whiteColor,
-                            ),
-                          ),
-                        horizontalSpace(width: 10),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            WidgetsBinding.instance
-                                .addPostFrameCallback((_) async {
-                              await _ensureIminServiceReady();
-                              await _printBillToIminOnly(context);
-                            });
-                          },
-                          icon: const Icon(Icons.print),
-                          label: const Text("Print Bill"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: greenColor,
-                            foregroundColor: whiteColor,
-                          ),
-                        ),
-                        horizontalSpace(width: 10),
-                        SizedBox(
-                          width: size.width * 0.09,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text(
-                              "CLOSE",
-                              style: TextStyle(color: appPrimaryColor),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
                   ],
                 ),
               ),
             ),
-          );
+          ),
+
+          // Fixed action buttons
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (order.orderType == "PARCEL")
+                  ElevatedButton.icon(
+                    onPressed: () => _selectBluetoothPrinter(context),
+                    icon: const Icon(Icons.bluetooth),
+                    label: const Text("KOT(BT)"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: greenColor,
+                      foregroundColor: whiteColor,
+                    ),
+                  ),
+                horizontalSpace(width: 10),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    WidgetsBinding.instance.addPostFrameCallback((_) async {
+                      await _ensureIminServiceReady();
+                      await _printBillToIminOnly(context);
+                    });
+                  },
+                  icon: const Icon(Icons.print),
+                  label: const Text("Print Bill"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: greenColor,
+                    foregroundColor: whiteColor,
+                  ),
+                ),
+                horizontalSpace(width: 10),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  label: const Text("CLOSE"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: appPrimaryColor,
+                    foregroundColor: whiteColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
