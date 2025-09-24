@@ -144,7 +144,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
   bool isLoadingMore = false;
   bool hasMoreData = true;
   int currentOffset = 0;
-  final int limit = 10;
+  final int limit = 1000;
 
   List<TextEditingController> splitAmountControllers = [];
   List<String?> selectedPaymentMethods = [];
@@ -1049,7 +1049,6 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
     setState(() {
       isLoadingMore = true;
     });
-
     context.read<FoodCategoryBloc>().add(
           FoodProductItem(
             selectedCatId.toString(),
@@ -6552,6 +6551,40 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
           }
           return true;
         }
+        // if (current is GetProductByCatIdModel) {
+        //   getProductByCatIdModel = current;
+        //   if (getProductByCatIdModel.errorResponse?.isUnauthorized == true) {
+        //     _handle401Error();
+        //     return true;
+        //   }
+        //   if (getProductByCatIdModel.success == true) {
+        //     setState(() {
+        //       if (currentOffset == 0) {
+        //         allProducts = getProductByCatIdModel.rows ?? [];
+        //         debugPrint(
+        //             "Initial load: ${getProductByCatIdModel.rows!.length} products");
+        //         getProductByCatIdModel = current;
+        //       } else {
+        //         if (getProductByCatIdModel.rows != null) {
+        //           allProducts.addAll(getProductByCatIdModel.rows!);
+        //           debugPrint(
+        //               "Pagination load: ${getProductByCatIdModel.rows!.length} new products, total: ${allProducts.length}");
+        //           getProductByCatIdModel = getProductByCatIdModel.copyWith(
+        //             rows: allProducts.cast<Rows>(),
+        //             count: allProducts.length,
+        //           );
+        //         }
+        //       }
+        //       currentOffset += limit;
+        //       hasMoreData = (getProductByCatIdModel.rows?.length ?? 0) == limit;
+        //       categoryLoad = false;
+        //       isLoadingMore = false;
+        //       debugPrint(
+        //           "Updated state - offset: $currentOffset, hasMoreData: $hasMoreData");
+        //     });
+        //   }
+        //   return true;
+        // }
         if (current is GetProductByCatIdModel) {
           getProductByCatIdModel = current;
           if (getProductByCatIdModel.errorResponse?.isUnauthorized == true) {
@@ -6560,23 +6593,63 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
           }
           if (getProductByCatIdModel.success == true) {
             setState(() {
-              if (currentOffset == 0) {
-                allProducts = getProductByCatIdModel.rows ?? [];
-                getProductByCatIdModel = current;
-              } else {
-                if (getProductByCatIdModel.rows != null) {
-                  allProducts.addAll(getProductByCatIdModel.rows!);
-                  getProductByCatIdModel = getProductByCatIdModel.copyWith(
-                    rows: allProducts.cast<Rows>(),
-                    count: allProducts.length,
+              try {
+                final newProducts = getProductByCatIdModel.rows ?? [];
+
+                if (currentOffset == 0) {
+                  allProducts = List<Rows>.from(newProducts);
+                  debugPrint("Initial load: ${newProducts.length} products");
+                } else {
+                  if (newProducts.isNotEmpty) {
+                    final existingIds = allProducts.map((p) => p.id).toSet();
+                    final uniqueNewProducts = newProducts
+                        .where((p) => !existingIds.contains(p.id))
+                        .toList();
+
+                    allProducts.addAll(uniqueNewProducts);
+                    debugPrint(
+                        "Pagination load: ${uniqueNewProducts.length} new products, total: ${allProducts.length}");
+                  }
+                }
+                if (newProducts.isNotEmpty || currentOffset == 0) {
+                  currentOffset += limit;
+                }
+                hasMoreData = newProducts.length == limit;
+                categoryLoad = false;
+                isLoadingMore = false;
+
+                debugPrint(
+                    "Updated state - offset: $currentOffset, hasMoreData: $hasMoreData, total products: ${allProducts.length}");
+              } catch (e) {
+                debugPrint("Error updating products state: $e");
+                categoryLoad = false;
+                isLoadingMore = false;
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Error loading products: $e"),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               }
-              currentOffset += limit;
-              hasMoreData = (current.rows?.length ?? 0) == limit;
+            });
+          } else {
+            setState(() {
               categoryLoad = false;
               isLoadingMore = false;
             });
+            if (mounted) {
+              final errorMessage =
+                  getProductByCatIdModel.errorResponse?.message ??
+                      'Failed to load products';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(errorMessage),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           }
           return true;
         }
