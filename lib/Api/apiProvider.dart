@@ -229,7 +229,7 @@ class ApiProvider {
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/waiter?isAvailable=true',
+        '${Constants.baseUrl}api/waiter?isAvailable=true&isSupplier=false',
         options: Options(
           method: 'GET',
           headers: {
