@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Bloc/Response/errorResponse.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart';
+import 'package:simple/ModelClass/Catering/getCateringModel.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_product_by_catId_model.dart';
 import 'package:simple/ModelClass/Order/Delete_order_model.dart';
@@ -760,7 +761,7 @@ class ApiProvider {
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/products?locationId=$locationId',
+        '${Constants.baseUrl}api/products?isStock=true&filter=false&locationId=$locationId',
         options: Options(
           method: 'GET',
           headers: {
@@ -841,6 +842,48 @@ class ApiProvider {
       return SaveStockInModel()..errorResponse = errorResponse;
     } catch (error) {
       return SaveStockInModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// catering
+  /// catering List - API Integration
+  Future<GetCateringModel> cateringListAPI() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/booking',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetCateringModel getCateringResponse =
+              GetCateringModel.fromJson(response.data);
+          return getCateringResponse;
+        }
+      } else {
+        return GetCateringModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetCateringModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetCateringModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return GetCateringModel()..errorResponse = handleError(error);
     }
   }
 
