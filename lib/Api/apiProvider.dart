@@ -6,6 +6,9 @@ import 'package:simple/Bloc/Response/errorResponse.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart';
 import 'package:simple/ModelClass/Catering/getCateringModel.dart';
+import 'package:simple/ModelClass/Catering/getCustomerByLocation.dart';
+import 'package:simple/ModelClass/Catering/getItemAddonsForPackageModel.dart';
+import 'package:simple/ModelClass/Catering/getPackageModel.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_product_by_catId_model.dart';
 import 'package:simple/ModelClass/Order/Delete_order_model.dart';
@@ -884,6 +887,142 @@ class ApiProvider {
       return GetCateringModel()..errorResponse = errorResponse;
     } catch (error) {
       return GetCateringModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// get customer by location API - Integration
+  Future<GetCustomerByLocation> getCustomerAPI(String? locationId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/customer?locationId=$locationId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetCustomerByLocation getCustomerByLocationResponse =
+              GetCustomerByLocation.fromJson(response.data);
+          return getCustomerByLocationResponse;
+        }
+      } else {
+        return GetCustomerByLocation()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetCustomerByLocation()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetCustomerByLocation()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetCustomerByLocation()..errorResponse = errorResponse;
+    }
+  }
+
+  /// get Package by location API - Integration
+  Future<GetPackageModel> getPackageAPI(String? locationId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/package?locationId=$locationId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetPackageModel getPackageResponse =
+              GetPackageModel.fromJson(response.data);
+          return getPackageResponse;
+        }
+      } else {
+        return GetPackageModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetPackageModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetPackageModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetPackageModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// get Item-Addons by package API - Integration
+  Future<GetItemAddonsForPackageModel> getItemAddonsAPI(
+      String? packageId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/package/$packageId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetItemAddonsForPackageModel getItemAddonsForPackageResponse =
+              GetItemAddonsForPackageModel.fromJson(response.data);
+          return getItemAddonsForPackageResponse;
+        }
+      } else {
+        return GetItemAddonsForPackageModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetItemAddonsForPackageModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetItemAddonsForPackageModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetItemAddonsForPackageModel()..errorResponse = errorResponse;
     }
   }
 
