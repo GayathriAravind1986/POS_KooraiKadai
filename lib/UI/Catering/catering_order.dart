@@ -5,17 +5,17 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Catering/catering_bloc.dart';
-import 'package:simple/ModelClass/Catering/getCateringModel.dart';
+import 'package:simple/ModelClass/Catering/getAllCateringModel.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
 import 'package:simple/UI/Catering/add_booking.dart';
 import 'package:simple/UI/Catering/edit_booking.dart';
 
-class CateringView extends StatelessWidget {
-  final GlobalKey<CateringViewViewState>? cateringKey;
+class CateringViewBooking extends StatelessWidget {
+  final GlobalKey<CateringViewViewBookingState>? cateringKey;
   bool? hasRefreshedCatering;
-  CateringView({
+  CateringViewBooking({
     super.key,
     this.cateringKey,
     this.hasRefreshedCatering,
@@ -23,32 +23,32 @@ class CateringView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CateringViewView(
+    return CateringViewViewBooking(
         cateringKey: cateringKey, hasRefreshedCatering: hasRefreshedCatering);
   }
 }
 
-class CateringViewView extends StatefulWidget {
-  final GlobalKey<CateringViewViewState>? cateringKey;
+class CateringViewViewBooking extends StatefulWidget {
+  final GlobalKey<CateringViewViewBookingState>? cateringKey;
   bool? hasRefreshedCatering;
-  CateringViewView({
+  CateringViewViewBooking({
     super.key,
     this.cateringKey,
     this.hasRefreshedCatering,
   });
 
   @override
-  CateringViewViewState createState() => CateringViewViewState();
+  CateringViewViewBookingState createState() => CateringViewViewBookingState();
 }
 
-class CateringViewViewState extends State<CateringViewView> {
+class CateringViewViewBookingState extends State<CateringViewViewBooking> {
   GetCateringModel getCateringModel = GetCateringModel();
   String? errorMessage;
   bool cateringLoad = false;
   bool? isEdit = false;
   void refreshCatering() {
     if (!mounted || !context.mounted) return;
-    context.read<CateringBloc>().add(CateringBooking());
+    //context.read<CateringBloc>().add(CateringBooking());
     setState(() {
       cateringLoad = true;
     });
@@ -96,7 +96,7 @@ class CateringViewViewState extends State<CateringViewView> {
         });
       });
     } else {
-      context.read<CateringBloc>().add(CateringBooking());
+      //context.read<CateringBloc>().add(CateringBooking());
       setState(() {
         cateringLoad = true;
       });

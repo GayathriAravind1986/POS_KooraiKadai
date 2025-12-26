@@ -3,7 +3,25 @@ import 'package:simple/Api/apiProvider.dart';
 
 abstract class CateringEvent {}
 
-class CateringBooking extends CateringEvent {}
+class CateringBooking extends CateringEvent {
+  String search;
+  String locationId;
+  String cusId;
+  String fromDate;
+  String toDate;
+  int offset;
+  int limit;
+
+  CateringBooking(
+    this.search,
+    this.locationId,
+    this.cusId,
+    this.fromDate,
+    this.toDate,
+    this.offset,
+    this.limit,
+  );
+}
 
 class CateringLocation extends CateringEvent {}
 
@@ -22,10 +40,18 @@ class CateringItemAddons extends CateringEvent {
   CateringItemAddons(this.packageId);
 }
 
+class SaveCatering extends CateringEvent {
+  final String orderPayloadJson;
+  SaveCatering(this.orderPayloadJson);
+}
+
 class CateringBloc extends Bloc<CateringEvent, dynamic> {
   CateringBloc() : super(dynamic) {
     on<CateringBooking>((event, emit) async {
-      await ApiProvider().cateringListAPI().then((value) {
+      await ApiProvider()
+          .cateringListAPI(event.search, event.locationId, event.cusId,
+              event.fromDate, event.toDate, event.offset, event.limit)
+          .then((value) {
         emit(value);
       }).catchError((error) {
         emit(error);
@@ -54,6 +80,15 @@ class CateringBloc extends Bloc<CateringEvent, dynamic> {
     });
     on<CateringItemAddons>((event, emit) async {
       await ApiProvider().getItemAddonsAPI(event.packageId).then((value) {
+        emit(value);
+      }).catchError((error) {
+        emit(error);
+      });
+    });
+    on<SaveCatering>((event, emit) async {
+      await ApiProvider()
+          .postSaveCateringAPI(event.orderPayloadJson)
+          .then((value) {
         emit(value);
       }).catchError((error) {
         emit(error);

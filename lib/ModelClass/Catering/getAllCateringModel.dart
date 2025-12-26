@@ -1,8 +1,8 @@
 import 'package:simple/Bloc/Response/errorResponse.dart';
 
 /// success : true
-/// data : [{"id":"694a477a15ce1e300c3a3474","date":"2025-12-23","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463971d85a3f7ede0c6a8f","name":"mano","phone":"9878967893"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0},{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}],"packageamount":1230,"quantity":10,"addonsamount":100,"finalamount":1030,"discounttype":"FIXED","discountvalue":300,"paidamount":630,"balanceamount":400,"paymenttype":"PARTIALLY","paymentmode":"","paymentdetails":[{"mode":"CASH","amount":500},{"mode":"ONLINE","amount":130}],"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T08:48:05.848Z"},{"id":"694a5be2413233982d701e16","date":"2025-12-23","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463ea2ce36a20f74df859c","name":"phoneds","phone":"7890989076"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}],"packageamount":492,"quantity":4,"addonsamount":0,"finalamount":492,"discounttype":"","discountvalue":0,"paidamount":0,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"UPI","paymentdetails":[],"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T09:11:43.295Z"},{"id":"694a582315ce1e300c3a3978","date":"2025-12-23","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463bb2d85a3f7ede0c6bc1","name":"murugan","phone":"9876543210"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"},{"id":"688b0a60fc5ac9c09f2e3b69","name":"Special product"}],"addons":[{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0},{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}],"packageamount":369,"quantity":3,"addonsamount":30,"finalamount":343.14,"discounttype":"PERCENTAGE","discountvalue":14,"paidamount":370,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"UPI","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T08:51:47.163Z"},{"id":"694a477a15ce1e300c3a3474","date":"2025-12-23","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463971d85a3f7ede0c6a8f","name":"mano","phone":"9878967893"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0},{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}],"packageamount":1230,"quantity":10,"addonsamount":100,"finalamount":1030,"discounttype":"FIXED","discountvalue":300,"paidamount":630,"balanceamount":400,"paymenttype":"PARTIALLY","paymentmode":"","paymentdetails":[{"mode":"CASH","amount":500},{"mode":"ONLINE","amount":130}],"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T08:48:05.848Z"},{"id":"694a3dcd15ce1e300c3a2eab","date":"2025-12-23","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463bd0d85a3f7ede0c6c1e","name":"phone","phone":"9965784466"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"},{"id":"688c51380e035b08f8f1564a","name":"Food"}],"addons":[{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0},{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}],"packageamount":369,"quantity":3,"addonsamount":30,"finalamount":300,"discounttype":"FIXED","discountvalue":99,"paidamount":200,"balanceamount":100,"paymenttype":"PARTIALLY","paymentmode":"","paymentdetails":[{"mode":"CASH","amount":100},{"mode":"UPI","amount":100}],"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T07:04:48.902Z"},{"id":"694a3d8a073d4bc6fb211545","date":"2025-12-23","location":{"id":"689097eb8f2278af1da6b97d","name":"alwar"},"customer":{"id":"694534c47ac0ecf2c38c8753","name":"ruban","phone":"7410852096"},"package":{"id":null,"name":null,"price":null},"items":[{"id":"688b3053f2e80392e2cd37b2","name":"icecream"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10},{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}],"packageamount":500,"quantity":2,"addonsamount":100,"finalamount":600,"discounttype":"PERCENTAGE","discountvalue":10,"paidamount":100,"balanceamount":500,"paymenttype":"PARTIALLY","paymentmode":null,"paymentdetails":[{"mode":"CASH","amount":100},{"mode":"UPI","amount":100}],"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T06:58:19.000Z"},{"id":"694a375aabf0e5ffbc994bf7","date":"2025-12-23","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463ea2ce36a20f74df859c","name":"phoneds","phone":"7890989076"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"},{"id":"688b0a60fc5ac9c09f2e3b69","name":"Special product"}],"addons":[{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0},{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}],"packageamount":615,"quantity":5,"addonsamount":50,"finalamount":655,"discounttype":"FIXED","discountvalue":10,"paidamount":655,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"CASH","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T06:31:54.763Z"},{"id":"694a3354abf0e5ffbc994a9e","date":"2025-12-23","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463bd0d85a3f7ede0c6c1e","name":"phone","phone":"9965784466"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}],"packageamount":615,"quantity":5,"addonsamount":50,"finalamount":665,"discounttype":"FIXED","discountvalue":65,"paidamount":665,"balanceamount":600,"paymenttype":"FULLY","paymentmode":"UPI","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T06:14:44.249Z"},{"id":"694a2ee6240dbe91e4402e0d","date":"2025-12-23","location":{"id":"689097eb8f2278af1da6b97d","name":"alwar"},"customer":{"id":"694534c47ac0ecf2c38c8753","name":"ruban","phone":"7410852096"},"package":{"id":null,"name":null,"price":null},"items":[{"id":"688b3053f2e80392e2cd37b2","name":"icecream"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10},{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}],"packageamount":500,"quantity":2,"addonsamount":100,"finalamount":600,"discounttype":"PERCENTAGE","discountvalue":10,"paidamount":100,"balanceamount":500,"paymenttype":"FULLY","paymentmode":"CARD","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T05:55:50.299Z"},{"id":"694a2c072c8f575251883280","date":"2025-12-23","location":{"id":"689097eb8f2278af1da6b97d","name":"alwar"},"customer":{"id":"694534c47ac0ecf2c38c8753","name":"ruban","phone":"7410852096"},"package":{"id":null,"name":null,"price":null},"items":[{"id":"688b3053f2e80392e2cd37b2","name":"icecream"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10},{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}],"packageamount":500,"quantity":2,"addonsamount":100,"finalamount":600,"discounttype":"PERCENTAGE","discountvalue":10,"paidamount":100,"balanceamount":500,"paymenttype":"PARTIALLY","paymentmode":"CARD","paymentdetails":[],"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T05:43:35.157Z"},{"id":"694a2653e2c2f40026a64d28","date":"2025-12-23","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463ea2ce36a20f74df859c","name":"phoneds","phone":"7890989076"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0},{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}],"packageamount":123,"addonsamount":30,"finalamount":153,"discounttype":"FIXED","discountvalue":5,"paidamount":153,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"CASH","paymentdetails":[],"createdBy":"Saranya","createdAt":"2025-12-23","updatedAt":"2025-12-23T05:19:15.205Z"}]
-/// total : 16
+/// data : [{"id":"694e33c31d157e1ae7738fdc","date":"2025-12-23","location":{"id":"689097eb8f2278af1da6b97d","name":"alwar"},"customer":{"id":"694534c47ac0ecf2c38c8753","name":"ruban","phone":"7410852096"},"package":{"id":null,"name":null,"price":null},"items":[{"id":"688b3053f2e80392e2cd37b2","name":"icecream"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10},{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}],"packageamount":500,"quantity":2,"addonsamount":100,"finalamount":600,"discounttype":"FIXED","discountvalue":10,"discountamount":50,"totalamount":500,"paidamount":100,"balanceamount":500,"paymenttype":"PARTIALLY","paymentmode":null,"paymentdetails":[{"mode":"CASH","amount":100},{"mode":"UPI","amount":100}],"createdBy":"Mano","createdAt":"2025-12-26","updatedAt":"2025-12-26T07:05:39.717Z"},{"id":"694e33a91d157e1ae7738fd9","date":"2025-12-23","location":{"id":"689097eb8f2278af1da6b97d","name":"alwar"},"customer":{"id":"694534c47ac0ecf2c38c8753","name":"ruban","phone":"7410852096"},"package":{"id":null,"name":null,"price":null},"items":[{"id":"688b3053f2e80392e2cd37b2","name":"icecream"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10},{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}],"packageamount":500,"quantity":2,"addonsamount":100,"finalamount":600,"discountamount":0,"totalamount":500,"paidamount":100,"balanceamount":500,"paymenttype":"FULLY","paymentmode":"CASH","paymentdetails":null,"createdBy":"Mano","createdAt":"2025-12-26","updatedAt":"2025-12-26T07:05:13.693Z"},{"id":"694e335b1d157e1ae7738fd6","date":"2025-12-23","location":{"id":"689097eb8f2278af1da6b97d","name":"alwar"},"customer":{"id":"694534c47ac0ecf2c38c8753","name":"ruban","phone":"7410852096"},"package":{"id":null,"name":null,"price":null},"items":[{"id":"688b3053f2e80392e2cd37b2","name":"icecream"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10},{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}],"packageamount":500,"quantity":2,"addonsamount":100,"finalamount":600,"discountamount":0,"totalamount":500,"paidamount":100,"balanceamount":500,"paymenttype":"FULLY","paymentmode":"CASH","paymentdetails":null,"createdBy":"Mano","createdAt":"2025-12-26","updatedAt":"2025-12-26T07:03:55.649Z"},{"id":"694e1e6ae96f8018b5d5f8ef","date":"2025-12-26","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463bd0d85a3f7ede0c6c1e","name":"phone","phone":"9965784466"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}],"addons":[{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0},{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}],"packageamount":369,"quantity":3,"addonsamount":30,"finalamount":339,"discounttype":"PERCENTAGE","discountvalue":15,"discountamount":60,"totalamount":399,"paidamount":339,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"UPI","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-26","updatedAt":"2025-12-26T05:34:34.950Z"},{"id":"694e1d5c20457b8626df588e","date":"2025-12-26","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463ea2ce36a20f74df859c","name":"phoneds","phone":"7890989076"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"},{"id":"688c51380e035b08f8f1564a","name":"Food"},{"id":"688b0a60fc5ac9c09f2e3b69","name":"Special product"}],"addons":[{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10},{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}],"packageamount":123,"quantity":1,"addonsamount":10,"finalamount":133,"discounttype":"PERCENTAGE","discountvalue":null,"discountamount":0,"totalamount":133,"paidamount":133,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"CASH","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-26","updatedAt":"2025-12-26T05:30:04.602Z"},{"id":"694e170659eb2ff32443aaae","date":"2025-12-26","location":{"id":"68aff731b58ebcf802312ad3","name":"pavoorChatram"},"customer":{"id":"694e161859eb2ff32443aa1f","name":"Kumar","phone":"9876543210"},"package":{"id":"69466c20674c3009d07e8d52","name":"Pongal","price":250},"items":[{"id":"692683602e8de1d7b15786a8","name":"parota"},{"id":"692553f594eaa21262538b4e","name":"Parotta"}],"addons":[],"packageamount":1250,"quantity":5,"addonsamount":0,"finalamount":1230,"discounttype":"FIXED","discountvalue":20,"discountamount":20,"totalamount":1250,"paidamount":1230,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"UPI","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-26","updatedAt":"2025-12-26T05:03:02.621Z"},{"id":"694e164259eb2ff32443aa7d","date":"2025-12-26","location":{"id":"68aff731b58ebcf802312ad3","name":"pavoorChatram"},"customer":{"id":"694e161859eb2ff32443aa1f","name":"Kumar","phone":"9876543210"},"package":{"id":"69466c20674c3009d07e8d52","name":"Pongal","price":250},"items":[{"id":"692683602e8de1d7b15786a8","name":"parota"},{"id":"692553f594eaa21262538b4e","name":"Parotta"},{"id":"68c7dcf0a327e601bfac1e3c","name":"Chocolate"}],"addons":[],"packageamount":1000,"quantity":4,"addonsamount":0,"finalamount":1000,"discounttype":"","discountvalue":null,"discountamount":0,"totalamount":1000,"paidamount":1000,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"UPI","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-26","updatedAt":"2025-12-26T04:59:46.511Z"},{"id":"694bed14c25c9df4e859d5ff","date":"2025-12-24","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463bd0d85a3f7ede0c6c1e","name":"phone","phone":"9965784466"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[],"addons":[],"packageamount":123,"quantity":1,"addonsamount":0,"finalamount":123,"discounttype":"","discountvalue":0,"discountamount":0,"totalamount":123,"paidamount":123,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"ONLINE","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-24","updatedAt":"2025-12-24T13:39:32.407Z"},{"id":"694beb9bc25c9df4e859d37f","date":"2025-12-24","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463bd0d85a3f7ede0c6c1e","name":"phone","phone":"9965784466"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[],"addons":[],"packageamount":123,"quantity":1,"addonsamount":0,"finalamount":123,"discounttype":"","discountvalue":null,"discountamount":0,"totalamount":123,"paidamount":123,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"CARD","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-24","updatedAt":"2025-12-24T13:33:15.888Z"},{"id":"694be8f9c25c9df4e859d092","date":"2025-12-24","location":{"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customer":{"id":"69463bd0d85a3f7ede0c6c1e","name":"phone","phone":"9965784466"},"package":{"id":"6948f15018768350f3a24893","name":"Raja","price":123},"items":[],"addons":[],"packageamount":123,"quantity":1,"addonsamount":0,"finalamount":123,"discounttype":"","discountvalue":null,"discountamount":0,"totalamount":123,"paidamount":123,"balanceamount":0,"paymenttype":"FULLY","paymentmode":"UPI","paymentdetails":null,"createdBy":"Saranya","createdAt":"2025-12-24","updatedAt":"2025-12-24T13:22:01.579Z"}]
+/// total : 49
 
 class GetCateringModel {
   GetCateringModel({
@@ -63,27 +63,29 @@ class GetCateringModel {
   }
 }
 
-/// id : "694a477a15ce1e300c3a3474"
+/// id : "694e33c31d157e1ae7738fdc"
 /// date : "2025-12-23"
-/// location : {"id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"}
-/// customer : {"id":"69463971d85a3f7ede0c6a8f","name":"mano","phone":"9878967893"}
-/// package : {"id":"6948f15018768350f3a24893","name":"Raja","price":123}
-/// items : [{"id":"6896dd1e34000a85304985bd","name":"juice"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}]
-/// addons : [{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0},{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10}]
-/// packageamount : 1230
-/// quantity : 10
+/// location : {"id":"689097eb8f2278af1da6b97d","name":"alwar"}
+/// customer : {"id":"694534c47ac0ecf2c38c8753","name":"ruban","phone":"7410852096"}
+/// package : {"id":null,"name":null,"price":null}
+/// items : [{"id":"688b3053f2e80392e2cd37b2","name":"icecream"},{"id":"688b31b0f2e80392e2cd38e1","name":"chocolate"}]
+/// addons : [{"id":"69466f6beeae7ae2a8622f0e","name":"Leaf","price":10},{"id":"69466f77eeae7ae2a8622f17","name":"Payasam","price":0}]
+/// packageamount : 500
+/// quantity : 2
 /// addonsamount : 100
-/// finalamount : 1030
+/// finalamount : 600
 /// discounttype : "FIXED"
-/// discountvalue : 300
-/// paidamount : 630
-/// balanceamount : 400
+/// discountvalue : 10
+/// discountamount : 50
+/// totalamount : 500
+/// paidamount : 100
+/// balanceamount : 500
 /// paymenttype : "PARTIALLY"
-/// paymentmode : ""
-/// paymentdetails : [{"mode":"CASH","amount":500},{"mode":"ONLINE","amount":130}]
-/// createdBy : "Saranya"
-/// createdAt : "2025-12-23"
-/// updatedAt : "2025-12-23T08:48:05.848Z"
+/// paymentmode : null
+/// paymentdetails : [{"mode":"CASH","amount":100},{"mode":"UPI","amount":100}]
+/// createdBy : "Mano"
+/// createdAt : "2025-12-26"
+/// updatedAt : "2025-12-26T07:05:39.717Z"
 
 class Data {
   Data({
@@ -100,10 +102,12 @@ class Data {
     num? finalamount,
     String? discounttype,
     num? discountvalue,
+    num? discountamount,
+    num? totalamount,
     num? paidamount,
     num? balanceamount,
     String? paymenttype,
-    String? paymentmode,
+    dynamic paymentmode,
     List<Paymentdetails>? paymentdetails,
     String? createdBy,
     String? createdAt,
@@ -122,6 +126,8 @@ class Data {
     _finalamount = finalamount;
     _discounttype = discounttype;
     _discountvalue = discountvalue;
+    _discountamount = discountamount;
+    _totalamount = totalamount;
     _paidamount = paidamount;
     _balanceamount = balanceamount;
     _paymenttype = paymenttype;
@@ -159,6 +165,8 @@ class Data {
     _finalamount = json['finalamount'];
     _discounttype = json['discounttype'];
     _discountvalue = json['discountvalue'];
+    _discountamount = json['discountamount'];
+    _totalamount = json['totalamount'];
     _paidamount = json['paidamount'];
     _balanceamount = json['balanceamount'];
     _paymenttype = json['paymenttype'];
@@ -186,10 +194,12 @@ class Data {
   num? _finalamount;
   String? _discounttype;
   num? _discountvalue;
+  num? _discountamount;
+  num? _totalamount;
   num? _paidamount;
   num? _balanceamount;
   String? _paymenttype;
-  String? _paymentmode;
+  dynamic _paymentmode;
   List<Paymentdetails>? _paymentdetails;
   String? _createdBy;
   String? _createdAt;
@@ -208,10 +218,12 @@ class Data {
     num? finalamount,
     String? discounttype,
     num? discountvalue,
+    num? discountamount,
+    num? totalamount,
     num? paidamount,
     num? balanceamount,
     String? paymenttype,
-    String? paymentmode,
+    dynamic paymentmode,
     List<Paymentdetails>? paymentdetails,
     String? createdBy,
     String? createdAt,
@@ -231,6 +243,8 @@ class Data {
         finalamount: finalamount ?? _finalamount,
         discounttype: discounttype ?? _discounttype,
         discountvalue: discountvalue ?? _discountvalue,
+        discountamount: discountamount ?? _discountamount,
+        totalamount: totalamount ?? _totalamount,
         paidamount: paidamount ?? _paidamount,
         balanceamount: balanceamount ?? _balanceamount,
         paymenttype: paymenttype ?? _paymenttype,
@@ -253,10 +267,12 @@ class Data {
   num? get finalamount => _finalamount;
   String? get discounttype => _discounttype;
   num? get discountvalue => _discountvalue;
+  num? get discountamount => _discountamount;
+  num? get totalamount => _totalamount;
   num? get paidamount => _paidamount;
   num? get balanceamount => _balanceamount;
   String? get paymenttype => _paymenttype;
-  String? get paymentmode => _paymentmode;
+  dynamic get paymentmode => _paymentmode;
   List<Paymentdetails>? get paymentdetails => _paymentdetails;
   String? get createdBy => _createdBy;
   String? get createdAt => _createdAt;
@@ -287,6 +303,8 @@ class Data {
     map['finalamount'] = _finalamount;
     map['discounttype'] = _discounttype;
     map['discountvalue'] = _discountvalue;
+    map['discountamount'] = _discountamount;
+    map['totalamount'] = _totalamount;
     map['paidamount'] = _paidamount;
     map['balanceamount'] = _balanceamount;
     map['paymenttype'] = _paymenttype;
@@ -302,7 +320,7 @@ class Data {
 }
 
 /// mode : "CASH"
-/// amount : 500
+/// amount : 100
 
 class Paymentdetails {
   Paymentdetails({
@@ -338,9 +356,9 @@ class Paymentdetails {
   }
 }
 
-/// id : "69466f77eeae7ae2a8622f17"
-/// name : "Payasam"
-/// price : 0
+/// id : "69466f6beeae7ae2a8622f0e"
+/// name : "Leaf"
+/// price : 10
 
 class Addons {
   Addons({
@@ -384,8 +402,8 @@ class Addons {
   }
 }
 
-/// id : "6896dd1e34000a85304985bd"
-/// name : "juice"
+/// id : "688b3053f2e80392e2cd37b2"
+/// name : "icecream"
 
 class Items {
   Items({
@@ -421,15 +439,15 @@ class Items {
   }
 }
 
-/// id : "6948f15018768350f3a24893"
-/// name : "Raja"
-/// price : 123
+/// id : null
+/// name : null
+/// price : null
 
 class Package {
   Package({
-    String? id,
-    String? name,
-    num? price,
+    dynamic id,
+    dynamic name,
+    dynamic price,
   }) {
     _id = id;
     _name = name;
@@ -441,22 +459,22 @@ class Package {
     _name = json['name'];
     _price = json['price'];
   }
-  String? _id;
-  String? _name;
-  num? _price;
+  dynamic _id;
+  dynamic _name;
+  dynamic _price;
   Package copyWith({
-    String? id,
-    String? name,
-    num? price,
+    dynamic id,
+    dynamic name,
+    dynamic price,
   }) =>
       Package(
         id: id ?? _id,
         name: name ?? _name,
         price: price ?? _price,
       );
-  String? get id => _id;
-  String? get name => _name;
-  num? get price => _price;
+  dynamic get id => _id;
+  dynamic get name => _name;
+  dynamic get price => _price;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -467,9 +485,9 @@ class Package {
   }
 }
 
-/// id : "69463971d85a3f7ede0c6a8f"
-/// name : "mano"
-/// phone : "9878967893"
+/// id : "694534c47ac0ecf2c38c8753"
+/// name : "ruban"
+/// phone : "7410852096"
 
 class Customer {
   Customer({
@@ -513,8 +531,8 @@ class Customer {
   }
 }
 
-/// id : "68c8ef05e42b9d827aeb4af3"
-/// name : "TUTY"
+/// id : "689097eb8f2278af1da6b97d"
+/// name : "alwar"
 
 class Location {
   Location({

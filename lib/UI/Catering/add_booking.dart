@@ -1392,7 +1392,7 @@ class _AddBookingViewState extends State<AddBookingView> {
                             ),
                           )
                         ],
-                      ), // 👇 Form widget
+                      ),
                     ),
                   ),
 
