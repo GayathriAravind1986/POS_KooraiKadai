@@ -27,6 +27,11 @@ import 'package:simple/ModelClass/User/getUserModel.dart';
 import 'package:simple/ModelClass/Waiter/getWaiterModel.dart';
 import 'package:simple/Reusable/constant.dart';
 
+import '../ModelClass/Customer/GetCustomerByIdModel.dart';
+import '../ModelClass/Customer/GetCustomerModel.dart';
+import '../ModelClass/Customer/PostCustomerModel.dart';
+import '../ModelClass/Customer/PutCustomerByIdModel.dart';
+import '../ModelClass/Customer/getCategoryByLocationModel.dart';
 import '../ModelClass/Table/Get_table_model.dart';
 
 /// All API Integration in ApiProvider
@@ -665,6 +670,241 @@ class ApiProvider {
     }
   }
 
+  // /// Category By Location API Integration
+  Future<GetCategoryByLocationModel> getCategoryByLocationAPI(
+      String? locationId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/expensescategory?locationId=$locationId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetCategoryByLocationModel getCategoryByLocationResponse =
+          GetCategoryByLocationModel.fromJson(response.data);
+          return getCategoryByLocationResponse;
+        }
+      } else {
+        return GetCategoryByLocationModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetCategoryByLocationModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetCategoryByLocationModel()
+        ..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetCategoryByLocationModel()
+        ..errorResponse = errorResponse;
+    }
+  }
+
+  /// Get All Customers API Integration
+  Future<GetCustomerModel> getAllCustomerAPI(
+      String search) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    final url = '${Constants.baseUrl}api/catering/customer?limit=100&offset=0&search=';
+    debugPrint("📡 Customer API URL: $url");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        url,
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      // ✅ Debug the response
+      debugPrint("📥 Customer API Status: ${response.statusCode}");
+      debugPrint("📥 Customer API Response: ${response.data}");
+
+      if (response.statusCode == 200 && response.data != null) {
+        final model = GetCustomerModel.fromJson(response.data);
+        debugPrint("✅ Model Success: ${model.success}");
+        debugPrint("✅ Model Data Count: ${model.data?.length}");
+        debugPrint("✅ Model Total: ${model.total}");
+        return model;
+      } else {
+        return GetCustomerModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      debugPrint("❌ DioException: ${dioError.message}");
+      debugPrint("❌ Response: ${dioError.response?.data}");
+      return GetCustomerModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      debugPrint("❌ Error: $error");
+      return GetCustomerModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Get Customer By ID API Integration
+  Future<GetCustomerByIdModel> getCustomerByIdAPI(String? customerId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/customer/$customerId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return GetCustomerByIdModel.fromJson(response.data);
+      } else {
+        return GetCustomerByIdModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return GetCustomerByIdModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return GetCustomerByIdModel()..errorResponse = handleError(error);
+    }
+  }
+
+  Future<PostCustomerModel> postCustomerAPI(
+      String name,
+      String phone,
+      String email,
+      String address,
+      String locId,
+      ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      final dataMap = {
+        "name": name,
+        "phone": phone,
+        "email": email,
+        "address": address,
+        "locationId": locId
+      };
+
+      // Add debugging
+      print("📤 POST /api/catering/customer");
+      print("📤 Token: ${token != null ? 'Present' : 'Missing'}");
+      print("📤 Request Data: $dataMap");
+
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/customer',
+        options: Options(
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json', // ✅ ADD THIS
+          },
+        ),
+        data: json.encode(dataMap),
+      );
+
+      print("📥 Response Status: ${response.statusCode}");
+      print("📥 Response Body: ${response.data}");
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return PostCustomerModel.fromJson(response.data);
+      } else {
+        return PostCustomerModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      print("❌ Dio Error: ${dioError.message}");
+      print("❌ Dio Error Response: ${dioError.response?.data}");
+      print("❌ Dio Error Status: ${dioError.response?.statusCode}");
+      return PostCustomerModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      print("❌ General Error: $error");
+      return PostCustomerModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Update Customer (PUT) API Integration
+  Future<PutCustomerByIdModel> putCustomerAPI(
+      String customerId,
+      String name,
+      String phone,
+      String email,
+      String address,
+      String locId,
+      ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      final dataMap = {
+        "name": name,
+        "phone": phone,
+        "email": email,
+        "address": address,
+        "locationId": locId
+      };
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/customer/$customerId',
+        options: Options(
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode(dataMap),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return PutCustomerByIdModel.fromJson(response.data);
+      } else {
+        return PutCustomerByIdModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return PutCustomerByIdModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return PutCustomerByIdModel()..errorResponse = handleError(error);
+    }
+  }
   /***** Stock_In*****/
   /// Location - fetch API Integration
   Future<GetLocationModel> getLocationAPI() async {
