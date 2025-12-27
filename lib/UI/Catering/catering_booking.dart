@@ -777,7 +777,7 @@ class CateringViewViewState extends State<CateringViewView> {
       locLoad = true;
       offset = 0;
       currentPage = 0;
-      rowsPerPage = 5;
+      rowsPerPage = 10;
       totalItems = 0;
       totalPages = 1;
     });
@@ -830,6 +830,12 @@ class CateringViewViewState extends State<CateringViewView> {
   @override
   Widget build(BuildContext context) {
     Widget buildPaginationBar() {
+      int start = offset + 1;
+      int end = offset + rowsPerPage;
+
+      if (end > totalItems) {
+        end = totalItems;
+      }
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -855,8 +861,7 @@ class CateringViewViewState extends State<CateringViewView> {
           const SizedBox(width: 20),
 
           // ---- Page X of Y ----
-          Text("${currentPage + 1} of $totalPages"),
-
+          Text("$start - $end of $totalItems"),
           // ---- Prev Button ----
           IconButton(
             icon: const Icon(Icons.chevron_left),
@@ -2127,205 +2132,6 @@ class CateringViewViewState extends State<CateringViewView> {
                             );
                           },
                         ),
-              // Container(
-              //             padding: EdgeInsets.only(
-              //                 top: MediaQuery.of(context).size.height * 0.1),
-              //             alignment: Alignment.center,
-              //             child: Text(
-              //               "No Expenses Today !!!",
-              //               style: MyTextStyle.f16(
-              //                 greyColor,
-              //                 weight: FontWeight.w500,
-              //               ),
-              //             ))
-              //         : LayoutBuilder(
-              //             builder: (context, constraints) {
-              //               // Calculate column widths based on available screen width
-              //               final availableWidth = constraints.maxWidth;
-              //
-              //               return SingleChildScrollView(
-              //                 scrollDirection: Axis.horizontal,
-              //                 child: ConstrainedBox(
-              //                   constraints: BoxConstraints(
-              //                     minWidth:
-              //                         availableWidth, // Ensures table takes full width
-              //                   ),
-              //                   child: Theme(
-              //                     data: Theme.of(context).copyWith(
-              //                       dataTableTheme: const DataTableThemeData(
-              //                         dataRowMinHeight: 40,
-              //                         dataRowMaxHeight: 40,
-              //                       ),
-              //                     ),
-              //                     child: DataTable(
-              //                       headingRowColor: MaterialStateProperty.all(
-              //                           Colors.grey.shade200),
-              //                       dataRowHeight: 55,
-              //                       headingTextStyle: const TextStyle(
-              //                         fontWeight: FontWeight.bold,
-              //                         color: Colors.black87,
-              //                         fontSize: 14,
-              //                       ),
-              //                       columnSpacing: availableWidth *
-              //                           0.02, // 2% of screen width
-              //                       columns: [
-              //                         DataColumn(
-              //                           label: SizedBox(
-              //                             width: availableWidth * 0.12,
-              //                             child: const Text("Date"),
-              //                           ),
-              //                         ),
-              //                         DataColumn(
-              //                           label: SizedBox(
-              //                             width: availableWidth * 0.15,
-              //                             child: const Text("Location"),
-              //                           ),
-              //                         ),
-              //                         DataColumn(
-              //                           label: SizedBox(
-              //                             width: availableWidth * 0.15,
-              //                             child: const Text("Category"),
-              //                           ),
-              //                         ),
-              //                         DataColumn(
-              //                           label: SizedBox(
-              //                             width: availableWidth * 0.15,
-              //                             child: const Text("Name"),
-              //                           ),
-              //                         ),
-              //                         DataColumn(
-              //                           label: SizedBox(
-              //                             width: availableWidth * 0.12,
-              //                             child: const Text("Amount"),
-              //                           ),
-              //                         ),
-              //                         DataColumn(
-              //                           label: SizedBox(
-              //                             width: availableWidth * 0.16,
-              //                             child: const Text("Payment Method"),
-              //                           ),
-              //                         ),
-              //                         DataColumn(
-              //                           label: SizedBox(
-              //                             width: availableWidth * 0.13,
-              //                             child: const Text("Actions"),
-              //                           ),
-              //                         ),
-              //                       ],
-              //                       rows:
-              //                           getDailyExpenseModel.data!.map((item) {
-              //                         return DataRow(
-              //                           cells: [
-              //                             DataCell(
-              //                               SizedBox(
-              //                                 width: availableWidth * 0.12,
-              //                                 child: Text(
-              //                                   formatDate(
-              //                                       item.date.toString()),
-              //                                   overflow: TextOverflow.ellipsis,
-              //                                 ),
-              //                               ),
-              //                             ),
-              //                             DataCell(
-              //                               SizedBox(
-              //                                 width: availableWidth * 0.15,
-              //                                 child: Text(
-              //                                   item.locationId?.name ?? "",
-              //                                   overflow: TextOverflow.ellipsis,
-              //                                 ),
-              //                               ),
-              //                             ),
-              //                             DataCell(
-              //                               SizedBox(
-              //                                 width: availableWidth * 0.15,
-              //                                 child: Text(
-              //                                   item.categoryId?.name ?? "",
-              //                                   overflow: TextOverflow.ellipsis,
-              //                                 ),
-              //                               ),
-              //                             ),
-              //                             DataCell(
-              //                               SizedBox(
-              //                                 width: availableWidth * 0.15,
-              //                                 child: Text(
-              //                                   item.name ?? "",
-              //                                   overflow: TextOverflow.ellipsis,
-              //                                 ),
-              //                               ),
-              //                             ),
-              //                             DataCell(
-              //                               SizedBox(
-              //                                 width: availableWidth * 0.12,
-              //                                 child: Text(
-              //                                   item.amount.toString(),
-              //                                   overflow: TextOverflow.ellipsis,
-              //                                 ),
-              //                               ),
-              //                             ),
-              //                             DataCell(
-              //                               SizedBox(
-              //                                 width: availableWidth * 0.16,
-              //                                 child: Text(
-              //                                   item.paymentMethod ?? "",
-              //                                   overflow: TextOverflow.ellipsis,
-              //                                 ),
-              //                               ),
-              //                             ),
-              //                             DataCell(
-              //                               SizedBox(
-              //                                 width: availableWidth * 0.13,
-              //                                 child: Row(
-              //                                   mainAxisSize: MainAxisSize.min,
-              //                                   children: [
-              //                                     IconButton(
-              //                                       icon: const Icon(
-              //                                         Icons.edit,
-              //                                         color: appPrimaryColor,
-              //                                         size: 18,
-              //                                       ),
-              //                                       onPressed: () {
-              //                                         setState(() {
-              //                                           isEdit = true;
-              //                                           expenseId =
-              //                                               item.id.toString();
-              //                                           debugPrint(
-              //                                               "isEdit_$isEdit");
-              //                                         });
-              //                                         context
-              //                                             .read<ExpenseBloc>()
-              //                                             .add(ExpenseById(item
-              //                                                 .id
-              //                                                 .toString()));
-              //                                       },
-              //                                       padding: EdgeInsets.zero,
-              //                                       constraints:
-              //                                           const BoxConstraints(),
-              //                                     ),
-              //                                     // const SizedBox(width: 8),
-              //                                     // IconButton(
-              //                                     //   icon: const Icon(
-              //                                     //     Icons.delete,
-              //                                     //     color: Colors.red,
-              //                                     //     size: 18,
-              //                                     //   ),
-              //                                     //   onPressed: () {},
-              //                                     //   padding: EdgeInsets.zero,
-              //                                     //   constraints:
-              //                                     //       const BoxConstraints(),
-              //                                     // ),
-              //                                   ],
-              //                                 ),
-              //                               ),
-              //                             ),
-              //                           ],
-              //                         );
-              //                       }).toList(),
-              //                     ),
-              //                   ),
-              //                 ),
-              //               );
-              //             },
-              //           )
             ],
           ),
         ),
