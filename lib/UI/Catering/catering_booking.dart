@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,10 +12,13 @@ import 'package:simple/ModelClass/Catering/getAllCateringModel.dart';
 import 'package:simple/ModelClass/Catering/getCustomerByLocation.dart';
 import 'package:simple/ModelClass/Catering/getItemAddonsForPackageModel.dart';
 import 'package:simple/ModelClass/Catering/getPackageModel.dart';
+import 'package:simple/ModelClass/Catering/getSingleCateringDetailsModel.dart';
+import 'package:simple/ModelClass/Catering/postCateringBookingModel.dart';
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
+import 'package:simple/UI/Catering/Helper/catering_payload_helper.dart';
 import 'package:simple/UI/Order/Helper/time_formatter.dart';
 
 class CateringView extends StatelessWidget {
@@ -52,6 +57,10 @@ class CateringViewViewState extends State<CateringViewView> {
   GetPackageModel getPackageModel = GetPackageModel();
   GetItemAddonsForPackageModel getItemAddonsForPackageModel =
       GetItemAddonsForPackageModel();
+  PostCateringBookingModel postCateringBookingModel =
+      PostCateringBookingModel();
+  GetSingleCateringDetailsModel getSingleCateringDetailsModel =
+      GetSingleCateringDetailsModel();
   String? errorMessage;
   bool cateringLoad = false;
   final TextEditingController dateController = TextEditingController();
@@ -670,6 +679,13 @@ class CateringViewViewState extends State<CateringViewView> {
       partialPayments.clear();
       selectedPartialPaymentMode = null;
       partialPaidAmountController.clear();
+      packageAmount.clear();
+      addonsAmount.clear();
+      finalAmount.clear();
+      totalAmount.clear();
+      discountAmount.clear();
+      balanceAmount.clear();
+      paidAmount.clear();
     });
   }
 
@@ -731,7 +747,7 @@ class CateringViewViewState extends State<CateringViewView> {
     }
   }
 
-  bool expenseShowLoad = false;
+  bool cateringShowLoad = false;
   bool isEdit = false;
   String? cateringId;
 
@@ -793,24 +809,37 @@ class CateringViewViewState extends State<CateringViewView> {
     widget.cateringKey?.currentState?.refreshCatering();
   }
 
-  // void _refreshEditData() {
-  //   setState(() {
-  //     isEdit = false;
-  //     selectedCategory = null;
-  //     selectedPayment = null;
-  //     amountController.clear();
-  //     nameController.clear();
-  //   });
-  //   context.read<CateringBloc>().add(CateringLocation());
-  //   widget.cateringKey?.currentState?.refreshCatering();
-  // }
+  void _refreshEditData() {
+    setState(() {
+      isEdit = false;
+      dateController.text =
+          "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}";
+      selectedCustomer = null;
+      selectedPackage = null;
+      selectedDiscount = null;
+      selectedPaymentType = null;
+      selectedPaymentMode = null;
+      partialPayments.clear();
+      selectedPartialPaymentMode = null;
+      partialPaidAmountController.clear();
+      packageAmount.clear();
+      addonsAmount.clear();
+      finalAmount.clear();
+      totalAmount.clear();
+      discountAmount.clear();
+      balanceAmount.clear();
+      paidAmount.clear();
+    });
+    context.read<CateringBloc>().add(CateringLocation());
+    widget.cateringKey?.currentState?.refreshCatering();
+  }
 
   @override
   void dispose() {
     super.dispose();
   }
 
-  void reloadCategory() {
+  void reloadCatering() {
     offset = currentPage * rowsPerPage;
 
     context.read<CateringBloc>().add(CateringBooking(
@@ -854,7 +883,7 @@ class CateringViewViewState extends State<CateringViewView> {
                 totalPages = (totalItems / rowsPerPage).ceil();
               });
 
-              reloadCategory();
+              reloadCatering();
             },
           ),
 
@@ -871,7 +900,7 @@ class CateringViewViewState extends State<CateringViewView> {
                       currentPage--;
                       offset = currentPage * rowsPerPage;
                     });
-                    reloadCategory();
+                    reloadCatering();
                   }
                 : null,
           ),
@@ -885,7 +914,7 @@ class CateringViewViewState extends State<CateringViewView> {
                       currentPage++;
                       offset = currentPage * rowsPerPage;
                     });
-                    reloadCategory();
+                    reloadCatering();
                   }
                 : null,
           ),
@@ -909,7 +938,7 @@ class CateringViewViewState extends State<CateringViewView> {
                   if (isEdit)
                     IconButton(
                       onPressed: () {
-                        //  _refreshEditData();
+                        _refreshEditData();
                       },
                       icon: const Icon(
                         Icons.refresh,
@@ -996,7 +1025,10 @@ class CateringViewViewState extends State<CateringViewView> {
                         ),
                         errorText: showCustomerError ? customerErrorText : null,
                       ),
-                      value: selectedCustomer,
+                      value: (getCustomerByLocation.data ?? [])
+                              .any((c) => c.id == selectedCustomer)
+                          ? selectedCustomer
+                          : null,
                       items: (getCustomerByLocation.data ?? [])
                           .map<DropdownMenuItem<String>>(
                               (cus) => DropdownMenuItem<String>(
@@ -1036,7 +1068,10 @@ class CateringViewViewState extends State<CateringViewView> {
                         ),
                         errorText: showPackageError ? packageErrorText : null,
                       ),
-                      value: selectedPackage,
+                      value: (getPackageModel.data ?? [])
+                              .any((p) => p.id == selectedPackage)
+                          ? selectedPackage
+                          : null,
                       items: (getPackageModel.data ?? [])
                           .map<DropdownMenuItem<String>>(
                               (pack) => DropdownMenuItem<String>(
@@ -1065,8 +1100,7 @@ class CateringViewViewState extends State<CateringViewView> {
                   ),
                 ],
               ),
-
-              const SizedBox(height: 15),
+              if (selectedPackage != null) const SizedBox(height: 15),
 
               // ---------------- Row 3 ----------------
               Row(
@@ -1527,30 +1561,6 @@ class CateringViewViewState extends State<CateringViewView> {
                         ),
                       ),
                       const SizedBox(width: 12),
-
-                      // Add Button
-                      // SizedBox(
-                      //   width: 50,
-                      //   height: 50,
-                      //   child: ElevatedButton(
-                      //     onPressed: addPartialPayment,
-                      //     style: ElevatedButton.styleFrom(
-                      //       backgroundColor: Colors.green,
-                      //       padding: EdgeInsets.zero,
-                      //       shape: RoundedRectangleBorder(
-                      //         borderRadius: BorderRadius.circular(8),
-                      //       ),
-                      //     ),
-                      //     child: Text(
-                      //       '+',
-                      //       style: TextStyle(
-                      //         color: whiteColor,
-                      //         fontSize: 24,
-                      //         fontWeight: FontWeight.bold,
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
                       SizedBox(
                         width: 50,
                         height: 50,
@@ -1659,7 +1669,6 @@ class CateringViewViewState extends State<CateringViewView> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const SizedBox(width: 16),
                   Expanded(
                       child: TextFormField(
                     readOnly: true,
@@ -1769,49 +1778,101 @@ class CateringViewViewState extends State<CateringViewView> {
                       child: saveLoad
                           ? SpinKitCircle(color: appPrimaryColor, size: 30)
                           : ElevatedButton(
+                              // Replace your SAVE button's onPressed logic with this:
+
                               onPressed: () {
-                                final parsed = DateFormat("dd/MM/yyyy")
-                                    .parse(dateController.text);
-                                final backendDate =
-                                    DateFormat("yyyy-MM-dd").format(parsed);
-                                debugPrint("date:$backendDate");
-                                // if (getLocationModel.data!.locationName ==
-                                //     null) {
-                                //   showToast("Location not found", context,
-                                //       color: false);
-                                // } else if (selectedCategory == null) {
-                                //   showToast("Select Category", context,
-                                //       color: false);
-                                // } else if (selectedPayment == null) {
-                                //   showToast("Select payment method", context,
-                                //       color: false);
-                                // } else if (nameController.text.isEmpty) {
-                                //   showToast("Enter category name", context,
-                                //       color: false);
-                                // } else if (amountController.text.isEmpty) {
-                                //   showToast("Enter amount", context,
-                                //       color: false);
-                                // } else {
-                                //   setState(() {
-                                //     saveLoad = true;
-                                //     context.read<ExpenseBloc>().add(SaveExpense(
-                                //         backendDate,
-                                //         categoryId.toString(),
-                                //         nameController.text,
-                                //         selectedPayment == "Cash"
-                                //             ? "cash"
-                                //             : selectedPayment == "Card"
-                                //                 ? "card"
-                                //                 : selectedPayment == "UPI"
-                                //                     ? "upi"
-                                //                     : selectedPayment ==
-                                //                             "Bank Transfer"
-                                //                         ? "bank_transfer"
-                                //                         : "other",
-                                //         amountController.text,
-                                //         locationId.toString()));
-                                //   });
-                                // }
+                                if (!validateForm()) {
+                                  return;
+                                }
+
+                                if (selectedPaymentType == "Partially Paid") {
+                                  // Case 1: No payments added at all
+                                  if (partialPayments.isEmpty &&
+                                      (selectedPartialPaymentMode == null ||
+                                          partialPaidAmountController
+                                              .text.isEmpty)) {
+                                    showValidationSnackBar(
+                                        'Please add at least one partial payment');
+                                    return; // ⛔ STOP API
+                                  }
+
+                                  // Case 2: User typed but didn't click +
+                                  if (selectedPartialPaymentMode != null &&
+                                      partialPaidAmountController
+                                          .text.isNotEmpty) {
+                                    // Validate before auto-adding
+                                    double amount = double.tryParse(
+                                            partialPaidAmountController.text) ??
+                                        0.0;
+                                    double finalAmt =
+                                        double.tryParse(finalAmount.text) ??
+                                            0.0;
+                                    double totalPaid = partialPayments.fold(0.0,
+                                        (sum, p) => sum + (p['amount'] ?? 0.0));
+
+                                    if ((totalPaid + amount) > finalAmt) {
+                                      showValidationSnackBar(
+                                          'Paid amount (${totalPaid + amount}) exceeds final amount ($finalAmt). Please adjust.');
+                                      return; // ⛔ STOP API
+                                    }
+
+                                    // If valid, auto-add the payment
+                                    addPartialPayment();
+                                  }
+
+                                  // Case 3: Check if total paid matches final amount (optional strict validation)
+                                  double finalAmt =
+                                      double.tryParse(finalAmount.text) ?? 0.0;
+                                  double totalPaid = partialPayments.fold(0.0,
+                                      (sum, p) => sum + (p['amount'] ?? 0.0));
+
+                                  // Optional: Allow saving even with balance remaining
+                                  // Remove this block if you want to allow saving with balance
+                                  if (totalPaid < finalAmt) {
+                                    showValidationSnackBar(
+                                        'Balance amount remaining: ${finalAmt - totalPaid}. Please complete payment or adjust.');
+                                    return; // ⛔ STOP API
+                                  }
+                                }
+
+                                // Build payload and save
+                                final basePayload =
+                                    BookingPayloadHelper.buildCommonPayload(
+                                  locationId: locationId.toString(),
+                                  customerId: selectedCustomer!,
+                                  packageId: selectedPackage!,
+                                  date: dateController.text,
+                                  quantity: int.tryParse(quantity.text) ?? 1,
+                                  selectedItems: selectedItems,
+                                  selectedAddons: selectedAddons,
+                                  selectedDiscount: selectedDiscount.toString(),
+                                  packageAmount: packageAmount.text,
+                                  addonsAmount: addonsAmount.text,
+                                  totalAmount: totalAmount.text,
+                                  discountInput: discountAmount.text,
+                                  discountCalculated:
+                                      discountAmountCalculated.text,
+                                  finalAmount: finalAmount.text,
+                                  paidAmount: paidAmount.text,
+                                  balanceAmount: balanceAmount.text,
+                                );
+
+                                final payload =
+                                    BookingPayloadHelper.buildFinalPayload(
+                                  basePayload: basePayload,
+                                  paymentType: selectedPaymentType ?? "",
+                                  paymentMode: selectedPaymentMode,
+                                  partialPayments: partialPayments,
+                                );
+
+                                debugPrint("Payload:${jsonEncode(payload)}");
+
+                                setState(() {
+                                  saveLoad = true;
+                                  context.read<CateringBloc>().add(
+                                        SaveCatering(jsonEncode(payload)),
+                                      );
+                                });
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: appPrimaryColor,
@@ -2104,7 +2165,21 @@ class CateringViewViewState extends State<CateringViewView> {
                                                 Row(
                                                   children: [
                                                     InkWell(
-                                                      onTap: () {},
+                                                      onTap: () {
+                                                        setState(() {
+                                                          isEdit = true;
+                                                          cateringId = item.id
+                                                              .toString();
+                                                          debugPrint(
+                                                              "isEdit_$isEdit");
+                                                        });
+                                                        context
+                                                            .read<
+                                                                CateringBloc>()
+                                                            .add(CateringById(item
+                                                                .id
+                                                                .toString()));
+                                                      },
                                                       child: const Icon(
                                                           Icons.edit,
                                                           color:
@@ -2268,6 +2343,112 @@ class CateringViewViewState extends State<CateringViewView> {
           }
           return true;
         }
+        if (current is PostCateringBookingModel) {
+          postCateringBookingModel = current;
+          if (postCateringBookingModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (postCateringBookingModel.success == true) {
+            showToast("Catering Added Successfully", context, color: true);
+            context.read<CateringBloc>().add(CateringBooking(
+                searchController.text,
+                locationId ?? "",
+                cusIdFilter ?? "",
+                fromDate ?? "",
+                toDate ?? "",
+                offset,
+                rowsPerPage));
+            Future.delayed(Duration(milliseconds: 100), () {
+              clearCateringForm();
+            });
+            setState(() {
+              saveLoad = false;
+            });
+          } else {
+            setState(() {
+              saveLoad = false;
+            });
+          }
+          return true;
+        }
+        if (current is GetSingleCateringDetailsModel) {
+          final data = current.data;
+
+          if (current.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+
+          if (current.success == true && data != null) {
+            setState(() {
+              dateController.text = formatDate(data.date.toString());
+
+              // CUSTOMER
+              final customerId = data.customerId?.id;
+              if (customerId != null &&
+                  (getCustomerByLocation.data ?? [])
+                      .any((c) => c.id == customerId)) {
+                selectedCustomer = customerId;
+              }
+
+              //  PACKAGE
+              final packageId = data.packageId?.id;
+              if (packageId != null &&
+                  (getPackageModel.data ?? []).any((p) => p.id == packageId)) {
+                selectedPackage = packageId;
+              }
+
+              quantity.text = data.quantity.toString();
+
+              packageAmount.text = data.packageamount.toString();
+              addonsAmount.text = data.addonsamount.toString();
+              totalAmount.text = data.totalamount.toString();
+              discountAmountCalculated.text = data.discountamount.toString();
+              finalAmount.text = data.finalamount.toString();
+              paidAmount.text = data.paidamount.toString();
+              balanceAmount.text = data.balanceamount.toString();
+
+              selectedItems = (data.items ?? [])
+                  .map((i) => {
+                        "_id": i.id,
+                        "name": i.name,
+                      })
+                  .toList();
+
+              selectedAddons = (data.addons ?? [])
+                  .map((a) => {
+                        "_id": a.id,
+                        "name": a.name,
+                        "price": a.price,
+                      })
+                  .toList();
+
+              selectedDiscount = data.discounttype;
+              discountAmount.text = data.discountvalue.toString();
+
+              if (data.paymenttype == "PARTIALLY") {
+                selectedPaymentType = "Partially Paid";
+                partialPayments = (data.paymentdetails ?? [])
+                    .map<Map<String, dynamic>>((p) => {
+                          "mode": p.mode,
+                          "amount": p.amount,
+                        })
+                    .toList();
+              } else {
+                selectedPaymentType = "Fully Paid";
+                selectedPaymentMode = data.paymentmode;
+              }
+
+              cateringShowLoad = false;
+            });
+          } else {
+            setState(() => cateringShowLoad = false);
+          }
+
+          return true;
+        }
+
         return false;
       }),
       builder: (context, dynamic) {
