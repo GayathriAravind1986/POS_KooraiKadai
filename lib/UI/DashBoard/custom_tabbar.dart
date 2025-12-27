@@ -6,13 +6,16 @@ import 'package:simple/Bloc/Catering/catering_bloc.dart';
 import 'package:simple/Bloc/Report/report_bloc.dart';
 import 'package:simple/Bloc/StockIn/stock_in_bloc.dart';
 import 'package:simple/Bloc/demo/demo_bloc.dart';
+import 'package:simple/Bloc/Customer/customer_bloc.dart';
 import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
 import 'package:simple/UI/Catering/catering_booking.dart';
 import 'package:simple/UI/CustomAppBar/custom_appbar.dart';
+import 'package:simple/UI/Customer/customer.dart';
 import 'package:simple/UI/Home_screen/home_screen.dart';
 import 'package:simple/UI/Order/order_list.dart';
 import 'package:simple/UI/Order/order_tab_page.dart';
 import 'package:simple/UI/StockIn/stock_in.dart';
+import 'package:simple/UI/Customer/customer.dart';
 import '../Report/report_order.dart';
 
 class DashBoardScreen extends StatelessWidget {
@@ -53,23 +56,28 @@ class DashBoard extends StatefulWidget {
 
 class _DashBoardState extends State<DashBoard> {
   final GlobalKey<OrderViewViewState> orderAllTabKey =
-      GlobalKey<OrderViewViewState>();
+  GlobalKey<OrderViewViewState>();
   final GlobalKey<FoodOrderingScreenViewState> foodKey =
-      GlobalKey<FoodOrderingScreenViewState>();
+  GlobalKey<FoodOrderingScreenViewState>();
   final GlobalKey<ReportViewViewState> reportKey =
-      GlobalKey<ReportViewViewState>();
+  GlobalKey<ReportViewViewState>();
   final GlobalKey<StockViewViewState> stockKey =
-      GlobalKey<StockViewViewState>();
+  GlobalKey<StockViewViewState>();
   final GlobalKey<OrderTabViewViewState> orderTabKey =
-      GlobalKey<OrderTabViewViewState>();
+  GlobalKey<OrderTabViewViewState>();
   final GlobalKey<CateringViewViewState> cateringKey =
-      GlobalKey<CateringViewViewState>();
+  GlobalKey<CateringViewViewState>();
+  // Fixed: Use the correct ViewState type for Customers
+  final GlobalKey<CustomerViewViewState> customerKey =
+  GlobalKey<CustomerViewViewState>();
+
   int selectedIndex = 0;
   bool orderLoad = false;
   bool hasRefreshedOrder = false;
   bool hasRefreshedReport = false;
   bool hasRefreshedStock = false;
   bool hasRefreshedCatering = false;
+  bool hasRefreshedCustomer = false; // Added flag for customers
 
   @override
   void initState() {
@@ -83,8 +91,6 @@ class _DashBoardState extends State<DashBoard> {
     final orderTabState = orderTabKey.currentState;
     if (orderTabState != null) {
       orderTabState.resetSelections();
-    } else {
-      debugPrint("orderTabState is NULL — check if key is assigned properly");
     }
   }
 
@@ -99,8 +105,6 @@ class _DashBoardState extends State<DashBoard> {
     final foodKeyState = foodKey.currentState;
     if (foodKeyState != null) {
       foodKeyState.refreshHome();
-    } else {
-      debugPrint("foodKeyState is NULL — check if key is assigned properly");
     }
   }
 
@@ -108,8 +112,6 @@ class _DashBoardState extends State<DashBoard> {
     final reportKeyState = reportKey.currentState;
     if (reportKeyState != null) {
       reportKeyState.refreshReport();
-    } else {
-      debugPrint("reportKeyState is NULL — check if key is assigned properly");
     }
   }
 
@@ -117,8 +119,6 @@ class _DashBoardState extends State<DashBoard> {
     final stockKeyState = stockKey.currentState;
     if (stockKeyState != null) {
       stockKeyState.refreshStock();
-    } else {
-      debugPrint("reportKeyState is NULL — check if key is assigned properly");
     }
   }
 
@@ -126,9 +126,14 @@ class _DashBoardState extends State<DashBoard> {
     final cateringKeyState = cateringKey.currentState;
     if (cateringKeyState != null) {
       cateringKeyState.refreshCatering();
-    } else {
-      debugPrint(
-          "cateringKeyState is NULL — check if key is assigned properly");
+    }
+  }
+
+  // Added refresh logic for customers
+  void _refreshCustomer() {
+    final customerKeyState = customerKey.currentState;
+    if (customerKeyState != null) {
+      customerKeyState.refreshCustomer();
     }
   }
 
@@ -147,6 +152,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedReport = false;
               hasRefreshedStock = false;
               hasRefreshedCatering = false;
+              hasRefreshedCustomer = false;
               WidgetsBinding.instance
                   .addPostFrameCallback((_) => _refreshHome());
             }
@@ -155,6 +161,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedReport = false;
               hasRefreshedStock = false;
               hasRefreshedCatering = false;
+              hasRefreshedCustomer = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshOrders();
                 _resetOrderTab();
@@ -165,6 +172,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedReport = true;
               hasRefreshedStock = false;
               hasRefreshedCatering = false;
+              hasRefreshedCustomer = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshReport();
               });
@@ -174,6 +182,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedReport = false;
               hasRefreshedStock = true;
               hasRefreshedCatering = false;
+              hasRefreshedCustomer = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshStock();
               });
@@ -183,8 +192,20 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedReport = false;
               hasRefreshedStock = false;
               hasRefreshedCatering = true;
+              hasRefreshedCustomer = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshCatering();
+              });
+            }
+            // Fixed logic for index 5 (Customers)
+            if (index == 5 && !hasRefreshedCustomer) {
+              hasRefreshedOrder = false;
+              hasRefreshedReport = false;
+              hasRefreshedStock = false;
+              hasRefreshedCatering = false;
+              hasRefreshedCustomer = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _refreshCustomer();
               });
             }
           },
@@ -197,22 +218,22 @@ class _DashBoardState extends State<DashBoard> {
           children: [
             hasRefreshedOrder == true
                 ? BlocProvider(
-                    create: (_) => FoodCategoryBloc(),
-                    child: FoodOrderingScreenView(
-                      key: foodKey,
-                      existingOrder: widget.existingOrder,
-                      isEditingOrder: widget.isEditingOrder,
-                      hasRefreshedOrder: hasRefreshedOrder,
-                    ))
+                create: (_) => FoodCategoryBloc(),
+                child: FoodOrderingScreenView(
+                  key: foodKey,
+                  existingOrder: widget.existingOrder,
+                  isEditingOrder: widget.isEditingOrder,
+                  hasRefreshedOrder: hasRefreshedOrder,
+                ))
                 : BlocProvider(
-                    create: (_) => FoodCategoryBloc(),
-                    child: FoodOrderingScreen(
-                      key: foodKey,
-                      existingOrder: widget.existingOrder,
-                      isEditingOrder: widget.isEditingOrder,
-                      hasRefreshedOrder: hasRefreshedOrder,
-                    ),
-                  ),
+              create: (_) => FoodCategoryBloc(),
+              child: FoodOrderingScreen(
+                key: foodKey,
+                existingOrder: widget.existingOrder,
+                isEditingOrder: widget.isEditingOrder,
+                hasRefreshedOrder: hasRefreshedOrder,
+              ),
+            ),
             OrdersTabbedScreen(
               key: PageStorageKey('OrdersTabbedScreen'),
               orderAllKey: orderAllTabKey,
@@ -220,46 +241,61 @@ class _DashBoardState extends State<DashBoard> {
             ),
             hasRefreshedReport == true
                 ? BlocProvider(
-                    create: (_) => ReportTodayBloc(),
-                    child: ReportViewView(
-                      key: reportKey,
-                      hasRefreshedReport: hasRefreshedReport,
-                    ))
+                create: (_) => ReportTodayBloc(),
+                child: ReportViewView(
+                  key: reportKey,
+                  hasRefreshedReport: hasRefreshedReport,
+                ))
                 : BlocProvider(
-                    create: (_) => ReportTodayBloc(),
-                    child: ReportView(
-                      key: reportKey,
-                      hasRefreshedReport: hasRefreshedReport,
-                    ),
-                  ),
+              create: (_) => ReportTodayBloc(),
+              child: ReportView(
+                key: reportKey,
+                hasRefreshedReport: hasRefreshedReport,
+              ),
+            ),
             hasRefreshedStock == true
                 ? BlocProvider(
-                    create: (_) => StockInBloc(),
-                    child: StockViewView(
-                      key: stockKey,
-                      hasRefreshedStock: hasRefreshedStock,
-                    ))
+                create: (_) => StockInBloc(),
+                child: StockViewView(
+                  key: stockKey,
+                  hasRefreshedStock: hasRefreshedStock,
+                ))
                 : BlocProvider(
-                    create: (_) => StockInBloc(),
-                    child: StockView(
-                      key: stockKey,
-                      hasRefreshedStock: hasRefreshedStock,
-                    ),
-                  ),
+              create: (_) => StockInBloc(),
+              child: StockView(
+                key: stockKey,
+                hasRefreshedStock: hasRefreshedStock,
+              ),
+            ),
             hasRefreshedCatering == true
                 ? BlocProvider(
-                    create: (_) => CateringBloc(),
-                    child: CateringViewView(
-                      key: cateringKey,
-                      hasRefreshedCatering: hasRefreshedCatering,
-                    ))
+                create: (_) => CateringBloc(),
+                child: CateringViewView(
+                  key: cateringKey,
+                  hasRefreshedCatering: hasRefreshedCatering,
+                ))
                 : BlocProvider(
-                    create: (_) => CateringBloc(),
-                    child: CateringView(
-                      key: cateringKey,
-                      hasRefreshedCatering: hasRefreshedCatering,
-                    ),
-                  ),
+              create: (_) => CateringBloc(),
+              child: CateringView(
+                key: cateringKey,
+                hasRefreshedCatering: hasRefreshedCatering,
+              ),
+            ),
+            // Fixed: Customer Tab logic (Index 5)
+            hasRefreshedCustomer == true
+                ? BlocProvider(
+                create: (_) => CustomerBloc(),
+                child: CustomerViewView(
+                  key: customerKey,
+                  hasRefreshedCustomer: hasRefreshedCustomer,
+                ))
+                : BlocProvider(
+              create: (_) => CustomerBloc(),
+              child: CustomerView(
+                key: customerKey,
+                hasRefreshedCustomer: hasRefreshedCustomer,
+              ),
+            ),
           ],
         ),
       ),
