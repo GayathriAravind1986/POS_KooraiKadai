@@ -15,7 +15,6 @@ import 'package:simple/UI/Home_screen/home_screen.dart';
 import 'package:simple/UI/Order/order_list.dart';
 import 'package:simple/UI/Order/order_tab_page.dart';
 import 'package:simple/UI/StockIn/stock_in.dart';
-import 'package:simple/UI/Customer/customer.dart';
 import '../Report/report_order.dart';
 
 class DashBoardScreen extends StatelessWidget {
@@ -67,9 +66,10 @@ class _DashBoardState extends State<DashBoard> {
   GlobalKey<OrderTabViewViewState>();
   final GlobalKey<CateringViewViewState> cateringKey =
   GlobalKey<CateringViewViewState>();
-  // Fixed: Use the correct ViewState type for Customers
   final GlobalKey<CustomerViewViewState> customerKey =
   GlobalKey<CustomerViewViewState>();
+  final GlobalKey<CateringViewViewState> cateringBookingKey =
+  GlobalKey<CateringViewViewState>();
 
   int selectedIndex = 0;
   bool orderLoad = false;
@@ -77,7 +77,8 @@ class _DashBoardState extends State<DashBoard> {
   bool hasRefreshedReport = false;
   bool hasRefreshedStock = false;
   bool hasRefreshedCatering = false;
-  bool hasRefreshedCustomer = false; // Added flag for customers
+  bool hasRefreshedCustomer = false;
+  bool hasRefreshedCateringBooking = false; // Added for catering booking
 
   @override
   void initState() {
@@ -129,11 +130,18 @@ class _DashBoardState extends State<DashBoard> {
     }
   }
 
-  // Added refresh logic for customers
   void _refreshCustomer() {
     final customerKeyState = customerKey.currentState;
     if (customerKeyState != null) {
       customerKeyState.refreshCustomer();
+    }
+  }
+
+  // Added refresh logic for catering booking
+  void _refreshCateringBooking() {
+    final cateringBookingKeyState = cateringBookingKey.currentState;
+    if (cateringBookingKeyState != null) {
+      cateringBookingKeyState.refreshCatering();
     }
   }
 
@@ -147,66 +155,58 @@ class _DashBoardState extends State<DashBoard> {
             setState(() {
               selectedIndex = index;
             });
-            if (index == 0 && !hasRefreshedOrder) {
-              hasRefreshedOrder = true;
-              hasRefreshedReport = false;
-              hasRefreshedStock = false;
-              hasRefreshedCatering = false;
-              hasRefreshedCustomer = false;
-              WidgetsBinding.instance
-                  .addPostFrameCallback((_) => _refreshHome());
-            }
-            if (index == 1) {
-              hasRefreshedOrder = false;
-              hasRefreshedReport = false;
-              hasRefreshedStock = false;
-              hasRefreshedCatering = false;
-              hasRefreshedCustomer = false;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _refreshOrders();
-                _resetOrderTab();
-              });
-            }
-            if (index == 2 && !hasRefreshedReport) {
-              hasRefreshedOrder = false;
-              hasRefreshedReport = true;
-              hasRefreshedStock = false;
-              hasRefreshedCatering = false;
-              hasRefreshedCustomer = false;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _refreshReport();
-              });
-            }
-            if (index == 3 && !hasRefreshedStock) {
-              hasRefreshedOrder = false;
-              hasRefreshedReport = false;
-              hasRefreshedStock = true;
-              hasRefreshedCatering = false;
-              hasRefreshedCustomer = false;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _refreshStock();
-              });
-            }
-            if (index == 4 && !hasRefreshedCatering) {
-              hasRefreshedOrder = false;
-              hasRefreshedReport = false;
-              hasRefreshedStock = false;
-              hasRefreshedCatering = true;
-              hasRefreshedCustomer = false;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _refreshCatering();
-              });
-            }
-            // Fixed logic for index 5 (Customers)
-            if (index == 5 && !hasRefreshedCustomer) {
-              hasRefreshedOrder = false;
-              hasRefreshedReport = false;
-              hasRefreshedStock = false;
-              hasRefreshedCatering = false;
-              hasRefreshedCustomer = true;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _refreshCustomer();
-              });
+
+            // Reset all refresh flags
+            hasRefreshedOrder = false;
+            hasRefreshedReport = false;
+            hasRefreshedStock = false;
+            hasRefreshedCatering = false;
+            hasRefreshedCustomer = false;
+            hasRefreshedCateringBooking = false;
+
+            // Set the appropriate flag and trigger refresh
+            switch (index) {
+              case 0: // Home
+                hasRefreshedOrder = true;
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _refreshHome());
+                break;
+              case 1: // Orders
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshOrders();
+                  _resetOrderTab();
+                });
+                break;
+              case 2: // Report
+                hasRefreshedReport = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshReport();
+                });
+                break;
+              case 3: // Stockin
+                hasRefreshedStock = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshStock();
+                });
+                break;
+              case 4: // Catering (Main Catering page)
+                hasRefreshedCatering = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshCatering();
+                });
+                break;
+              case 5: // Customers
+                hasRefreshedCustomer = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshCustomer();
+                });
+                break;
+              case 6: // Catering Booking (New page)
+                hasRefreshedCateringBooking = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshCateringBooking();
+                });
+                break;
             }
           },
           onLogout: () {
@@ -216,6 +216,7 @@ class _DashBoardState extends State<DashBoard> {
         body: IndexedStack(
           index: selectedIndex,
           children: [
+            // Index 0: Home
             hasRefreshedOrder == true
                 ? BlocProvider(
                 create: (_) => FoodCategoryBloc(),
@@ -234,11 +235,15 @@ class _DashBoardState extends State<DashBoard> {
                 hasRefreshedOrder: hasRefreshedOrder,
               ),
             ),
+
+            // Index 1: Orders
             OrdersTabbedScreen(
               key: PageStorageKey('OrdersTabbedScreen'),
               orderAllKey: orderAllTabKey,
               orderResetKey: orderTabKey,
             ),
+
+            // Index 2: Report
             hasRefreshedReport == true
                 ? BlocProvider(
                 create: (_) => ReportTodayBloc(),
@@ -253,6 +258,8 @@ class _DashBoardState extends State<DashBoard> {
                 hasRefreshedReport: hasRefreshedReport,
               ),
             ),
+
+            // Index 3: Stockin
             hasRefreshedStock == true
                 ? BlocProvider(
                 create: (_) => StockInBloc(),
@@ -267,6 +274,8 @@ class _DashBoardState extends State<DashBoard> {
                 hasRefreshedStock: hasRefreshedStock,
               ),
             ),
+
+            // Index 4: Catering (Main page)
             hasRefreshedCatering == true
                 ? BlocProvider(
                 create: (_) => CateringBloc(),
@@ -281,7 +290,8 @@ class _DashBoardState extends State<DashBoard> {
                 hasRefreshedCatering: hasRefreshedCatering,
               ),
             ),
-            // Fixed: Customer Tab logic (Index 5)
+
+            // Index 5: Customers
             hasRefreshedCustomer == true
                 ? BlocProvider(
                 create: (_) => CustomerBloc(),
@@ -294,6 +304,23 @@ class _DashBoardState extends State<DashBoard> {
               child: CustomerView(
                 key: customerKey,
                 hasRefreshedCustomer: hasRefreshedCustomer,
+              ),
+            ),
+
+            // Index 6: Catering Booking (New page)
+            // Note: You need to create this CateringBooking widget
+            hasRefreshedCateringBooking == true
+                ? BlocProvider(
+                create: (_) => CateringBloc(), // Or create a new bloc
+                child: CateringViewView(
+                  key: cateringBookingKey,
+                  hasRefreshedCatering: hasRefreshedCateringBooking,
+                ))
+                : BlocProvider(
+              create: (_) => CateringBloc(), // Or create a new bloc
+              child: CateringView(
+                key: cateringBookingKey,
+                hasRefreshedCatering: hasRefreshedCateringBooking,
               ),
             ),
           ],

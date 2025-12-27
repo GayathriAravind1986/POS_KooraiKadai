@@ -12,6 +12,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final Function(int) onTabSelected;
   final VoidCallback onLogout;
+
   const CustomAppBar({
     super.key,
     required this.selectedIndex,
@@ -39,6 +40,7 @@ class CustomAppBarView extends StatefulWidget {
   final int selectedIndex;
   final Function(int) onTabSelected;
   final VoidCallback onLogout;
+
   const CustomAppBarView({
     super.key,
     required this.selectedIndex,
@@ -51,9 +53,14 @@ class CustomAppBarView extends StatefulWidget {
 }
 
 class CustomAppBarViewState extends State<CustomAppBarView> {
-  GetStockMaintanencesModel getStockMaintanencesModel =
-      GetStockMaintanencesModel();
+  GetStockMaintanencesModel getStockMaintanencesModel = GetStockMaintanencesModel();
   bool stockLoad = false;
+
+  // Track dropdown state
+  bool _isCateringDropdownOpen = false;
+  final GlobalKey _cateringButtonKey = GlobalKey();
+  OverlayEntry? _dropdownOverlay;
+
   @override
   void initState() {
     super.initState();
@@ -65,12 +72,107 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
 
   @override
   void dispose() {
+    _removeDropdownOverlay();
     super.dispose();
+  }
+
+  void _removeDropdownOverlay() {
+    _dropdownOverlay?.remove();
+    _dropdownOverlay = null;
+    setState(() {
+      _isCateringDropdownOpen = false;
+    });
+  }
+
+  void _toggleCateringDropdown() {
+    if (_isCateringDropdownOpen) {
+      _removeDropdownOverlay();
+    } else {
+      _showDropdownOverlay();
+    }
+  }
+
+  void _showDropdownOverlay() {
+    final RenderBox? renderBox = _cateringButtonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    _dropdownOverlay = OverlayEntry(
+      builder: (context) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => _removeDropdownOverlay(),
+        child: Stack(
+          children: [
+            Positioned(
+              left: offset.dx,
+              top: offset.dy + size.height,
+              child: GestureDetector(
+                onTap: () {}, // Prevent closing when tapping inside dropdown
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Customers option
+                        _buildDropdownItem(
+                          icon: Icons.people_outline,
+                          label: "Customers",
+                          onTap: () {
+                            widget.onTabSelected(5);
+                            _removeDropdownOverlay();
+                          },
+                          isSelected: widget.selectedIndex == 5,
+                        ),
+                        // Divider
+                        const Divider(height: 1, color: Colors.grey),
+                        // Catering Booking option
+                        _buildDropdownItem(
+                          icon: Icons.calendar_today_outlined,
+                          label: "Catering Booking",
+                          onTap: () {
+                            widget.onTabSelected(6);
+                            _removeDropdownOverlay();
+                          },
+                          isSelected: widget.selectedIndex == 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_dropdownOverlay!);
+    setState(() {
+      _isCateringDropdownOpen = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
     Widget mainContainer() {
       return AppBar(
         backgroundColor: whiteColor,
@@ -78,9 +180,8 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
         automaticallyImplyLeading: false,
         title: LayoutBuilder(
           builder: (context, constraints) {
-            // Determine if we need compact mode based on available width
             final isCompactMode = constraints.maxWidth < 600;
-            debugPrint("layoutidth:$isCompactMode");
+
             return Row(
               children: [
                 // Store/Restaurant Name
@@ -137,8 +238,7 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           isCompact: isCompactMode,
                         ),
                         SizedBox(width: isCompactMode ? 8 : 16),
-                        if (getStockMaintanencesModel.data?.stockMaintenance ==
-                            true) ...[
+                        if (getStockMaintanencesModel.data?.stockMaintenance == true) ...[
                           _buildNavButton(
                             icon: Icons.inventory,
                             label: "Stockin",
@@ -149,23 +249,9 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           ),
                           SizedBox(width: isCompactMode ? 8 : 16),
                         ],
-                        _buildNavButton(
-                          icon: Icons.restaurant,
-                          label: "Catering",
-                          index: 4,
-                          isSelected: widget.selectedIndex == 4,
-                          onPressed: () => widget.onTabSelected(4),
-                          isCompact: isCompactMode,
-                        ),
+                        // Catering dropdown button
+                        _buildCateringDropdownButton(isCompactMode),
                         SizedBox(width: isCompactMode ? 8 : 16),
-                        _buildNavButton(
-                          icon: Icons.people,
-                          label: "Customers",
-                          index: 5,
-                          isSelected: widget.selectedIndex == 5,
-                          onPressed: () => widget.onTabSelected(5),
-                          isCompact: isCompactMode,
-                        ),
                       ],
                     ),
                   ),
@@ -185,135 +271,6 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
           ),
         ],
       );
-      //   AppBar(
-      //   backgroundColor: whiteColor,
-      //   elevation: 0,
-      //   automaticallyImplyLeading: false,
-      //   title: Container(
-      //     margin: EdgeInsets.only(left: 10),
-      //     child: Row(
-      //       children: [
-      //         getStockMaintanencesModel.data?.name != null
-      //             ? Text(
-      //                 getStockMaintanencesModel.data!.name.toString(),
-      //                 style: TextStyle(
-      //                   fontSize: 20,
-      //                   fontWeight: FontWeight.bold,
-      //                   color: appPrimaryColor,
-      //                 ),
-      //               )
-      //             : Text(""),
-      //         SizedBox(width: size.width * 0.2),
-      //         Row(
-      //           children: [
-      //             TextButton.icon(
-      //               onPressed: () => widget.onTabSelected(0),
-      //               icon: Icon(
-      //                 Icons.home_outlined,
-      //                 size: 30,
-      //                 color: widget.selectedIndex == 0
-      //                     ? appPrimaryColor
-      //                     : greyColor,
-      //               ),
-      //               label: Text(
-      //                 "Home",
-      //                 style: MyTextStyle.f16(
-      //                   weight: FontWeight.bold,
-      //                   widget.selectedIndex == 0 ? appPrimaryColor : greyColor,
-      //                 ),
-      //               ),
-      //             ),
-      //             SizedBox(width: 16),
-      //             TextButton.icon(
-      //               onPressed: () => widget.onTabSelected(1),
-      //               icon: Icon(
-      //                 Icons.shopping_cart_outlined,
-      //                 size: 30,
-      //                 color: widget.selectedIndex == 1
-      //                     ? appPrimaryColor
-      //                     : greyColor,
-      //               ),
-      //               label: Text(
-      //                 "Orders",
-      //                 style: MyTextStyle.f16(
-      //                   weight: FontWeight.bold,
-      //                   widget.selectedIndex == 1 ? appPrimaryColor : greyColor,
-      //                 ),
-      //               ),
-      //             ),
-      //             SizedBox(width: 16),
-      //             TextButton.icon(
-      //               onPressed: () => widget.onTabSelected(2),
-      //               icon: Icon(
-      //                 Icons.note_alt_outlined,
-      //                 size: 30,
-      //                 color: widget.selectedIndex == 2
-      //                     ? appPrimaryColor
-      //                     : greyColor,
-      //               ),
-      //               label: Text(
-      //                 "Report",
-      //                 style: MyTextStyle.f16(
-      //                   weight: FontWeight.bold,
-      //                   widget.selectedIndex == 2 ? appPrimaryColor : greyColor,
-      //                 ),
-      //               ),
-      //             ),
-      //             SizedBox(width: 16),
-      //             (getStockMaintanencesModel.data?.stockMaintenance == true)
-      //                 ? TextButton.icon(
-      //                     onPressed: () => widget.onTabSelected(3),
-      //                     icon: Icon(
-      //                       Icons.inventory,
-      //                       size: 30,
-      //                       color: widget.selectedIndex == 3
-      //                           ? appPrimaryColor
-      //                           : greyColor,
-      //                     ),
-      //                     label: Text(
-      //                       "Stockin",
-      //                       style: MyTextStyle.f16(
-      //                         weight: FontWeight.bold,
-      //                         widget.selectedIndex == 3
-      //                             ? appPrimaryColor
-      //                             : greyColor,
-      //                       ),
-      //                     ),
-      //                   )
-      //                 : Container(),
-      //             SizedBox(width: 16),
-      //             TextButton.icon(
-      //               onPressed: () => widget.onTabSelected(4),
-      //               icon: Icon(
-      //                 Icons.restaurant,
-      //                 size: 30,
-      //                 color: widget.selectedIndex == 4
-      //                     ? appPrimaryColor
-      //                     : greyColor,
-      //               ),
-      //               label: Text(
-      //                 "Catering",
-      //                 style: MyTextStyle.f16(
-      //                   weight: FontWeight.bold,
-      //                   widget.selectedIndex == 4 ? appPrimaryColor : greyColor,
-      //                 ),
-      //               ),
-      //             ),
-      //           ],
-      //         ),
-      //       ],
-      //     ),
-      //   ),
-      //   actions: [
-      //     Container(
-      //       padding: EdgeInsets.only(right: 20),
-      //       child: IconButton(
-      //         icon: Icon(Icons.logout, color: appPrimaryColor),
-      //         onPressed: widget.onLogout,
-      //       ),
-      //     ),
-      //   ],
-      // );
     }
 
     return BlocBuilder<FoodCategoryBloc, dynamic>(
@@ -341,6 +298,46 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
       builder: (context, dynamic) {
         return mainContainer();
       },
+    );
+  }
+
+  Widget _buildCateringDropdownButton(bool isCompactMode) {
+    final isCateringSelected = widget.selectedIndex == 5 || widget.selectedIndex == 6;
+
+    return Container(
+      key: _cateringButtonKey,
+      child: TextButton.icon(
+        onPressed: _toggleCateringDropdown,
+        icon: Icon(
+          Icons.restaurant,
+          size: 24,
+          color: isCateringSelected ? appPrimaryColor : greyColor,
+        ),
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Catering",
+              style: MyTextStyle.f16(
+                weight: FontWeight.bold,
+                isCateringSelected ? appPrimaryColor : greyColor,
+              ).copyWith(fontSize: 15),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              _isCateringDropdownOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+              size: 20,
+              color: isCateringSelected ? appPrimaryColor : greyColor,
+            ),
+          ],
+        ),
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompactMode ? 4 : 6,
+            vertical: 8,
+          ),
+        ),
+      ),
     );
   }
 
@@ -375,15 +372,50 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
     );
   }
 
+  Widget _buildDropdownItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isSelected,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? appPrimaryColor.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected ? appPrimaryColor : greyColor,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: MyTextStyle.f14(
+                weight: FontWeight.w500,
+                isSelected ? appPrimaryColor : greyColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _handle401Error() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     await sharedPreferences.remove("token");
     await sharedPreferences.clear();
     showToast("Session expired. Please login again.", context, color: false);
-
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => LoginScreen()),
-      (Route<dynamic> route) => false,
+          (Route<dynamic> route) => false,
     );
   }
 }
