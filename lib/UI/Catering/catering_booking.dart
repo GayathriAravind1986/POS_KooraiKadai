@@ -61,6 +61,10 @@ class CateringViewViewState extends State<CateringViewView> {
   final TextEditingController addonsAmount = TextEditingController();
   final TextEditingController finalAmount = TextEditingController();
   final TextEditingController balanceAmount = TextEditingController();
+  final TextEditingController paidAmount = TextEditingController();
+  final TextEditingController totalAmount = TextEditingController();
+  final TextEditingController discountAmountCalculated =
+      TextEditingController();
 
   List<Map<String, dynamic>> partialPayments = [];
   String? selectedPartialPaymentMode;
@@ -159,12 +163,14 @@ class CateringViewViewState extends State<CateringViewView> {
   bool showDiscountError = false;
   bool showPaymentTypeError = false;
   bool showPaymentModeError = false;
+  bool canAddPartialPayment = false;
 
   String? customerErrorText;
   String? packageErrorText;
   String? discountErrorText;
   String? paymentTypeErrorText;
   String? paymentModeErrorText;
+  String? paidAmountError;
 
   final List<String> discountType = ['Fixed', 'Percentage'];
   final List<String> paymentType = ['Fully Paid', 'Partially Paid'];
@@ -455,65 +461,58 @@ class CateringViewViewState extends State<CateringViewView> {
   double packagePrice = 0.0;
 
   void calculateTotals() {
-    // Get package price and quantity
     double packagePrice = 0.0;
     int qty = int.tryParse(quantity.text) ?? 1;
 
     if (selectedPackage != null && getPackageModel.data != null) {
-      var selectedPack = getPackageModel.data!.firstWhere(
-        (pack) => pack.id == selectedPackage,
-        orElse: () => getPackageModel.data!.first,
-      );
-      packagePrice = (selectedPack.price ?? 0).toDouble();
+      var pack =
+          getPackageModel.data!.firstWhere((p) => p.id == selectedPackage);
+      packagePrice = (pack.price ?? 0).toDouble();
     }
 
-    // Calculate package amount (price * quantity)
+    // 1️⃣ Package Amount
     double packageTotal = packagePrice * qty;
-    packageAmount.text = packageTotal.toStringAsFixed(2);
+    packageAmount.text = packageTotal.toStringAsFixed(0);
 
-    // Calculate addons amount (only paid addons) * quantity
-    double addonsPricePerUnit = 0.0;
+    // 2️⃣ Addon Amount
+    double addonsPerUnit = 0;
     for (var addon in selectedAddons) {
       if (addon['isFree'] != true) {
-        addonsPricePerUnit += (addon['price'] ?? 0).toDouble();
+        addonsPerUnit += (addon['price'] ?? 0).toDouble();
       }
     }
-    // Multiply addons by quantity
-    double addonsTotal = addonsPricePerUnit * qty;
-    addonsAmount.text = addonsTotal.toStringAsFixed(2);
+    double addonsTotal = addonsPerUnit * qty;
+    addonsAmount.text = addonsTotal.toStringAsFixed(0);
 
-    // Calculate subtotal (package + addons)
-    double subtotal = packageTotal + addonsTotal;
+    // 3️⃣ Total Amount ✅ (FIXED)
+    double total = packageTotal + addonsTotal;
+    totalAmount.text = total.toStringAsFixed(0);
 
-    // Calculate discount
-    double discountValue = 0.0;
-    double discountAmt = double.tryParse(discountAmount.text) ?? 0.0;
+    // 4️⃣ Discount
+    double discountInput = double.tryParse(discountAmount.text) ?? 0;
 
-    if (selectedDiscount == 'Fixed') {
-      // Fixed discount
-      discountValue = discountAmt;
-    } else if (selectedDiscount == 'Percentage') {
-      // Percentage discount
-      discountValue = (subtotal * discountAmt) / 100;
-    }
+    double discountValue = selectedDiscount == 'Fixed'
+        ? discountInput
+        : (total * discountInput) / 100;
 
-    // Calculate final amount
-    double finalTotal = subtotal - discountValue;
-    finalAmount.text = finalTotal.toStringAsFixed(2);
+    discountAmountCalculated.text = discountValue.toStringAsFixed(0);
 
-    // Calculate balance amount based on payment type
+    // 5️⃣ Final Amount
+    double finalTotal = total - discountValue;
+    finalAmount.text = finalTotal.toStringAsFixed(0);
+
+    // 6️⃣ Payment Logic
     if (selectedPaymentType == 'Fully Paid') {
+      paidAmount.text = finalTotal.toStringAsFixed(0);
       balanceAmount.text = "0";
-    } else if (selectedPaymentType == 'Partially Paid') {
-      // Calculate total paid amount from partial payments
-      double totalPaid = 0.0;
-      for (var payment in partialPayments) {
-        totalPaid += payment['amount'] ?? 0.0;
-      }
-      double balance = finalTotal - totalPaid;
-      balanceAmount.text = balance.toStringAsFixed(2);
     } else {
-      balanceAmount.text = finalTotal.toStringAsFixed(2);
+      double totalPaid = partialPayments.fold(
+        0.0,
+        (sum, p) => sum + (p['amount'] ?? 0),
+      );
+
+      paidAmount.text = totalPaid.toStringAsFixed(0);
+      balanceAmount.text = (finalTotal - totalPaid).toStringAsFixed(0);
     }
 
     setState(() {});
@@ -524,65 +523,76 @@ class CateringViewViewState extends State<CateringViewView> {
     int qty = int.tryParse(quantity.text) ?? 1;
 
     if (selectedPackage != null && getPackageModel.data != null) {
-      var selectedPack = getPackageModel.data!.firstWhere(
-        (pack) => pack.id == selectedPackage,
-        orElse: () => getPackageModel.data!.first,
-      );
-      packagePrice = (selectedPack.price ?? 0).toDouble();
+      var pack =
+          getPackageModel.data!.firstWhere((p) => p.id == selectedPackage);
+      packagePrice = (pack.price ?? 0).toDouble();
     }
 
-    // Calculate package amount (price * quantity)
+    // 1️⃣ Package Amount
     double packageTotal = packagePrice * qty;
-    packageAmount.text = packageTotal.toStringAsFixed(2);
+    packageAmount.text = packageTotal.toStringAsFixed(0);
 
-    // Calculate addons amount (only paid addons) * quantity
-    double addonsPricePerUnit = 0.0;
+    // 2️⃣ Addon Amount
+    double addonsPerUnit = 0.0;
     for (var addon in selectedAddons) {
       if (addon['isFree'] != true) {
-        addonsPricePerUnit += (addon['price'] ?? 0).toDouble();
+        addonsPerUnit += (addon['price'] ?? 0).toDouble();
       }
     }
-    double addonsTotal = addonsPricePerUnit * qty;
-    addonsAmount.text = addonsTotal.toStringAsFixed(2);
+    double addonsTotal = addonsPerUnit * qty;
+    addonsAmount.text = addonsTotal.toStringAsFixed(0);
 
-    // Calculate subtotal (package + addons)
-    double subtotal = packageTotal + addonsTotal;
+    // 3️⃣ Total Amount
+    double total = packageTotal + addonsTotal;
+    totalAmount.text = total.toStringAsFixed(0);
 
-    // Calculate discount
-    double discountValue = 0.0;
-    double discountAmt = double.tryParse(discountAmount.text) ?? 0.0;
+    // 4️⃣ Discount
+    double discountInput = double.tryParse(discountAmount.text) ?? 0.0;
 
-    if (selectedDiscount == 'Fixed') {
-      discountValue = discountAmt;
-    } else if (selectedDiscount == 'Percentage') {
-      discountValue = (subtotal * discountAmt) / 100;
-    }
+    double discountValue = selectedDiscount == 'Fixed'
+        ? discountInput
+        : (total * discountInput) / 100;
 
-    // Calculate final amount
-    double finalTotal = subtotal - discountValue;
-    finalAmount.text = finalTotal.toStringAsFixed(2);
+    discountAmountCalculated.text = discountValue.toStringAsFixed(0);
 
-    // Calculate balance amount including current input
+    // 5️⃣ Final Amount
+    double finalTotal = total - discountValue;
+    finalAmount.text = finalTotal.toStringAsFixed(0);
+
+    // 6️⃣ Paid & Balance
+    // 6️⃣ Paid & Balance
     if (selectedPaymentType == 'Fully Paid') {
+      paidAmount.text = finalTotal.toStringAsFixed(0);
       balanceAmount.text = "0";
     } else if (selectedPaymentType == 'Partially Paid') {
-      // Calculate total paid from already added payments
-      double totalPaid = 0.0;
-      for (var payment in partialPayments) {
-        totalPaid += payment['amount'] ?? 0.0;
+      double alreadyPaid = partialPayments.fold(
+        0.0,
+        (sum, p) => sum + (p['amount'] ?? 0.0),
+      );
+
+      double current = double.tryParse(partialPaidAmountController.text) ?? 0.0;
+
+      double totalPaid = alreadyPaid + current;
+
+      if (totalPaid > finalTotal) {
+        // ❌ ERROR CONDITION
+        paidAmountError = "Amount exceeds final amount";
+
+        // keep last valid values
+        paidAmount.text = alreadyPaid.toStringAsFixed(0);
+        balanceAmount.text = (finalTotal - alreadyPaid).toStringAsFixed(0);
+      } else {
+        // ✅ VALID
+        paidAmountError = null;
+
+        paidAmount.text = totalPaid.toStringAsFixed(0);
+        balanceAmount.text = (finalTotal - totalPaid).toStringAsFixed(0);
       }
-
-      // Add the current input amount (even if not yet added to the list)
-      double currentInputAmount =
-          double.tryParse(partialPaidAmountController.text) ?? 0.0;
-      totalPaid += currentInputAmount;
-
-      double balance = finalTotal - totalPaid;
-      balanceAmount.text = balance.toStringAsFixed(2);
-    } else {
-      balanceAmount.text = finalTotal.toStringAsFixed(2);
     }
-
+    canAddPartialPayment = selectedPaymentType == 'Partially Paid' &&
+        paidAmountError == null &&
+        balanceAmount.text != "0" &&
+        partialPaidAmountController.text.isNotEmpty;
     setState(() {});
   }
 
@@ -632,6 +642,21 @@ class CateringViewViewState extends State<CateringViewView> {
     setState(() {
       selectedPartialPaymentMode = null;
       partialPaidAmountController.clear();
+      paidAmountError = null;
+
+      // Recalculate paid & balance WITHOUT current typing
+      double finalTotal = double.tryParse(finalAmount.text) ?? 0.0;
+
+      double alreadyPaid = partialPayments.fold(
+        0.0,
+        (sum, p) => sum + (p['amount'] ?? 0.0),
+      );
+
+      paidAmount.text = alreadyPaid.toStringAsFixed(0);
+      balanceAmount.text = (finalTotal - alreadyPaid).toStringAsFixed(0);
+
+      // Re-enable add button if balance exists
+      canAddPartialPayment = (finalTotal - alreadyPaid) > 0;
     });
   }
 
@@ -796,6 +821,10 @@ class CateringViewViewState extends State<CateringViewView> {
         toDate ?? "",
         offset,
         rowsPerPage));
+  }
+
+  double get balanceValue {
+    return double.tryParse(balanceAmount.text) ?? 0.0;
   }
 
   @override
@@ -1168,6 +1197,12 @@ class CateringViewViewState extends State<CateringViewView> {
                             selectedDiscount = value;
                             showDiscountError = false;
                             discountErrorText = null;
+                            discountAmount.clear();
+                            selectedPaymentType = null;
+                            selectedPaymentMode = null;
+                            partialPayments.clear();
+                            selectedPartialPaymentMode = null;
+                            partialPaidAmountController.clear();
                             calculateTotals();
                           });
                         },
@@ -1467,6 +1502,7 @@ class CateringViewViewState extends State<CateringViewView> {
                           decoration: InputDecoration(
                             labelText: 'Paid Amount',
                             labelStyle: TextStyle(color: appPrimaryColor),
+                            errorText: paidAmountError,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 10),
                             border: OutlineInputBorder(
@@ -1488,13 +1524,38 @@ class CateringViewViewState extends State<CateringViewView> {
                       const SizedBox(width: 12),
 
                       // Add Button
+                      // SizedBox(
+                      //   width: 50,
+                      //   height: 50,
+                      //   child: ElevatedButton(
+                      //     onPressed: addPartialPayment,
+                      //     style: ElevatedButton.styleFrom(
+                      //       backgroundColor: Colors.green,
+                      //       padding: EdgeInsets.zero,
+                      //       shape: RoundedRectangleBorder(
+                      //         borderRadius: BorderRadius.circular(8),
+                      //       ),
+                      //     ),
+                      //     child: Text(
+                      //       '+',
+                      //       style: TextStyle(
+                      //         color: whiteColor,
+                      //         fontSize: 24,
+                      //         fontWeight: FontWeight.bold,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
                       SizedBox(
                         width: 50,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: addPartialPayment,
+                          onPressed:
+                              canAddPartialPayment ? addPartialPayment : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: canAddPartialPayment
+                                ? Colors.green
+                                : Colors.grey,
                             padding: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1569,9 +1630,20 @@ class CateringViewViewState extends State<CateringViewView> {
                   Expanded(
                       child: TextFormField(
                     readOnly: true,
-                    controller: finalAmount,
+                    controller: totalAmount,
                     decoration: InputDecoration(
-                      labelText: "Final Amount",
+                      labelText: "Total Amount",
+                      labelStyle: TextStyle(color: greyColor),
+                      border: const OutlineInputBorder(),
+                    ),
+                  )),
+                  const SizedBox(width: 16),
+                  Expanded(
+                      child: TextFormField(
+                    readOnly: true,
+                    controller: discountAmountCalculated,
+                    decoration: InputDecoration(
+                      labelText: "Discount Amount",
                       labelStyle: TextStyle(color: greyColor),
                       border: const OutlineInputBorder(),
                     ),
@@ -1580,14 +1652,46 @@ class CateringViewViewState extends State<CateringViewView> {
               ),
 
               const SizedBox(height: 16),
-              TextFormField(
-                readOnly: true,
-                controller: balanceAmount,
-                decoration: InputDecoration(
-                  labelText: "Balance Amount",
-                  labelStyle: TextStyle(color: greyColor),
-                  border: const OutlineInputBorder(),
-                ),
+              Row(
+                children: [
+                  const SizedBox(width: 16),
+                  Expanded(
+                      child: TextFormField(
+                    readOnly: true,
+                    controller: finalAmount,
+                    decoration: InputDecoration(
+                      labelText: "Final Amount",
+                      labelStyle: TextStyle(color: greyColor),
+                      border: const OutlineInputBorder(),
+                    ),
+                  )),
+                  const SizedBox(width: 16),
+                  Expanded(
+                      child: TextFormField(
+                    readOnly: true,
+                    controller: balanceAmount,
+                    decoration: InputDecoration(
+                      labelText: "Balance Amount",
+                      labelStyle: TextStyle(color: greyColor),
+                      border: const OutlineInputBorder(),
+                    ),
+                  )),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      readOnly: true,
+                      controller: paidAmount,
+                      decoration: InputDecoration(
+                        labelText: "Paid Amount",
+                        labelStyle: TextStyle(color: greyColor),
+                        border: const OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        calculateTotalsWithCurrentInput();
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 30),
               isEdit == true
