@@ -14,3 +14,8 @@ String formatTime(String? dateString) {
 String formatToApiDate(DateTime dateTime) {
   return DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(dateTime.toUtc());
 }
+
+String formatDate(String isoString) {
+  DateTime date = DateTime.parse(isoString);
+  return DateFormat("dd/MM/yyyy").format(date);
+}

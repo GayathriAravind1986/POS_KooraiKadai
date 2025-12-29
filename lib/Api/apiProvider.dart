@@ -9,6 +9,7 @@ import 'package:simple/ModelClass/Catering/getAllCateringModel.dart';
 import 'package:simple/ModelClass/Catering/getCustomerByLocation.dart';
 import 'package:simple/ModelClass/Catering/getItemAddonsForPackageModel.dart';
 import 'package:simple/ModelClass/Catering/getPackageModel.dart';
+import 'package:simple/ModelClass/Catering/getSingleCateringDetailsModel.dart';
 import 'package:simple/ModelClass/Catering/postCateringBookingModel.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_product_by_catId_model.dart';
@@ -743,7 +744,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetCategoryByLocationModel getCategoryByLocationResponse =
-          GetCategoryByLocationModel.fromJson(response.data);
+              GetCategoryByLocationModel.fromJson(response.data);
           return getCategoryByLocationResponse;
         }
       } else {
@@ -760,22 +761,20 @@ class ApiProvider {
         );
     } on DioException catch (dioError) {
       final errorResponse = handleError(dioError);
-      return GetCategoryByLocationModel()
-        ..errorResponse = errorResponse;
+      return GetCategoryByLocationModel()..errorResponse = errorResponse;
     } catch (error) {
       final errorResponse = handleError(error);
-      return GetCategoryByLocationModel()
-        ..errorResponse = errorResponse;
+      return GetCategoryByLocationModel()..errorResponse = errorResponse;
     }
   }
 
   /// Get All Customers API Integration
-  Future<GetCustomerModel> getAllCustomerAPI(
-      String search) async {
+  Future<GetCustomerModel> getAllCustomerAPI(String search) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
 
-    final url = '${Constants.baseUrl}api/catering/customer?limit=100&offset=0&search=';
+    final url =
+        '${Constants.baseUrl}api/catering/customer?limit=100&offset=0&search=';
     debugPrint("📡 Customer API URL: $url");
 
     try {
@@ -851,12 +850,12 @@ class ApiProvider {
   }
 
   Future<PostCustomerModel> postCustomerAPI(
-      String name,
-      String phone,
-      String email,
-      String address,
-      String locId,
-      ) async {
+    String name,
+    String phone,
+    String email,
+    String address,
+    String locId,
+  ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
 
@@ -912,13 +911,13 @@ class ApiProvider {
 
   /// Update Customer (PUT) API Integration
   Future<PutCustomerByIdModel> putCustomerAPI(
-      String customerId,
-      String name,
-      String phone,
-      String email,
-      String address,
-      String locId,
-      ) async {
+    String customerId,
+    String name,
+    String phone,
+    String email,
+    String address,
+    String locId,
+  ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
     try {
@@ -956,6 +955,7 @@ class ApiProvider {
       return PutCustomerByIdModel()..errorResponse = handleError(error);
     }
   }
+
   /***** Stock_In*****/
   /// Location - fetch API Integration
   Future<GetLocationModel> getLocationAPI() async {
@@ -1372,6 +1372,52 @@ class ApiProvider {
       return PostCateringBookingModel()..errorResponse = errorResponse;
     } catch (error) {
       return PostCateringBookingModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Single Catering - API Integration
+  Future<GetSingleCateringDetailsModel> getSingleCateringAPI(
+      String? cateringId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/booking/$cateringId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetSingleCateringDetailsModel getSingleCateringResponse =
+              GetSingleCateringDetailsModel.fromJson(response.data);
+          return getSingleCateringResponse;
+        }
+      } else {
+        return GetSingleCateringDetailsModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetSingleCateringDetailsModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetSingleCateringDetailsModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetSingleCateringDetailsModel()..errorResponse = errorResponse;
     }
   }
 

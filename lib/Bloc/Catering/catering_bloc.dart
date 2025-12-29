@@ -45,6 +45,11 @@ class SaveCatering extends CateringEvent {
   SaveCatering(this.orderPayloadJson);
 }
 
+class CateringById extends CateringEvent {
+  String cateringId;
+  CateringById(this.cateringId);
+}
+
 class CateringBloc extends Bloc<CateringEvent, dynamic> {
   CateringBloc() : super(dynamic) {
     on<CateringBooking>((event, emit) async {
@@ -89,6 +94,13 @@ class CateringBloc extends Bloc<CateringEvent, dynamic> {
       await ApiProvider()
           .postSaveCateringAPI(event.orderPayloadJson)
           .then((value) {
+        emit(value);
+      }).catchError((error) {
+        emit(error);
+      });
+    });
+    on<CateringById>((event, emit) async {
+      await ApiProvider().getSingleCateringAPI(event.cateringId).then((value) {
         emit(value);
       }).catchError((error) {
         emit(error);
