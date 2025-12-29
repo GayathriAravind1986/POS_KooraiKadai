@@ -18,6 +18,8 @@ import 'package:simple/UI/StockIn/stock_in.dart';
 import '../../Bloc/Report/accounts_report_bloc.dart';
 import '../Accounts/accounts_report.dart';
 import '../Report/report_order.dart';
+import 'package:simple/Bloc/Accounts/credit_bloc.dart';
+import 'package:simple/UI/Accounts/credit_screen.dart';
 
 class DashBoardScreen extends StatelessWidget {
   final int? selectTab;
@@ -74,6 +76,9 @@ class _DashBoardState extends State<DashBoard> {
   GlobalKey<CateringViewViewState>();
   final GlobalKey<ReturnReportViewState> returnReportKey =
   GlobalKey<ReturnReportViewState>();
+  // Add Credit key
+  final GlobalKey<CreditViewViewState> creditKey =
+  GlobalKey<CreditViewViewState>();
 
   int selectedIndex = 0;
   bool orderLoad = false;
@@ -84,6 +89,7 @@ class _DashBoardState extends State<DashBoard> {
   bool hasRefreshedCustomer = false;
   bool hasRefreshedCateringBooking = false;
   bool hasRefreshedReturnReport = false;
+  bool hasRefreshedCredit = false; // Add this
 
   @override
   void initState() {
@@ -156,6 +162,14 @@ class _DashBoardState extends State<DashBoard> {
     }
   }
 
+  // Add this function for Credit
+  void _refreshCredit() {
+    final creditKeyState = creditKey.currentState;
+    if (creditKeyState != null) {
+      creditKeyState.refreshCredit();
+    }
+  }
+
   Widget mainContainer() {
     return SafeArea(
       child: Scaffold(
@@ -175,6 +189,7 @@ class _DashBoardState extends State<DashBoard> {
             hasRefreshedCustomer = false;
             hasRefreshedCateringBooking = false;
             hasRefreshedReturnReport = false;
+            hasRefreshedCredit = false; // Reset credit flag
 
             // Set the appropriate flag and trigger refresh
             switch (index) {
@@ -220,7 +235,10 @@ class _DashBoardState extends State<DashBoard> {
                 });
                 break;
               case 7: // Credit
-              // TODO: Implement Credit page
+                hasRefreshedCredit = true; // Set credit flag
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshCredit();
+                });
                 break;
               case 8: // Return
               // TODO: Implement Return page
@@ -347,11 +365,19 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 7: Credit (Placeholder)
-            const Center(
-              child: Text(
-                "Credit Page - Coming Soon",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            // Index 7: Credit
+            hasRefreshedCredit == true
+                ? BlocProvider(
+                create: (_) => CreditBloc(),
+                child: CreditViewView(
+                  key: creditKey,
+                  hasRefreshedCredit: hasRefreshedCredit,
+                ))
+                : BlocProvider(
+              create: (_) => CreditBloc(),
+              child: CreditView(
+                key: creditKey,
+                hasRefreshedCredit: hasRefreshedCredit,
               ),
             ),
 

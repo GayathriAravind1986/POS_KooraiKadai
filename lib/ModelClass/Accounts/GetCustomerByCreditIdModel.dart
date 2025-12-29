@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'package:simple/Bloc/Response/errorResponse.dart';
 
 /// success : true
-/// data : {"date":"2025-12-29T00:00:00.000Z","locationId":"68c8ef05e42b9d827aeb4af3","customerId":"694e36fe1d157e1ae77390eb","price":3000,"description":"","createdBy":"6878971f0bc550868fe1b34b","_id":"69524963682d49ef5c7a13c0","createdAt":"2025-12-29T09:26:59.332Z","updatedAt":"2025-12-29T09:26:59.332Z","creditCode":"CRD-20251229-0006","__v":0}
+/// data : {"_id":"69526b04cd98efef7dd31e36","date":"2025-12-29T00:00:00.000Z","locationId":{"_id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"},"customerId":{"_id":"694e36fe1d157e1ae77390eb","name":"hari"},"price":4000,"description":"","createdBy":{"_id":"6878971f0bc550868fe1b34b","name":"Saranya"},"createdAt":"2025-12-29T11:50:28.999Z","updatedAt":"2025-12-29T12:15:38.801Z","creditCode":"CRD-20251229-0011","__v":0}
 
-PostCreditModel postCreditModelFromJson(String str) => PostCreditModel.fromJson(json.decode(str));
-String postCreditModelToJson(PostCreditModel data) => json.encode(data.toJson());
+GetCustomerByCreditIdModel getCustomerByCreditIdModelFromJson(String str) => GetCustomerByCreditIdModel.fromJson(json.decode(str));
+String getCustomerByCreditIdModelToJson(GetCustomerByCreditIdModel data) => json.encode(data.toJson());
 
-class PostCreditModel {
-  PostCreditModel({
+class GetCustomerByCreditIdModel {
+  GetCustomerByCreditIdModel({
     bool? success,
     Data? data,
     ErrorResponse? errorResponse,
@@ -20,7 +20,7 @@ class PostCreditModel {
     _errorMessage = errorMessage;
   }
 
-  PostCreditModel.fromJson(dynamic json) {
+  GetCustomerByCreditIdModel.fromJson(dynamic json) {
     _success = json['success'];
 
     // Handle data field with null safety
@@ -30,7 +30,7 @@ class PostCreditModel {
       } catch (e) {
         // If data parsing fails, create an error response
         _errorResponse = ErrorResponse(
-          message: 'Failed to parse credit data: $e',
+          message: 'Failed to parse credit details: $e',
         );
       }
     }
@@ -50,7 +50,7 @@ class PostCreditModel {
 
     // Check if success is false but no explicit error provided
     if (_success == false && _errorResponse == null && _errorMessage == null) {
-      _errorMessage = 'Credit creation failed but no error details provided';
+      _errorMessage = 'Failed to fetch credit details';
       _errorResponse = ErrorResponse(message: _errorMessage);
     }
   }
@@ -60,12 +60,12 @@ class PostCreditModel {
   ErrorResponse? _errorResponse;
   String? _errorMessage;
 
-  PostCreditModel copyWith({
+  GetCustomerByCreditIdModel copyWith({
     bool? success,
     Data? data,
     ErrorResponse? errorResponse,
     String? errorMessage,
-  }) => PostCreditModel(
+  }) => GetCustomerByCreditIdModel(
     success: success ?? _success,
     data: data ?? _data,
     errorResponse: errorResponse ?? _errorResponse,
@@ -119,33 +119,25 @@ class PostCreditModel {
   }
 
   // Factory method for creating error response
-  factory PostCreditModel.error(String message, {String? code}) {
-    return PostCreditModel(
+  factory GetCustomerByCreditIdModel.error(String message, {String? code}) {
+    return GetCustomerByCreditIdModel(
       success: false,
       errorResponse: ErrorResponse(message: message),
       errorMessage: message,
     );
   }
-
-  // Factory method for creating success response
-  factory PostCreditModel.success(Data data) {
-    return PostCreditModel(
-      success: true,
-      data: data,
-    );
-  }
 }
 
+/// _id : "69526b04cd98efef7dd31e36"
 /// date : "2025-12-29T00:00:00.000Z"
-/// locationId : "68c8ef05e42b9d827aeb4af3"
-/// customerId : "694e36fe1d157e1ae77390eb"
-/// price : 3000
+/// locationId : {"_id":"68c8ef05e42b9d827aeb4af3","name":"TUTY"}
+/// customerId : {"_id":"694e36fe1d157e1ae77390eb","name":"hari"}
+/// price : 4000
 /// description : ""
-/// createdBy : "6878971f0bc550868fe1b34b"
-/// _id : "69524963682d49ef5c7a13c0"
-/// createdAt : "2025-12-29T09:26:59.332Z"
-/// updatedAt : "2025-12-29T09:26:59.332Z"
-/// creditCode : "CRD-20251229-0006"
+/// createdBy : {"_id":"6878971f0bc550868fe1b34b","name":"Saranya"}
+/// createdAt : "2025-12-29T11:50:28.999Z"
+/// updatedAt : "2025-12-29T12:15:38.801Z"
+/// creditCode : "CRD-20251229-0011"
 /// __v : 0
 
 Data dataFromJson(String str) => Data.fromJson(json.decode(str));
@@ -153,25 +145,25 @@ String dataToJson(Data data) => json.encode(data.toJson());
 
 class Data {
   Data({
+    String? id,
     String? date,
-    String? locationId,
-    String? customerId,
+    LocationId? locationId,
+    CustomerId? customerId,
     num? price,
     String? description,
-    String? createdBy,
-    String? id,
+    CreatedBy? createdBy,
     String? createdAt,
     String? updatedAt,
     String? creditCode,
     num? v,
   }) {
+    _id = id;
     _date = date;
     _locationId = locationId;
     _customerId = customerId;
     _price = price;
     _description = description;
     _createdBy = createdBy;
-    _id = id;
     _createdAt = createdAt;
     _updatedAt = updatedAt;
     _creditCode = creditCode;
@@ -179,64 +171,64 @@ class Data {
   }
 
   Data.fromJson(dynamic json) {
+    _id = json['_id'];
     _date = json['date'];
-    _locationId = json['locationId'];
-    _customerId = json['customerId'];
+    _locationId = json['locationId'] != null ? LocationId.fromJson(json['locationId']) : null;
+    _customerId = json['customerId'] != null ? CustomerId.fromJson(json['customerId']) : null;
     _price = json['price'];
     _description = json['description'];
-    _createdBy = json['createdBy'];
-    _id = json['_id'];
+    _createdBy = json['createdBy'] != null ? CreatedBy.fromJson(json['createdBy']) : null;
     _createdAt = json['createdAt'];
     _updatedAt = json['updatedAt'];
     _creditCode = json['creditCode'];
     _v = json['__v'];
   }
 
+  String? _id;
   String? _date;
-  String? _locationId;
-  String? _customerId;
+  LocationId? _locationId;
+  CustomerId? _customerId;
   num? _price;
   String? _description;
-  String? _createdBy;
-  String? _id;
+  CreatedBy? _createdBy;
   String? _createdAt;
   String? _updatedAt;
   String? _creditCode;
   num? _v;
 
   Data copyWith({
+    String? id,
     String? date,
-    String? locationId,
-    String? customerId,
+    LocationId? locationId,
+    CustomerId? customerId,
     num? price,
     String? description,
-    String? createdBy,
-    String? id,
+    CreatedBy? createdBy,
     String? createdAt,
     String? updatedAt,
     String? creditCode,
     num? v,
   }) => Data(
+    id: id ?? _id,
     date: date ?? _date,
     locationId: locationId ?? _locationId,
     customerId: customerId ?? _customerId,
     price: price ?? _price,
     description: description ?? _description,
     createdBy: createdBy ?? _createdBy,
-    id: id ?? _id,
     createdAt: createdAt ?? _createdAt,
     updatedAt: updatedAt ?? _updatedAt,
     creditCode: creditCode ?? _creditCode,
     v: v ?? _v,
   );
 
+  String? get id => _id;
   String? get date => _date;
-  String? get locationId => _locationId;
-  String? get customerId => _customerId;
+  LocationId? get locationId => _locationId;
+  CustomerId? get customerId => _customerId;
   num? get price => _price;
   String? get description => _description;
-  String? get createdBy => _createdBy;
-  String? get id => _id;
+  CreatedBy? get createdBy => _createdBy;
   String? get createdAt => _createdAt;
   String? get updatedAt => _updatedAt;
   String? get creditCode => _creditCode;
@@ -244,17 +236,149 @@ class Data {
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
+    map['_id'] = _id;
     map['date'] = _date;
-    map['locationId'] = _locationId;
-    map['customerId'] = _customerId;
+    if (_locationId != null) {
+      map['locationId'] = _locationId?.toJson();
+    }
+    if (_customerId != null) {
+      map['customerId'] = _customerId?.toJson();
+    }
     map['price'] = _price;
     map['description'] = _description;
-    map['createdBy'] = _createdBy;
-    map['_id'] = _id;
+    if (_createdBy != null) {
+      map['createdBy'] = _createdBy?.toJson();
+    }
     map['createdAt'] = _createdAt;
     map['updatedAt'] = _updatedAt;
     map['creditCode'] = _creditCode;
     map['__v'] = _v;
+    return map;
+  }
+}
+
+/// _id : "6878971f0bc550868fe1b34b"
+/// name : "Saranya"
+
+CreatedBy createdByFromJson(String str) => CreatedBy.fromJson(json.decode(str));
+String createdByToJson(CreatedBy data) => json.encode(data.toJson());
+
+class CreatedBy {
+  CreatedBy({
+    String? id,
+    String? name,
+  }) {
+    _id = id;
+    _name = name;
+  }
+
+  CreatedBy.fromJson(dynamic json) {
+    _id = json['_id'];
+    _name = json['name'];
+  }
+
+  String? _id;
+  String? _name;
+
+  CreatedBy copyWith({
+    String? id,
+    String? name,
+  }) => CreatedBy(
+    id: id ?? _id,
+    name: name ?? _name,
+  );
+
+  String? get id => _id;
+  String? get name => _name;
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    map['_id'] = _id;
+    map['name'] = _name;
+    return map;
+  }
+}
+
+/// _id : "694e36fe1d157e1ae77390eb"
+/// name : "hari"
+
+CustomerId customerIdFromJson(String str) => CustomerId.fromJson(json.decode(str));
+String customerIdToJson(CustomerId data) => json.encode(data.toJson());
+
+class CustomerId {
+  CustomerId({
+    String? id,
+    String? name,
+  }) {
+    _id = id;
+    _name = name;
+  }
+
+  CustomerId.fromJson(dynamic json) {
+    _id = json['_id'];
+    _name = json['name'];
+  }
+
+  String? _id;
+  String? _name;
+
+  CustomerId copyWith({
+    String? id,
+    String? name,
+  }) => CustomerId(
+    id: id ?? _id,
+    name: name ?? _name,
+  );
+
+  String? get id => _id;
+  String? get name => _name;
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    map['_id'] = _id;
+    map['name'] = _name;
+    return map;
+  }
+}
+
+/// _id : "68c8ef05e42b9d827aeb4af3"
+/// name : "TUTY"
+
+LocationId locationIdFromJson(String str) => LocationId.fromJson(json.decode(str));
+String locationIdToJson(LocationId data) => json.encode(data.toJson());
+
+class LocationId {
+  LocationId({
+    String? id,
+    String? name,
+  }) {
+    _id = id;
+    _name = name;
+  }
+
+  LocationId.fromJson(dynamic json) {
+    _id = json['_id'];
+    _name = json['name'];
+  }
+
+  String? _id;
+  String? _name;
+
+  LocationId copyWith({
+    String? id,
+    String? name,
+  }) => LocationId(
+    id: id ?? _id,
+    name: name ?? _name,
+  );
+
+  String? get id => _id;
+  String? get name => _name;
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    map['_id'] = _id;
+    map['name'] = _name;
     return map;
   }
 }
