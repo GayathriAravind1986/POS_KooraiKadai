@@ -5,12 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Bloc/Response/errorResponse.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart';
+import 'package:simple/ModelClass/Catering/deleteCateringModel.dart';
 import 'package:simple/ModelClass/Catering/getAllCateringModel.dart';
 import 'package:simple/ModelClass/Catering/getCustomerByLocation.dart';
 import 'package:simple/ModelClass/Catering/getItemAddonsForPackageModel.dart';
 import 'package:simple/ModelClass/Catering/getPackageModel.dart';
 import 'package:simple/ModelClass/Catering/getSingleCateringDetailsModel.dart';
 import 'package:simple/ModelClass/Catering/postCateringBookingModel.dart';
+import 'package:simple/ModelClass/Catering/putCateringBookingModel.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_product_by_catId_model.dart';
 import 'package:simple/ModelClass/Order/Delete_order_model.dart';
@@ -1106,7 +1108,7 @@ class ApiProvider {
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/catering/booking?limit=$limit&offset=$offset&search=$search&customerId=$cusId&from_date=$fromDate&to_date=$toDate',
+        '${Constants.baseUrl}api/catering/booking?limit=$limit&offset=$offset&search=$search&locationId=$locId&customerId=$cusId&from_date=$fromDate&to_date=$toDate',
         options: Options(
           method: 'GET',
           headers: {
@@ -1330,6 +1332,7 @@ class ApiProvider {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
     debugPrint("token:$token");
+    debugPrint("url:${Constants.baseUrl}api/catering/booking/$cateringId");
 
     try {
       var dio = Dio();
@@ -1367,6 +1370,94 @@ class ApiProvider {
     } catch (error) {
       final errorResponse = handleError(error);
       return GetSingleCateringDetailsModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// Update Catering Booking - Post API Integration
+  Future<PutCateringBookingModel> putCateringBookingAPI(
+      final String orderPayloadJson, String? cateringId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      var data = orderPayloadJson;
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/booking/$cateringId',
+        options: Options(
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: data,
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        try {
+          PutCateringBookingModel putCateringBookingResponse =
+              PutCateringBookingModel.fromJson(response.data);
+          return putCateringBookingResponse;
+        } catch (e) {
+          return PutCateringBookingModel()
+            ..errorResponse = ErrorResponse(
+              message: "Failed to parse response: $e",
+            );
+        }
+      } else {
+        return PutCateringBookingModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return PutCateringBookingModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return PutCateringBookingModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Delete Catering - API Integration
+  Future<DeleteCateringModel> deleteCateringAPI(String? cateringId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/booking/$cateringId',
+        options: Options(
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          DeleteCateringModel deleteCateringResponse =
+              DeleteCateringModel.fromJson(response.data);
+          return deleteCateringResponse;
+        }
+      } else {
+        return DeleteCateringModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return DeleteCateringModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return DeleteCateringModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return DeleteCateringModel()..errorResponse = errorResponse;
     }
   }
 
