@@ -15,9 +15,6 @@ import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
 
-// Import the Customer model if it exists
-// import 'package:simple/ModelClass/Customer/CustomerModel.dart'; // Uncomment if you have this
-
 class CustomerView extends StatelessWidget {
   final GlobalKey<CustomerViewViewState>? customerKey;
   bool? hasRefreshedCustomer;
@@ -69,12 +66,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
   String? errorMessage;
   String? customerId;
 
+  // KEEP YOUR ORIGINAL WORKING PAGINATION VARIABLES
   int currentPage = 1;
   int rowsPerPage = 10;
   num totalItems = 0;
   int totalPages = 1;
 
-  // Define a local type for customer items if CustomerItem doesn't exist
+  // Function to get current page items - THIS IS CRITICAL
   List<dynamic> _getCurrentPageItems() {
     if (getCustomerModel.data == null || getCustomerModel.data!.isEmpty) {
       return [];
@@ -94,14 +92,98 @@ class CustomerViewViewState extends State<CustomerViewView> {
     return getCustomerModel.data!.sublist(startIndex, endIndex);
   }
 
-  void refreshCustomer() {
-    if (!mounted || !context.mounted) return;
-    context.read<CustomerBloc>().add(FetchLocations());
-    context.read<CustomerBloc>().add(FetchAllCustomers(
+  // Catering-style UI for pagination bar
+  Widget buildPaginationBar() {
+    int start = ((currentPage - 1) * rowsPerPage) + 1;
+    int end = currentPage * rowsPerPage;
+
+    if (end > totalItems) {
+      end = totalItems.toInt();
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        // ---- Rows Per Page Dropdown ----
+        const Text("Rows per page: "),
+        DropdownButton<int>(
+          value: rowsPerPage,
+          items: [5, 10, 20, 50].map((e) {
+            return DropdownMenuItem(value: e, child: Text("$e"));
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              rowsPerPage = value!;
+              currentPage = 1; // Reset to first page when changing rows
+            });
+            _goToPage(currentPage);
+          },
+        ),
+
+        const SizedBox(width: 20),
+
+        // ---- Page X of Y ----
+        Text("$start - $end of $totalItems"),
+
+        // ---- Prev Button ----
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: currentPage > 1
+              ? () {
+            _goToPage(currentPage - 1);
+          }
+              : null,
+        ),
+
+        // ---- Next Button ----
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          onPressed: currentPage < totalPages
+              ? () {
+            _goToPage(currentPage + 1);
+          }
+              : null,
+        ),
+      ],
+    );
+  }
+
+  // Your original working page navigation function
+  void _goToPage(int page) {
+    if (page >= 1 && page <= totalPages) {
+      setState(() {
+        currentPage = page;
+        customerLoad = true;
+      });
+      context.read<CustomerBloc>().add(FetchAllCustomers(
         searchController.text,
         locationId ?? "",
         rowsPerPage,
-        (currentPage - 1) * rowsPerPage));
+        (page - 1) * rowsPerPage, // This is your offset calculation
+      ));
+    }
+  }
+
+  // Your original rows per page change function
+  void _changeRowsPerPage(int? newValue) {
+    if (newValue != null) {
+      setState(() {
+        rowsPerPage = newValue;
+        currentPage = 1;
+        customerLoad = true;
+      });
+      context.read<CustomerBloc>().add(FetchAllCustomers(
+        searchController.text,
+        locationId ?? "",
+        newValue,
+        0,
+      ));
+    }
+  }
+
+  void refreshCustomer() {
+    if (!mounted || !context.mounted) return;
+    context.read<CustomerBloc>().add(FetchLocations());
     setState(() {
       customerLoad = true;
     });
@@ -119,25 +201,15 @@ class CustomerViewViewState extends State<CustomerViewView> {
   @override
   void initState() {
     super.initState();
-    debugPrint("🔵 CustomerView initState");
-    debugPrint("🔵 hasRefreshedCustomer: ${widget.hasRefreshedCustomer}");
-
     if (widget.hasRefreshedCustomer == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        debugPrint("🔵 Post frame callback - refreshing");
         setState(() {
           customerLoad = true;
         });
         widget.customerKey?.currentState?.refreshCustomer();
       });
     } else {
-      debugPrint("🔵 Fetching locations and customers");
       context.read<CustomerBloc>().add(FetchLocations());
-      context.read<CustomerBloc>().add(FetchAllCustomers(
-          searchController.text,
-          locationId ?? "",
-          rowsPerPage,
-          0));
       setState(() {
         customerLoad = true;
       });
@@ -146,15 +218,11 @@ class CustomerViewViewState extends State<CustomerViewView> {
 
   void _refreshData() {
     setState(() {
+      searchController.clear();
       currentPage = 1;
       customerLoad = true;
     });
     context.read<CustomerBloc>().add(FetchLocations());
-    context.read<CustomerBloc>().add(FetchAllCustomers(
-        searchController.text,
-        locationId ?? "",
-        rowsPerPage,
-        0));
     widget.customerKey?.currentState?.refreshCustomer();
   }
 
@@ -168,35 +236,6 @@ class CustomerViewViewState extends State<CustomerViewView> {
     });
     context.read<CustomerBloc>().add(FetchLocations());
     widget.customerKey?.currentState?.refreshCustomer();
-  }
-
-  void _goToPage(int page) {
-    if (page >= 1 && page <= totalPages) {
-      setState(() {
-        currentPage = page;
-        customerLoad = true;
-      });
-      context.read<CustomerBloc>().add(FetchAllCustomers(
-          searchController.text,
-          locationId ?? "",
-          rowsPerPage,
-          (page - 1) * rowsPerPage));
-    }
-  }
-
-  void _changeRowsPerPage(int? newValue) {
-    if (newValue != null) {
-      setState(() {
-        rowsPerPage = newValue;
-        currentPage = 1;
-        customerLoad = true;
-      });
-      context.read<CustomerBloc>().add(FetchAllCustomers(
-          searchController.text,
-          locationId ?? "",
-          newValue,
-          0));
-    }
   }
 
   @override
@@ -337,13 +376,15 @@ class CustomerViewViewState extends State<CustomerViewView> {
                       setState(() {
                         editLoad = true;
                         context.read<CustomerBloc>().add(
-                            UpdateCustomer(
-                                customerId.toString(),
-                                nameController.text,
-                                phoneController.text,
-                                emailController.text,
-                                addressController.text,
-                                locationId.toString()));
+                          UpdateCustomer(
+                            customerId.toString(),
+                            nameController.text,
+                            phoneController.text,
+                            emailController.text,
+                            addressController.text,
+                            locationId.toString(),
+                          ),
+                        );
                       });
                     }
                   },
@@ -357,8 +398,9 @@ class CustomerViewViewState extends State<CustomerViewView> {
                   child: const Text(
                     "Update Customer",
                     style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               )
@@ -380,12 +422,15 @@ class CustomerViewViewState extends State<CustomerViewView> {
                     } else {
                       setState(() {
                         saveLoad = true;
-                        context.read<CustomerBloc>().add(SaveCustomer(
+                        context.read<CustomerBloc>().add(
+                          SaveCustomer(
                             nameController.text,
                             phoneController.text,
                             emailController.text,
                             addressController.text,
-                            locationId.toString()));
+                            locationId.toString(),
+                          ),
+                        );
                       });
                     }
                   },
@@ -399,8 +444,9 @@ class CustomerViewViewState extends State<CustomerViewView> {
                   child: const Text(
                     "SAVE CUSTOMER",
                     style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -441,10 +487,11 @@ class CustomerViewViewState extends State<CustomerViewView> {
                           customerLoad = true;
                         });
                         context.read<CustomerBloc>().add(FetchAllCustomers(
-                            value,
-                            locationId ?? "",
-                            rowsPerPage,
-                            0));
+                          value,
+                          locationId ?? "",
+                          rowsPerPage,
+                          0,
+                        ));
                       },
                     ),
                   ),
@@ -455,11 +502,12 @@ class CustomerViewViewState extends State<CustomerViewView> {
                       _refreshData();
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: appPrimaryColor,
-                        minimumSize: const Size(0, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        )),
+                      backgroundColor: appPrimaryColor,
+                      minimumSize: const Size(0, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
                     child: const Text(
                       "CLEAR FILTERS",
                       style: TextStyle(color: whiteColor),
@@ -472,209 +520,126 @@ class CustomerViewViewState extends State<CustomerViewView> {
 
               customerLoad
                   ? Container(
-                  padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).size.height * 0.1),
-                  alignment: Alignment.center,
-                  child: const SpinKitChasingDots(
-                      color: appPrimaryColor, size: 30))
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).size.height * 0.1,
+                ),
+                alignment: Alignment.center,
+                child: const SpinKitChasingDots(
+                  color: appPrimaryColor,
+                  size: 30,
+                ),
+              )
                   : getCustomerModel.data == null ||
                   getCustomerModel.data!.isEmpty
                   ? Container(
-                  padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).size.height * 0.1),
-                  alignment: Alignment.center,
-                  child: Text(
-                    "No Customers Found !!!",
-                    style: MyTextStyle.f16(
-                      greyColor,
-                      weight: FontWeight.w500,
-                    ),
-                  ))
-                  : Column(
-                children: [
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      headingRowColor: MaterialStateProperty.all(
-                          Colors.grey.shade200),
-                      dataRowHeight: 55,
-                      headingTextStyle: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                        fontSize: 14,
-                      ),
-                      columns: const [
-                        DataColumn(label: Text("Name")),
-                        DataColumn(label: Text("Phone")),
-                        DataColumn(label: Text("Email")),
-                        DataColumn(label: Text("Address")),
-                        DataColumn(label: Text("Location")),
-                        DataColumn(label: Text("Actions"),
-                            numeric: true),
-                      ],
-                      rows: _getCurrentPageItems().map((item) {
-                        // Cast item to the correct type or use dynamic
-                        final customer = item as dynamic;
-                        return DataRow(
-                          cells: [
-                            DataCell(Text(customer.name ?? "")),
-                            DataCell(Text(customer.phone ?? "")),
-                            DataCell(Text(customer.email ?? "N/A")),
-                            DataCell(Text(customer.address ?? "N/A")),
-                            DataCell(Text(
-                                customer.location?.name ?? "")),
-                            DataCell(
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.edit,
-                                      color: appPrimaryColor,
-                                      size: 18,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        isEdit = true;
-                                        customerId =
-                                            customer.id?.toString();
-                                      });
-                                      if (customer.id != null) {
-                                        context
-                                            .read<CustomerBloc>()
-                                            .add(FetchCustomerById(
-                                            customer.id!
-                                                .toString()));
-                                      }
-                                    },
-                                    padding: EdgeInsets.zero,
-                                    constraints:
-                                    const BoxConstraints(),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).size.height * 0.1,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  "No Customers Found !!!",
+                  style: MyTextStyle.f16(
+                    greyColor,
+                    weight: FontWeight.w500,
                   ),
-
-                  const SizedBox(height: 20),
-                  Container(
-                    padding:
-                    const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Text("Rows per page:"),
-                            const SizedBox(width: 8),
-                            DropdownButton<int>(
-                              value: rowsPerPage,
-                              onChanged: _changeRowsPerPage,
-                              items: [5, 10, 15, 20, 25]
-                                  .map<DropdownMenuItem<int>>(
-                                      (int value) {
-                                    return DropdownMenuItem<int>(
-                                      value: value,
-                                      child: Text(value.toString()),
-                                    );
-                                  }).toList(),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          "${((currentPage - 1) * rowsPerPage) + 1} - ${currentPage * rowsPerPage > totalItems ? totalItems : currentPage * rowsPerPage} of $totalItems",
-                          style: MyTextStyle.f14(
-                            blackColor,
-                            weight: FontWeight.normal,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.chevron_left),
-                              onPressed: currentPage > 1
-                                  ? () => _goToPage(currentPage - 1)
-                                  : null,
-                              color: currentPage > 1
-                                  ? appPrimaryColor
-                                  : Colors.grey,
-                            ),
-                            ...List.generate(
-                              totalPages > 5 ? 5 : totalPages,
-                                  (index) {
-                                int pageNumber;
-                                if (totalPages <= 5) {
-                                  pageNumber = index + 1;
-                                } else if (currentPage <= 3) {
-                                  pageNumber = index + 1;
-                                } else if (currentPage >=
-                                    totalPages - 2) {
-                                  pageNumber = totalPages - 4 + index;
-                                } else {
-                                  pageNumber = currentPage - 2 + index;
-                                }
-
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4),
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        _goToPage(pageNumber),
-                                    child: Container(
-                                      padding:
-                                      const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: currentPage ==
-                                            pageNumber
-                                            ? appPrimaryColor
-                                            : Colors.transparent,
-                                        borderRadius:
-                                        BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        pageNumber.toString(),
-                                        style: TextStyle(
-                                          color: currentPage ==
-                                              pageNumber
-                                              ? Colors.white
-                                              : Colors.black,
-                                          fontWeight:
-                                          currentPage == pageNumber
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.chevron_right),
-                              onPressed: currentPage < totalPages
-                                  ? () => _goToPage(currentPage + 1)
-                                  : null,
-                              color: currentPage < totalPages
-                                  ? appPrimaryColor
-                                  : Colors.grey,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               )
+                  : LayoutBuilder(
+                builder: (context, constraints) {
+                  // Get only current page items
+                  final currentPageItems = _getCurrentPageItems();
+
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: constraints.maxWidth,
+                      ),
+                      child: Card(
+                        elevation: 2,
+                        child: Column(
+                          children: [
+                            DataTable(
+                              headingRowColor:
+                              MaterialStateProperty.all(
+                                greyColor200,
+                              ),
+                              columnSpacing: 32,
+                              columns: const [
+                                DataColumn(label: Text('Name')),
+                                DataColumn(label: Text('Phone')),
+                                DataColumn(label: Text('Email')),
+                                DataColumn(label: Text('Address')),
+                                DataColumn(label: Text('Location')),
+                                DataColumn(label: Text('Actions')),
+                              ],
+                              // Use currentPageItems instead of getCustomerModel.data!
+                              rows: currentPageItems.map((item) {
+                                return DataRow(
+                                  cells: [
+                                    DataCell(Text(item.name ?? "")),
+                                    DataCell(Text(item.phone ?? "")),
+                                    DataCell(
+                                        Text(item.email ?? "N/A")),
+                                    DataCell(
+                                        Text(item.address ?? "N/A")),
+                                    DataCell(Text(
+                                        item.location?.name ?? "")),
+                                    DataCell(
+                                      Row(
+                                        children: [
+                                          InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                isEdit = true;
+                                                customerId =
+                                                    item.id?.toString();
+                                              });
+                                              if (item.id != null) {
+                                                context
+                                                    .read<
+                                                    CustomerBloc>()
+                                                    .add(
+                                                  FetchCustomerById(
+                                                    item.id!
+                                                        .toString(),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: const Icon(
+                                              Icons.edit,
+                                              color: appPrimaryColor,
+                                            ),
+                                          ),
+                                          // const SizedBox(width: 12),
+                                          // InkWell(
+                                          //   onTap: () {
+                                          //     // Add delete functionality here
+                                          //   },
+                                          //   // child: const Icon(
+                                          //   //   Icons.delete,
+                                          //   //   color: redColor,
+                                          //   // ),
+                                          // ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: buildPaginationBar(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -691,12 +656,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
           }
           if (getLocationModel.success == true) {
             locationId = getLocationModel.data?.locationId;
-            debugPrint("✅ Location ID: $locationId");
+            // Fetch customers after getting location
             context.read<CustomerBloc>().add(FetchAllCustomers(
-                searchController.text,
-                locationId ?? "",
-                rowsPerPage,
-                0));
+              searchController.text,
+              locationId ?? "",
+              rowsPerPage,
+              0,
+            ));
             setState(() {
               customerLoad = true;
             });
@@ -712,15 +678,6 @@ class CustomerViewViewState extends State<CustomerViewView> {
         if (current is GetCustomerModel) {
           getCustomerModel = current;
 
-          debugPrint("=== GetCustomerModel Response ===");
-          debugPrint("Success: ${getCustomerModel.success}");
-          debugPrint("Data length: ${getCustomerModel.data?.length}");
-          debugPrint("Total: ${getCustomerModel.total}");
-          debugPrint("TotalCount: ${getCustomerModel.totalCount}");
-          debugPrint(
-              "Error Response: ${getCustomerModel.errorResponse?.message}");
-          debugPrint("================================");
-
           if (getCustomerModel.errorResponse?.isUnauthorized == true) {
             _handle401Error();
             return true;
@@ -730,9 +687,6 @@ class CustomerViewViewState extends State<CustomerViewView> {
             totalItems = getCustomerModel.total?.toInt() ?? 0;
             totalPages = totalItems > 0 ? (totalItems / rowsPerPage).ceil() : 1;
 
-            debugPrint("Total Items: $totalItems");
-            debugPrint("Total Pages: $totalPages");
-
             setState(() {
               customerLoad = false;
             });
@@ -740,10 +694,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
             setState(() {
               customerLoad = false;
             });
-
             String errorMsg = getCustomerModel.errorResponse?.message ??
                 "No Customers found";
-            debugPrint("Error Message: $errorMsg");
             showToast(errorMsg, context, color: false);
           }
           return true;
@@ -757,11 +709,16 @@ class CustomerViewViewState extends State<CustomerViewView> {
           }
           if (postCustomerModel.success == true) {
             showToast("Customer Added Successfully", context, color: true);
+            // Refresh customers after adding
+            setState(() {
+              currentPage = 1;
+            });
             context.read<CustomerBloc>().add(FetchAllCustomers(
-                searchController.text,
-                locationId ?? "",
-                rowsPerPage,
-                0));
+              searchController.text,
+              locationId ?? "",
+              rowsPerPage,
+              0,
+            ));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCustomerForm();
             });
@@ -810,11 +767,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
           if (putCustomerByIdModel.success == true) {
             showToast("Customer Updated Successfully", context, color: true);
             _refreshEditData();
+            // Refresh customers after updating
             context.read<CustomerBloc>().add(FetchAllCustomers(
-                searchController.text,
-                locationId ?? "",
-                rowsPerPage,
-                0));
+              searchController.text,
+              locationId ?? "",
+              rowsPerPage,
+              (currentPage - 1) * rowsPerPage,
+            ));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCustomerForm();
             });

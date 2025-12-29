@@ -56,9 +56,13 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
   GetStockMaintanencesModel getStockMaintanencesModel = GetStockMaintanencesModel();
   bool stockLoad = false;
 
-  // Track dropdown state
+  // Track dropdown states
   bool _isCateringDropdownOpen = false;
+  bool _isAccountsDropdownOpen = false;
+
   final GlobalKey _cateringButtonKey = GlobalKey();
+  final GlobalKey _accountsButtonKey = GlobalKey();
+
   OverlayEntry? _dropdownOverlay;
 
   @override
@@ -81,6 +85,7 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
     _dropdownOverlay = null;
     setState(() {
       _isCateringDropdownOpen = false;
+      _isAccountsDropdownOpen = false;
     });
   }
 
@@ -88,11 +93,19 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
     if (_isCateringDropdownOpen) {
       _removeDropdownOverlay();
     } else {
-      _showDropdownOverlay();
+      _showCateringDropdownOverlay();
     }
   }
 
-  void _showDropdownOverlay() {
+  void _toggleAccountsDropdown() {
+    if (_isAccountsDropdownOpen) {
+      _removeDropdownOverlay();
+    } else {
+      _showAccountsDropdownOverlay();
+    }
+  }
+
+  void _showCateringDropdownOverlay() {
     final RenderBox? renderBox = _cateringButtonKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
@@ -109,7 +122,7 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
               left: offset.dx,
               top: offset.dy + size.height,
               child: GestureDetector(
-                onTap: () {}, // Prevent closing when tapping inside dropdown
+                onTap: () {},
                 child: Material(
                   elevation: 8,
                   borderRadius: BorderRadius.circular(8),
@@ -130,7 +143,6 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Customers option
                         _buildDropdownItem(
                           icon: Icons.people_outline,
                           label: "Customers",
@@ -140,11 +152,9 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           },
                           isSelected: widget.selectedIndex == 5,
                         ),
-                        // Divider
                         const Divider(height: 1, color: Colors.grey),
-                        // Catering Booking option
                         _buildDropdownItem(
-                          icon: Icons.calendar_today_outlined,
+                          icon: Icons.restaurant,
                           label: "Catering Booking",
                           onTap: () {
                             widget.onTabSelected(6);
@@ -166,6 +176,98 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
     Overlay.of(context).insert(_dropdownOverlay!);
     setState(() {
       _isCateringDropdownOpen = true;
+      _isAccountsDropdownOpen = false;
+    });
+  }
+
+  void _showAccountsDropdownOverlay() {
+    final RenderBox? renderBox = _accountsButtonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    _dropdownOverlay = OverlayEntry(
+      builder: (context) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => _removeDropdownOverlay(),
+        child: Stack(
+          children: [
+            Positioned(
+              left: offset.dx,
+              top: offset.dy + size.height,
+              child: GestureDetector(
+                onTap: () {},
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Credit option
+                        _buildDropdownItem(
+                          icon: Icons.credit_card,
+                          label: "Credit",
+                          onTap: () {
+                            // Navigate to Credit page
+                            widget.onTabSelected(7); // Index 7 for Credit
+                            _removeDropdownOverlay();
+                          },
+                          isSelected: widget.selectedIndex == 7,
+                        ),
+                        const Divider(height: 1, color: Colors.grey),
+                        // Return option
+                        _buildDropdownItem(
+                          icon: Icons.assignment_return,
+                          label: "Return",
+                          onTap: () {
+                            // Navigate to Return page
+                            widget.onTabSelected(8); // Index 8 for Return
+                            _removeDropdownOverlay();
+                          },
+                          isSelected: widget.selectedIndex == 8,
+                        ),
+                        const Divider(height: 1, color: Colors.grey),
+                        // Report option
+                        _buildDropdownItem(
+                          icon: Icons.receipt_long,
+                          label: "Report",
+                          onTap: () {
+                            // Navigate to Credit & Return Report page
+                            widget.onTabSelected(9); // Index 9 for Report
+                            _removeDropdownOverlay();
+                          },
+                          isSelected: widget.selectedIndex == 9,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_dropdownOverlay!);
+    setState(() {
+      _isAccountsDropdownOpen = true;
+      _isCateringDropdownOpen = false;
     });
   }
 
@@ -249,6 +351,9 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           ),
                           SizedBox(width: isCompactMode ? 8 : 16),
                         ],
+                        // Accounts dropdown button
+                        _buildAccountsDropdownButton(isCompactMode),
+                        SizedBox(width: isCompactMode ? 8 : 16),
                         // Catering dropdown button
                         _buildCateringDropdownButton(isCompactMode),
                         SizedBox(width: isCompactMode ? 8 : 16),
@@ -328,6 +433,46 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
               _isCateringDropdownOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
               size: 20,
               color: isCateringSelected ? appPrimaryColor : greyColor,
+            ),
+          ],
+        ),
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompactMode ? 4 : 6,
+            vertical: 8,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountsDropdownButton(bool isCompactMode) {
+    final isAccountsSelected = widget.selectedIndex == 7 || widget.selectedIndex == 8 || widget.selectedIndex == 9;
+
+    return Container(
+      key: _accountsButtonKey,
+      child: TextButton.icon(
+        onPressed: _toggleAccountsDropdown,
+        icon: Icon(
+          Icons.account_balance_wallet,
+          size: 24,
+          color: isAccountsSelected ? appPrimaryColor : greyColor,
+        ),
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Accounts",
+              style: MyTextStyle.f16(
+                weight: FontWeight.bold,
+                isAccountsSelected ? appPrimaryColor : greyColor,
+              ).copyWith(fontSize: 15),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              _isAccountsDropdownOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+              size: 20,
+              color: isAccountsSelected ? appPrimaryColor : greyColor,
             ),
           ],
         ),

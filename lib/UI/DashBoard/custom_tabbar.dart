@@ -15,6 +15,8 @@ import 'package:simple/UI/Home_screen/home_screen.dart';
 import 'package:simple/UI/Order/order_list.dart';
 import 'package:simple/UI/Order/order_tab_page.dart';
 import 'package:simple/UI/StockIn/stock_in.dart';
+import '../../Bloc/Report/accounts_report_bloc.dart';
+import '../Accounts/accounts_report.dart';
 import '../Report/report_order.dart';
 
 class DashBoardScreen extends StatelessWidget {
@@ -70,6 +72,8 @@ class _DashBoardState extends State<DashBoard> {
   GlobalKey<CustomerViewViewState>();
   final GlobalKey<CateringViewViewState> cateringBookingKey =
   GlobalKey<CateringViewViewState>();
+  final GlobalKey<ReturnReportViewState> returnReportKey =
+  GlobalKey<ReturnReportViewState>();
 
   int selectedIndex = 0;
   bool orderLoad = false;
@@ -78,7 +82,8 @@ class _DashBoardState extends State<DashBoard> {
   bool hasRefreshedStock = false;
   bool hasRefreshedCatering = false;
   bool hasRefreshedCustomer = false;
-  bool hasRefreshedCateringBooking = false; // Added for catering booking
+  bool hasRefreshedCateringBooking = false;
+  bool hasRefreshedReturnReport = false;
 
   @override
   void initState() {
@@ -137,11 +142,17 @@ class _DashBoardState extends State<DashBoard> {
     }
   }
 
-  // Added refresh logic for catering booking
   void _refreshCateringBooking() {
     final cateringBookingKeyState = cateringBookingKey.currentState;
     if (cateringBookingKeyState != null) {
       cateringBookingKeyState.refreshCatering();
+    }
+  }
+
+  void _refreshReturnReport() {
+    final returnReportKeyState = returnReportKey.currentState;
+    if (returnReportKeyState != null) {
+      returnReportKeyState.refreshReturnReport();
     }
   }
 
@@ -163,6 +174,7 @@ class _DashBoardState extends State<DashBoard> {
             hasRefreshedCatering = false;
             hasRefreshedCustomer = false;
             hasRefreshedCateringBooking = false;
+            hasRefreshedReturnReport = false;
 
             // Set the appropriate flag and trigger refresh
             switch (index) {
@@ -201,10 +213,22 @@ class _DashBoardState extends State<DashBoard> {
                   _refreshCustomer();
                 });
                 break;
-              case 6: // Catering Booking (New page)
+              case 6: // Catering Booking
                 hasRefreshedCateringBooking = true;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _refreshCateringBooking();
+                });
+                break;
+              case 7: // Credit
+              // TODO: Implement Credit page
+                break;
+              case 8: // Return
+              // TODO: Implement Return page
+                break;
+              case 9: // Credit & Return Report
+                hasRefreshedReturnReport = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshReturnReport();
                 });
                 break;
             }
@@ -307,20 +331,49 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 6: Catering Booking (New page)
-            // Note: You need to create this CateringBooking widget
+            // Index 6: Catering Booking
             hasRefreshedCateringBooking == true
                 ? BlocProvider(
-                create: (_) => CateringBloc(), // Or create a new bloc
+                create: (_) => CateringBloc(),
                 child: CateringViewView(
                   key: cateringBookingKey,
                   hasRefreshedCatering: hasRefreshedCateringBooking,
                 ))
                 : BlocProvider(
-              create: (_) => CateringBloc(), // Or create a new bloc
+              create: (_) => CateringBloc(),
               child: CateringView(
                 key: cateringBookingKey,
                 hasRefreshedCatering: hasRefreshedCateringBooking,
+              ),
+            ),
+
+            // Index 7: Credit (Placeholder)
+            const Center(
+              child: Text(
+                "Credit Page - Coming Soon",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            // Index 8: Return (Placeholder)
+            const Center(
+              child: Text(
+                "Return Page - Coming Soon",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            // Index 9: Credit & Return Report
+            hasRefreshedReturnReport == true
+                ? BlocProvider(
+                create: (_) => ReportBloc(),
+                child: ReturnReportView(
+                  key: returnReportKey,
+                ))
+                : BlocProvider(
+              create: (_) => ReportBloc(),
+              child: ReturnReportView(
+                key: returnReportKey,
               ),
             ),
           ],

@@ -32,6 +32,7 @@ import '../ModelClass/Customer/GetCustomerModel.dart';
 import '../ModelClass/Customer/PostCustomerModel.dart';
 import '../ModelClass/Customer/PutCustomerByIdModel.dart';
 import '../ModelClass/Customer/getCategoryByLocationModel.dart';
+import '../ModelClass/Accounts/GetReportModel.dart';
 import '../ModelClass/Table/Get_table_model.dart';
 
 /// All API Integration in ApiProvider
@@ -667,6 +668,56 @@ class ApiProvider {
       return UpdateGenerateOrderModel()..errorResponse = errorResponse;
     } catch (error) {
       return UpdateGenerateOrderModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Get Return Report with Search API Integration
+  Future<ReturnReportModel> getReturnReportAPI(
+      String fromDate,
+      String toDate,
+      String search,
+      int limit,
+      int offset) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/return/report?limit=$limit&offset=$offset&from_date=$fromDate&to_date=$toDate&search=$search',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      debugPrint("📥 API Response Status: ${response.statusCode}");
+      debugPrint("📥 API Response Data: ${response.data}");
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          ReturnReportModel getReportResponse =
+          ReturnReportModel.fromJson(response.data);
+          return getReportResponse;
+        }
+      }
+
+      return ReturnReportModel()
+        ..errorResponse = ErrorResponse(
+          message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+          statusCode: response.statusCode,
+        );
+    } on DioException catch (dioError) {
+      debugPrint("❌ DioException: $dioError");
+      final errorResponse = handleError(dioError);
+      return ReturnReportModel()..errorResponse = errorResponse;
+    } catch (error) {
+      debugPrint("❌ General Error: $error");
+      final errorResponse = handleError(error);
+      return ReturnReportModel()..errorResponse = errorResponse;
     }
   }
 
