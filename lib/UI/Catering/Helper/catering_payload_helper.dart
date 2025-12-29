@@ -53,12 +53,26 @@ class BookingPayloadHelper {
     if (paymentType == "Partially Paid") {
       payload.addAll({
         "paymenttype": "PARTIALLY",
-        "paymentdetails": partialPayments
-                ?.map((p) => {
-                      "mode": p['mode'],
-                      "amount": p['amount'],
-                    })
-                .toList() ??
+        "paymentdetails": partialPayments?.map((p) {
+              DateTime parsedDate;
+
+              final dateStr = p['date'];
+
+              // ✅ Handle both formats safely
+              if (dateStr.contains('/')) {
+                parsedDate = DateFormat('dd/MM/yyyy').parse(dateStr);
+              } else {
+                parsedDate = DateFormat('dd-MM-yyyy').parse(dateStr);
+              }
+
+              final apiDate = DateFormat('yyyy-MM-dd').format(parsedDate);
+
+              return {
+                "mode": p['mode'],
+                "amount": p['amount'],
+                "date": apiDate,
+              };
+            }).toList() ??
             [],
       });
     } else {

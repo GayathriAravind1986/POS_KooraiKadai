@@ -1,6 +1,4 @@
 import 'dart:convert';
-
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -8,12 +6,14 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Catering/catering_bloc.dart';
+import 'package:simple/ModelClass/Catering/deleteCateringModel.dart';
 import 'package:simple/ModelClass/Catering/getAllCateringModel.dart';
 import 'package:simple/ModelClass/Catering/getCustomerByLocation.dart';
 import 'package:simple/ModelClass/Catering/getItemAddonsForPackageModel.dart';
 import 'package:simple/ModelClass/Catering/getPackageModel.dart';
 import 'package:simple/ModelClass/Catering/getSingleCateringDetailsModel.dart';
 import 'package:simple/ModelClass/Catering/postCateringBookingModel.dart';
+import 'package:simple/ModelClass/Catering/putCateringBookingModel.dart';
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
@@ -61,6 +61,8 @@ class CateringViewViewState extends State<CateringViewView> {
       PostCateringBookingModel();
   GetSingleCateringDetailsModel getSingleCateringDetailsModel =
       GetSingleCateringDetailsModel();
+  PutCateringBookingModel putCateringBooking = PutCateringBookingModel();
+  DeleteCateringModel deleteCateringModel = DeleteCateringModel();
   String? errorMessage;
   bool cateringLoad = false;
   final TextEditingController dateController = TextEditingController();
@@ -79,6 +81,8 @@ class CateringViewViewState extends State<CateringViewView> {
   String? selectedPartialPaymentMode;
   final TextEditingController partialPaidAmountController =
       TextEditingController();
+  final TextEditingController partialPaidDateController =
+      TextEditingController();
 
   String? locationId;
   bool itAddLoad = false;
@@ -88,6 +92,7 @@ class CateringViewViewState extends State<CateringViewView> {
   String? packageId;
   bool saveLoad = false;
   bool editLoad = false;
+  bool deleteLoad = false;
 
   ///filter
   TextEditingController searchController = TextEditingController();
@@ -104,6 +109,39 @@ class CateringViewViewState extends State<CateringViewView> {
   int rowsPerPage = 10;
   int totalItems = 0;
   int totalPages = 1;
+
+  Future<void> pickPartialPaymentDate() async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: appPrimaryColor,
+              onPrimary: whiteColor,
+              onSurface: blackColor,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: appPrimaryColor,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        partialPaidDateController.text =
+            DateFormat('dd-MM-yyyy').format(picked);
+      });
+    }
+  }
 
   Future<void> _selectDate(
     BuildContext context,
@@ -158,6 +196,16 @@ class CateringViewViewState extends State<CateringViewView> {
             );
       });
     }
+  }
+
+  /// package dropdown logic common
+  void onPackageSelected(String packId) {
+    selectedPackage = packId;
+    quantity.text = "1";
+
+    context.read<CateringBloc>().add(CateringItemAddons(packId));
+
+    calculateTotals();
   }
 
   /// save
@@ -233,6 +281,7 @@ class CateringViewViewState extends State<CateringViewView> {
       });
       isValid = false;
     }
+
     // Validate payment type
     if (selectedPaymentType == null || selectedPaymentType!.isEmpty) {
       setState(() {
@@ -241,13 +290,16 @@ class CateringViewViewState extends State<CateringViewView> {
       });
       isValid = false;
     }
-    // Validate payment mode
-    if (selectedPaymentMode == null || selectedPaymentMode!.isEmpty) {
-      setState(() {
-        showPaymentModeError = true;
-        paymentModeErrorText = 'Payment Mode is required';
-      });
-      isValid = false;
+
+    // ✅ FIXED: Only validate payment mode for "Fully Paid"
+    if (selectedPaymentType == "Fully Paid") {
+      if (selectedPaymentMode == null || selectedPaymentMode!.isEmpty) {
+        setState(() {
+          showPaymentModeError = true;
+          paymentModeErrorText = 'Payment Mode is required';
+        });
+        isValid = false;
+      }
     }
 
     return isValid;
@@ -612,6 +664,10 @@ class CateringViewViewState extends State<CateringViewView> {
       return;
     }
 
+    if (partialPaidAmountController.text.isEmpty) {
+      showValidationSnackBar('Please select paid date');
+      return;
+    }
     double amount = double.tryParse(partialPaidAmountController.text) ?? 0.0;
     if (amount <= 0) {
       showValidationSnackBar('Please enter valid payment amount');
@@ -633,14 +689,22 @@ class CateringViewViewState extends State<CateringViewView> {
       partialPayments.add({
         'mode': selectedPartialPaymentMode,
         'amount': amount,
+        'date': partialPaidDateController.text,
+        'isLocked': false,
       });
       selectedPartialPaymentMode = null;
+      partialPaidDateController.clear();
       partialPaidAmountController.clear();
       calculateTotals();
     });
   }
 
   void removePartialPayment(int index) {
+    if (partialPayments[index]['isLocked'] == true) {
+      showValidationSnackBar('Paid payment cannot be removed');
+      return;
+    }
+
     setState(() {
       partialPayments.removeAt(index);
       calculateTotals();
@@ -651,6 +715,7 @@ class CateringViewViewState extends State<CateringViewView> {
     setState(() {
       selectedPartialPaymentMode = null;
       partialPaidAmountController.clear();
+      partialPaidDateController.clear(); // Clear date
       paidAmountError = null;
 
       // Recalculate paid & balance WITHOUT current typing
@@ -679,10 +744,12 @@ class CateringViewViewState extends State<CateringViewView> {
       partialPayments.clear();
       selectedPartialPaymentMode = null;
       partialPaidAmountController.clear();
+      partialPaidDateController.clear();
       packageAmount.clear();
       addonsAmount.clear();
       finalAmount.clear();
       totalAmount.clear();
+      discountAmountCalculated.clear();
       discountAmount.clear();
       balanceAmount.clear();
       paidAmount.clear();
@@ -817,6 +884,8 @@ class CateringViewViewState extends State<CateringViewView> {
       selectedCustomer = null;
       selectedPackage = null;
       selectedDiscount = null;
+      selectedItems.clear();
+      selectedAddons.clear();
       selectedPaymentType = null;
       selectedPaymentMode = null;
       partialPayments.clear();
@@ -826,6 +895,7 @@ class CateringViewViewState extends State<CateringViewView> {
       addonsAmount.clear();
       finalAmount.clear();
       totalAmount.clear();
+      discountAmountCalculated.clear();
       discountAmount.clear();
       balanceAmount.clear();
       paidAmount.clear();
@@ -979,6 +1049,10 @@ class CateringViewViewState extends State<CateringViewView> {
                   getLocationModel.data?.locationName != null
                       ? Expanded(
                           child: TextFormField(
+                            style: TextStyle(
+                                color: greyColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold),
                             enabled: false,
                             initialValue: getLocationModel.data!.locationName!,
                             decoration: InputDecoration(
@@ -1083,17 +1157,11 @@ class CateringViewViewState extends State<CateringViewView> {
                           .toList(),
                       onChanged: (value) {
                         setState(() {
-                          selectedPackage = value;
                           showPackageError = false;
                           packageErrorText = null;
-                          quantity.text = "1";
                           packageId = value;
                           debugPrint("packageId:$packageId");
-                          debugPrint("quantity:${quantity.text}");
-                          context
-                              .read<CateringBloc>()
-                              .add(CateringItemAddons(packageId.toString()));
-                          calculateTotals();
+                          onPackageSelected(packageId.toString());
                         });
                       },
                     ),
@@ -1108,6 +1176,10 @@ class CateringViewViewState extends State<CateringViewView> {
                   if (selectedPackage != null)
                     Expanded(
                       child: TextFormField(
+                          style: TextStyle(
+                              color: blackColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold),
                           readOnly: false,
                           controller: quantity,
                           keyboardType:
@@ -1164,7 +1236,15 @@ class CateringViewViewState extends State<CateringViewView> {
                                 : selectedItems
                                     .map((e) => e['name'])
                                     .join(', '),
-                            style: TextStyle(color: greyColor),
+                            style: TextStyle(
+                              color: selectedItems.isEmpty
+                                  ? greyColor
+                                  : blackColor,
+                              fontSize: 14,
+                              fontWeight: selectedItems.isEmpty
+                                  ? FontWeight.normal
+                                  : FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -1193,7 +1273,14 @@ class CateringViewViewState extends State<CateringViewView> {
                                         ? "${e['name']} (Free)"
                                         : "${e['name']} (₹$price)";
                                   }).join(', '),
-                            style: TextStyle(color: greyColor),
+                            style: TextStyle(
+                                color: selectedAddons.isEmpty
+                                    ? greyColor
+                                    : blackColor,
+                                fontSize: 14,
+                                fontWeight: selectedAddons.isEmpty
+                                    ? FontWeight.normal
+                                    : FontWeight.w600),
                           ),
                         ),
                       ),
@@ -1375,7 +1462,7 @@ class CateringViewViewState extends State<CateringViewView> {
                 ...partialPayments.asMap().entries.map((entry) {
                   int index = entry.key;
                   Map<String, dynamic> payment = entry.value;
-
+                  bool isLocked = payment['isLocked'] == true;
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(12),
@@ -1385,6 +1472,39 @@ class CateringViewViewState extends State<CateringViewView> {
                     ),
                     child: Row(
                       children: [
+                        // Paid Date Display
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'Paid Date: ',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  payment['date'] ?? '-',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+
                         // Payment Mode Display
                         Expanded(
                           flex: 2,
@@ -1452,24 +1572,30 @@ class CateringViewViewState extends State<CateringViewView> {
                         const SizedBox(width: 12),
 
                         // Remove Button
+
                         SizedBox(
                           width: 50,
                           height: 50,
-                          child: ElevatedButton(
-                            onPressed: () => removePartialPayment(index),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: redColor,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                          child: Tooltip(
+                            message: isLocked
+                                ? 'Paid payment cannot be removed'
+                                : 'Remove payment',
+                            child: ElevatedButton(
+                              onPressed: isLocked
+                                  ? null
+                                  : () => removePartialPayment(index),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    isLocked ? Colors.grey : redColor,
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              '-',
-                              style: TextStyle(
+                              child: Icon(
+                                isLocked ? Icons.lock : Icons.remove,
                                 color: whiteColor,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                                size: 24,
                               ),
                             ),
                           ),
@@ -1478,7 +1604,6 @@ class CateringViewViewState extends State<CateringViewView> {
                     ),
                   );
                 }).toList(),
-
                 // Add new partial payment row
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -1489,12 +1614,45 @@ class CateringViewViewState extends State<CateringViewView> {
                   ),
                   child: Row(
                     children: [
+                      // Paid Date TextField
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          controller: partialPaidDateController,
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Paid Date *',
+                            labelStyle: TextStyle(color: appPrimaryColor),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.calendar_month),
+                              onPressed: pickPartialPaymentDate,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(color: greyColor),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: greyColor),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: appPrimaryColor, width: 2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+
                       // Payment Mode Dropdown
                       Expanded(
                         flex: 2,
                         child: DropdownButtonFormField<String>(
                           decoration: InputDecoration(
-                            labelText: 'Payment Mode',
+                            labelText: 'Payment Mode *',
                             labelStyle: TextStyle(color: appPrimaryColor),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 10),
@@ -1539,7 +1697,7 @@ class CateringViewViewState extends State<CateringViewView> {
                             calculateTotalsWithCurrentInput();
                           },
                           decoration: InputDecoration(
-                            labelText: 'Paid Amount',
+                            labelText: 'Paid Amount *',
                             labelStyle: TextStyle(color: appPrimaryColor),
                             errorText: paidAmountError,
                             contentPadding: const EdgeInsets.symmetric(
@@ -1561,6 +1719,8 @@ class CateringViewViewState extends State<CateringViewView> {
                         ),
                       ),
                       const SizedBox(width: 12),
+
+                      // Add Button
                       SizedBox(
                         width: 50,
                         height: 50,
@@ -1713,51 +1873,123 @@ class CateringViewViewState extends State<CateringViewView> {
                       child: editLoad
                           ? SpinKitCircle(color: appPrimaryColor, size: 30)
                           : ElevatedButton(
-                              onPressed: () {
-                                // final parsed = DateFormat("dd/MM/yyyy")
-                                //     .parse(dateController.text);
-                                // final backendDate =
-                                //     DateFormat("yyyy-MM-dd").format(parsed);
-                                // debugPrint("date:$backendDate");
-                                // if (getLocationModel.data!.locationName ==
-                                //     null) {
-                                //   showToast("Location not found", context,
-                                //       color: false);
-                                // } else if (selectedCategory == null) {
-                                //   showToast("Select Category", context,
-                                //       color: false);
-                                // } else if (selectedPayment == null) {
-                                //   showToast("Select payment method", context,
-                                //       color: false);
-                                // } else if (nameController.text.isEmpty) {
-                                //   showToast("Enter category name", context,
-                                //       color: false);
-                                // } else if (amountController.text.isEmpty) {
-                                //   showToast("Enter amount", context,
-                                //       color: false);
-                                // } else {
-                                //   setState(() {
-                                //     editLoad = true;
-                                //     context.read<ExpenseBloc>().add(
-                                //         UpdateExpense(
-                                //             expenseId.toString(),
-                                //             backendDate,
-                                //             categoryId.toString(),
-                                //             nameController.text,
-                                //             selectedPayment == "Cash"
-                                //                 ? "cash"
-                                //                 : selectedPayment == "Card"
-                                //                     ? "card"
-                                //                     : selectedPayment == "UPI"
-                                //                         ? "upi"
-                                //                         : selectedPayment ==
-                                //                                 "Bank Transfer"
-                                //                             ? "bank_transfer"
-                                //                             : "other",
-                                //             amountController.text,
-                                //             locationId.toString()));
-                                //   });
-                                // }
+                              onPressed: () async {
+                                if (!validateForm()) {
+                                  return;
+                                }
+                                if (selectedPaymentType == "Partially Paid") {
+                                  if (partialPaidDateController.text.isEmpty &&
+                                      partialPayments.isEmpty) {
+                                    showValidationSnackBar(
+                                        'Please select paid date');
+                                    return;
+                                  }
+                                  // ❌ BLOCK: amount entered but no payment mode
+                                  if (partialPaidAmountController
+                                          .text.isNotEmpty &&
+                                      selectedPartialPaymentMode == null) {
+                                    showValidationSnackBar(
+                                        'Please select payment mode');
+                                    return;
+                                  }
+
+                                  // ✅ Auto-add if user typed but didn't click +
+                                  if (selectedPartialPaymentMode != null &&
+                                      partialPaidAmountController
+                                          .text.isNotEmpty) {
+                                    double amount = double.tryParse(
+                                            partialPaidAmountController.text) ??
+                                        0.0;
+                                    double finalAmt =
+                                        double.tryParse(finalAmount.text) ??
+                                            0.0;
+
+                                    double totalPaid = partialPayments.fold(0.0,
+                                        (sum, p) => sum + (p['amount'] ?? 0.0));
+
+                                    if (amount <= 0) {
+                                      showValidationSnackBar(
+                                          'Please enter valid payment amount');
+                                      return;
+                                    }
+
+                                    if ((totalPaid + amount) > finalAmt) {
+                                      showValidationSnackBar(
+                                          'Paid amount exceeds final amount. Please adjust.');
+                                      return;
+                                    }
+
+                                    addPartialPayment();
+                                    await Future.delayed(
+                                        const Duration(milliseconds: 100));
+                                  }
+
+                                  // ❌ No partial payments added
+                                  if (partialPayments.isEmpty) {
+                                    showValidationSnackBar(
+                                        'Please add at least one partial payment');
+                                    return;
+                                  }
+
+                                  // ❌ Overpayment check
+                                  double finalAmt =
+                                      double.tryParse(finalAmount.text) ?? 0.0;
+                                  double totalPaid = partialPayments.fold(0.0,
+                                      (sum, p) => sum + (p['amount'] ?? 0.0));
+
+                                  if (totalPaid > finalAmt) {
+                                    showValidationSnackBar(
+                                        'Total paid exceeds final amount. Please adjust.');
+                                    return;
+                                  }
+                                }
+
+                                String? discountTypeForApi;
+                                if (selectedDiscount == 'Fixed') {
+                                  discountTypeForApi = 'FIXED';
+                                } else if (selectedDiscount == 'Percentage') {
+                                  discountTypeForApi = 'PERCENTAGE';
+                                }
+
+                                final basePayload =
+                                    BookingPayloadHelper.buildCommonPayload(
+                                  locationId: locationId.toString(),
+                                  customerId: selectedCustomer!,
+                                  packageId: selectedPackage!,
+                                  date: dateController.text,
+                                  quantity: int.tryParse(quantity.text) ?? 1,
+                                  selectedItems: selectedItems,
+                                  selectedAddons: selectedAddons,
+                                  selectedDiscount:
+                                      discountTypeForApi.toString(),
+                                  packageAmount: packageAmount.text,
+                                  addonsAmount: addonsAmount.text,
+                                  totalAmount: totalAmount.text,
+                                  discountInput: discountAmount.text,
+                                  discountCalculated:
+                                      discountAmountCalculated.text,
+                                  finalAmount: finalAmount.text,
+                                  paidAmount: paidAmount.text,
+                                  balanceAmount: balanceAmount.text,
+                                );
+
+                                final payload =
+                                    BookingPayloadHelper.buildFinalPayload(
+                                  basePayload: basePayload,
+                                  paymentType: selectedPaymentType ?? "",
+                                  paymentMode: selectedPaymentMode,
+                                  partialPayments: partialPayments,
+                                );
+
+                                debugPrint("Payload:${jsonEncode(payload)}");
+
+                                setState(() {
+                                  editLoad = true;
+                                  context.read<CateringBloc>().add(
+                                        UpdateCatering(
+                                            jsonEncode(payload), cateringId),
+                                      );
+                                });
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: appPrimaryColor,
@@ -1778,64 +2010,87 @@ class CateringViewViewState extends State<CateringViewView> {
                       child: saveLoad
                           ? SpinKitCircle(color: appPrimaryColor, size: 30)
                           : ElevatedButton(
-                              // Replace your SAVE button's onPressed logic with this:
-
-                              onPressed: () {
+                              onPressed: () async {
                                 if (!validateForm()) {
                                   return;
                                 }
-
                                 if (selectedPaymentType == "Partially Paid") {
-                                  // Case 1: No payments added at all
-                                  if (partialPayments.isEmpty &&
-                                      (selectedPartialPaymentMode == null ||
-                                          partialPaidAmountController
-                                              .text.isEmpty)) {
+                                  if (partialPaidDateController.text.isEmpty &&
+                                      partialPayments.isEmpty) {
                                     showValidationSnackBar(
-                                        'Please add at least one partial payment');
-                                    return; // ⛔ STOP API
+                                        'Please select paid date');
+                                    return;
+                                  }
+                                  // ❌ BLOCK: amount entered but no payment mode
+                                  if (partialPaidAmountController
+                                          .text.isNotEmpty &&
+                                      selectedPartialPaymentMode == null) {
+                                    showValidationSnackBar(
+                                        'Please select payment mode');
+                                    return;
                                   }
 
-                                  // Case 2: User typed but didn't click +
+                                  // ✅ Auto-add if user typed but didn't click +
                                   if (selectedPartialPaymentMode != null &&
                                       partialPaidAmountController
                                           .text.isNotEmpty) {
-                                    // Validate before auto-adding
                                     double amount = double.tryParse(
                                             partialPaidAmountController.text) ??
                                         0.0;
                                     double finalAmt =
                                         double.tryParse(finalAmount.text) ??
                                             0.0;
+
                                     double totalPaid = partialPayments.fold(0.0,
                                         (sum, p) => sum + (p['amount'] ?? 0.0));
 
-                                    if ((totalPaid + amount) > finalAmt) {
+                                    if (amount <= 0) {
                                       showValidationSnackBar(
-                                          'Paid amount (${totalPaid + amount}) exceeds final amount ($finalAmt). Please adjust.');
-                                      return; // ⛔ STOP API
+                                          'Please enter valid payment amount');
+                                      return;
                                     }
 
-                                    // If valid, auto-add the payment
+                                    if ((totalPaid + amount) > finalAmt) {
+                                      showValidationSnackBar(
+                                          'Paid amount exceeds final amount. Please adjust.');
+                                      return;
+                                    }
+
                                     addPartialPayment();
+                                    await Future.delayed(
+                                        const Duration(milliseconds: 100));
                                   }
 
-                                  // Case 3: Check if total paid matches final amount (optional strict validation)
+                                  // ❌ No partial payments added
+                                  if (partialPayments.isEmpty) {
+                                    showValidationSnackBar(
+                                        'Please add at least one partial payment');
+                                    return;
+                                  }
+
+                                  // ❌ Overpayment check
                                   double finalAmt =
                                       double.tryParse(finalAmount.text) ?? 0.0;
                                   double totalPaid = partialPayments.fold(0.0,
                                       (sum, p) => sum + (p['amount'] ?? 0.0));
 
-                                  // Optional: Allow saving even with balance remaining
-                                  // Remove this block if you want to allow saving with balance
-                                  if (totalPaid < finalAmt) {
+                                  if (totalPaid > finalAmt) {
                                     showValidationSnackBar(
-                                        'Balance amount remaining: ${finalAmt - totalPaid}. Please complete payment or adjust.');
-                                    return; // ⛔ STOP API
+                                        'Total paid exceeds final amount. Please adjust.');
+                                    return;
                                   }
                                 }
 
-                                // Build payload and save
+                                // Build discount type
+                                String? discountTypeForApi;
+                                if (selectedDiscount == 'Fixed') {
+                                  discountTypeForApi = 'FIXED';
+                                } else if (selectedDiscount == 'Percentage') {
+                                  discountTypeForApi = 'PERCENTAGE';
+                                }
+                                debugPrint("discountType:$discountTypeForApi");
+
+                                // Build payload
                                 final basePayload =
                                     BookingPayloadHelper.buildCommonPayload(
                                   locationId: locationId.toString(),
@@ -1845,7 +2100,8 @@ class CateringViewViewState extends State<CateringViewView> {
                                   quantity: int.tryParse(quantity.text) ?? 1,
                                   selectedItems: selectedItems,
                                   selectedAddons: selectedAddons,
-                                  selectedDiscount: selectedDiscount.toString(),
+                                  selectedDiscount:
+                                      discountTypeForApi.toString(),
                                   packageAmount: packageAmount.text,
                                   addonsAmount: addonsAmount.text,
                                   totalAmount: totalAmount.text,
@@ -1876,7 +2132,7 @@ class CateringViewViewState extends State<CateringViewView> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: appPrimaryColor,
-                                minimumSize: const Size(0, 50), // Height only
+                                minimumSize: const Size(0, 50),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -2003,7 +2259,7 @@ class CateringViewViewState extends State<CateringViewView> {
                         }
                       },
                       hint: Text(
-                        'All Customer',
+                        'All Catering',
                         style: MyTextStyle.f14(
                           greyColor,
                           weight: FontWeight.normal,
@@ -2187,7 +2443,14 @@ class CateringViewViewState extends State<CateringViewView> {
                                                     ),
                                                     const SizedBox(width: 12),
                                                     InkWell(
-                                                      onTap: () {},
+                                                      onTap: () {
+                                                        context
+                                                            .read<
+                                                                CateringBloc>()
+                                                            .add(DeleteCatering(
+                                                                item.id
+                                                                    .toString()));
+                                                      },
                                                       child: const Icon(
                                                           Icons.delete,
                                                           color: redColor),
@@ -2397,8 +2660,8 @@ class CateringViewViewState extends State<CateringViewView> {
               if (packageId != null &&
                   (getPackageModel.data ?? []).any((p) => p.id == packageId)) {
                 selectedPackage = packageId;
+                context.read<CateringBloc>().add(CateringItemAddons(packageId));
               }
-
               quantity.text = data.quantity.toString();
 
               packageAmount.text = data.packageamount.toString();
@@ -2424,7 +2687,11 @@ class CateringViewViewState extends State<CateringViewView> {
                       })
                   .toList();
 
-              selectedDiscount = data.discounttype;
+              selectedDiscount = data.discounttype == "PERCENTAGE"
+                  ? "Percentage"
+                  : data.discounttype == "FIXED"
+                      ? "Fixed"
+                      : null;
               discountAmount.text = data.discountvalue.toString();
 
               if (data.paymenttype == "PARTIALLY") {
@@ -2433,6 +2700,8 @@ class CateringViewViewState extends State<CateringViewView> {
                     .map<Map<String, dynamic>>((p) => {
                           "mode": p.mode,
                           "amount": p.amount,
+                          "date": formatDate(p.date ?? ''),
+                          "isLocked": true,
                         })
                     .toList();
               } else {
@@ -2448,7 +2717,65 @@ class CateringViewViewState extends State<CateringViewView> {
 
           return true;
         }
-
+        if (current is PutCateringBookingModel) {
+          putCateringBooking = current;
+          if (putCateringBooking.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (putCateringBooking.success == true) {
+            showToast("Catering Updated Successfully", context, color: true);
+            _refreshEditData();
+            context.read<CateringBloc>().add(CateringBooking(
+                searchController.text,
+                locationId ?? "",
+                cusIdFilter ?? "",
+                fromDate ?? "",
+                toDate ?? "",
+                offset,
+                rowsPerPage));
+            Future.delayed(Duration(milliseconds: 100), () {
+              clearCateringForm();
+            });
+            setState(() {
+              editLoad = false;
+            });
+          } else {
+            setState(() {
+              editLoad = false;
+            });
+          }
+          return true;
+        }
+        if (current is DeleteCateringModel) {
+          deleteCateringModel = current;
+          if (deleteCateringModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (deleteCateringModel.success == true) {
+            setState(() {
+              deleteLoad = false;
+              cateringLoad = true;
+              showToast("${deleteCateringModel.message}", context, color: true);
+            });
+            context.read<CateringBloc>().add(CateringBooking(
+                searchController.text,
+                locationId ?? "",
+                cusIdFilter ?? "",
+                fromDate ?? "",
+                toDate ?? "",
+                offset,
+                rowsPerPage));
+          } else if (deleteCateringModel.errorResponse != null) {
+            showToast("${deleteCateringModel.errorResponse?.message}", context,
+                color: false);
+            setState(() {
+              deleteLoad = false;
+            });
+          }
+          return true;
+        }
         return false;
       }),
       builder: (context, dynamic) {

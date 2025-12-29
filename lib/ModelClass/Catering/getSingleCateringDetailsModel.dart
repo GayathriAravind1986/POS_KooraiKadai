@@ -365,32 +365,40 @@ class Paymentdetails {
   Paymentdetails({
     String? mode,
     num? amount,
+    String? date,
   }) {
     _mode = mode;
     _amount = amount;
+    _date = date;
   }
 
   Paymentdetails.fromJson(dynamic json) {
     _mode = json['mode'];
     _amount = json['amount'];
+    _date = json['date'];
   }
   String? _mode;
   num? _amount;
+  String? _date;
   Paymentdetails copyWith({
     String? mode,
     num? amount,
+    String? date,
   }) =>
       Paymentdetails(
         mode: mode ?? _mode,
         amount: amount ?? _amount,
+        date: date ?? _date,
       );
   String? get mode => _mode;
   num? get amount => _amount;
+  String? get date => _date;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     map['mode'] = _mode;
     map['amount'] = _amount;
+    map['date'] = _date;
     return map;
   }
 }

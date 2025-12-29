@@ -50,6 +50,17 @@ class CateringById extends CateringEvent {
   CateringById(this.cateringId);
 }
 
+class UpdateCatering extends CateringEvent {
+  final String orderPayloadJson;
+  String? cateringId;
+  UpdateCatering(this.orderPayloadJson, this.cateringId);
+}
+
+class DeleteCatering extends CateringEvent {
+  String? cateringId;
+  DeleteCatering(this.cateringId);
+}
+
 class CateringBloc extends Bloc<CateringEvent, dynamic> {
   CateringBloc() : super(dynamic) {
     on<CateringBooking>((event, emit) async {
@@ -101,6 +112,22 @@ class CateringBloc extends Bloc<CateringEvent, dynamic> {
     });
     on<CateringById>((event, emit) async {
       await ApiProvider().getSingleCateringAPI(event.cateringId).then((value) {
+        emit(value);
+      }).catchError((error) {
+        emit(error);
+      });
+    });
+    on<UpdateCatering>((event, emit) async {
+      await ApiProvider()
+          .putCateringBookingAPI(event.orderPayloadJson, event.cateringId)
+          .then((value) {
+        emit(value);
+      }).catchError((error) {
+        emit(error);
+      });
+    });
+    on<DeleteCatering>((event, emit) async {
+      await ApiProvider().deleteCateringAPI(event.cateringId).then((value) {
         emit(value);
       }).catchError((error) {
         emit(error);
