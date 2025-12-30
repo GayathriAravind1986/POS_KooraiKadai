@@ -1639,7 +1639,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetCateringModel getCateringResponse =
-              GetCateringModel.fromJson(response.data);
+          GetCateringModel.fromJson(response.data);
           return getCateringResponse;
         }
       } else {
@@ -1728,7 +1728,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetPackageModel getPackageResponse =
-              GetPackageModel.fromJson(response.data);
+          GetPackageModel.fromJson(response.data);
           return getPackageResponse;
         }
       } else {
@@ -1752,6 +1752,7 @@ class ApiProvider {
     }
   }
 
+
   /// get Item-Addons by package API - Integration
   Future<GetItemAddonsForPackageModel> getItemAddonsAPI(
       String? packageId) async {
@@ -1774,7 +1775,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetItemAddonsForPackageModel getItemAddonsForPackageResponse =
-              GetItemAddonsForPackageModel.fromJson(response.data);
+          GetItemAddonsForPackageModel.fromJson(response.data);
           return getItemAddonsForPackageResponse;
         }
       } else {
@@ -1823,7 +1824,7 @@ class ApiProvider {
       if (response.statusCode == 201 && response.data != null) {
         try {
           PostCateringBookingModel postCateringBookingResponse =
-              PostCateringBookingModel.fromJson(response.data);
+          PostCateringBookingModel.fromJson(response.data);
           return postCateringBookingResponse;
         } catch (e) {
           return PostCateringBookingModel()
@@ -1869,7 +1870,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetSingleCateringDetailsModel getSingleCateringResponse =
-              GetSingleCateringDetailsModel.fromJson(response.data);
+          GetSingleCateringDetailsModel.fromJson(response.data);
           return getSingleCateringResponse;
         }
       } else {
@@ -1915,7 +1916,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         try {
           PutCateringBookingModel putCateringBookingResponse =
-              PutCateringBookingModel.fromJson(response.data);
+          PutCateringBookingModel.fromJson(response.data);
           return putCateringBookingResponse;
         } catch (e) {
           return PutCateringBookingModel()
@@ -1957,7 +1958,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           DeleteCateringModel deleteCateringResponse =
-              DeleteCateringModel.fromJson(response.data);
+          DeleteCateringModel.fromJson(response.data);
           return deleteCateringResponse;
         }
       } else {
@@ -1980,6 +1981,7 @@ class ApiProvider {
       return DeleteCateringModel()..errorResponse = errorResponse;
     }
   }
+
 
   /// handle Error Response
   ErrorResponse handleError(Object error) {

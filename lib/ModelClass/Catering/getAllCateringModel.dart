@@ -142,11 +142,11 @@ class Data {
     _id = json['id'];
     _date = json['date'];
     _location =
-        json['location'] != null ? Location.fromJson(json['location']) : null;
+    json['location'] != null ? Location.fromJson(json['location']) : null;
     _customer =
-        json['customer'] != null ? Customer.fromJson(json['customer']) : null;
+    json['customer'] != null ? Customer.fromJson(json['customer']) : null;
     _package =
-        json['package'] != null ? Package.fromJson(json['package']) : null;
+    json['package'] != null ? Package.fromJson(json['package']) : null;
     if (json['items'] != null) {
       _items = [];
       json['items'].forEach((v) {

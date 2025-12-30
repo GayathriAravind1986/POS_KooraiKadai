@@ -103,7 +103,7 @@ class Data {
     _address = json['address'];
     _email = json['email'];
     _location =
-        json['location'] != null ? Location.fromJson(json['location']) : null;
+    json['location'] != null ? Location.fromJson(json['location']) : null;
     _createdBy = json['createdBy'];
     _createdAt = json['createdAt'];
     _updatedAt = json['updatedAt'];

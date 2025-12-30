@@ -54,25 +54,25 @@ class BookingPayloadHelper {
       payload.addAll({
         "paymenttype": "PARTIALLY",
         "paymentdetails": partialPayments?.map((p) {
-              DateTime parsedDate;
+          DateTime parsedDate;
 
-              final dateStr = p['date'];
+          final dateStr = p['date'];
 
-              // ✅ Handle both formats safely
-              if (dateStr.contains('/')) {
-                parsedDate = DateFormat('dd/MM/yyyy').parse(dateStr);
-              } else {
-                parsedDate = DateFormat('dd-MM-yyyy').parse(dateStr);
-              }
+          // ✅ Handle both formats safely
+          if (dateStr.contains('/')) {
+            parsedDate = DateFormat('dd/MM/yyyy').parse(dateStr);
+          } else {
+            parsedDate = DateFormat('dd-MM-yyyy').parse(dateStr);
+          }
 
-              final apiDate = DateFormat('yyyy-MM-dd').format(parsedDate);
+          final apiDate = DateFormat('yyyy-MM-dd').format(parsedDate);
 
-              return {
-                "mode": p['mode'],
-                "amount": p['amount'],
-                "date": apiDate,
-              };
-            }).toList() ??
+          return {
+            "mode": p['mode'],
+            "amount": p['amount'],
+            "date": apiDate,
+          };
+        }).toList() ??
             [],
       });
     } else {

@@ -231,37 +231,31 @@ class _DashBoardState extends State<DashBoard> {
                   _refreshStock();
                 });
                 break;
-              case 4: // Catering (Main Catering page)
-                hasRefreshedCatering = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _refreshCatering();
-                });
-                break;
-              case 5: // Customers
+              case 4: // Customers (Changed from Catering Main to Customers)
                 hasRefreshedCustomer = true;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _refreshCustomer();
                 });
                 break;
-              case 6: // Catering Booking
+              case 5: // Catering Booking (Changed from Customers to Catering Booking)
                 hasRefreshedCateringBooking = true;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _refreshCateringBooking();
                 });
                 break;
-              case 7: // Credit
-                hasRefreshedCredit = true; // Set credit flag
+              case 6: // Credit (Changed from 7 to 6)
+                hasRefreshedCredit = true;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _refreshCredit();
                 });
                 break;
-              case 8: // Return
-                hasRefreshedReturn = true; // Set return flag
+              case 7: // Return (Changed from 8 to 7)
+                hasRefreshedReturn = true;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _refreshReturn();
                 });
                 break;
-              case 9: // Credit & Return Report
+              case 8: // Credit & Return Report (Changed from 9 to 8)
                 hasRefreshedReturnReport = true;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _refreshReturnReport();
@@ -335,23 +329,7 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 4: Catering (Main page)
-            hasRefreshedCatering == true
-                ? BlocProvider(
-                create: (_) => CateringBloc(),
-                child: CateringViewView(
-                  key: cateringKey,
-                  hasRefreshedCatering: hasRefreshedCatering,
-                ))
-                : BlocProvider(
-              create: (_) => CateringBloc(),
-              child: CateringView(
-                key: cateringKey,
-                hasRefreshedCatering: hasRefreshedCatering,
-              ),
-            ),
-
-            // Index 5: Customers
+            // Index 4: Customers (CHANGED from Catering Main to Customers)
             hasRefreshedCustomer == true
                 ? BlocProvider(
                 create: (_) => CustomerBloc(),
@@ -367,7 +345,7 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 6: Catering Booking
+            // Index 5: Catering Booking (CHANGED from Customers to Catering Booking)
             hasRefreshedCateringBooking == true
                 ? BlocProvider(
                 create: (_) => CateringBloc(),
@@ -383,7 +361,7 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 7: Credit
+            // Index 6: Credit (CHANGED from 7 to 6)
             hasRefreshedCredit == true
                 ? BlocProvider(
                 create: (_) => CreditBloc(),
@@ -399,23 +377,23 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 8: Return - Replace placeholder with actual Return screen
+            // Index 7: Return (CHANGED from 8 to 7)
             hasRefreshedReturn == true
                 ? BlocProvider(
                 create: (_) => ReturnBloc(),
-                child: ReturnViewView( // Use CreditViewView which is actually your Return screen
+                child: ReturnViewView(
                   key: returnKey,
                   hasRefreshedCredit: hasRefreshedReturn,
                 ))
                 : BlocProvider(
               create: (_) => ReturnBloc(),
-              child: ReturnView( // Use CreditView which is actually your Return screen
+              child: ReturnView(
                 key: returnKey,
                 hasRefreshedReturn: hasRefreshedReturn,
               ),
             ),
 
-            // Index 9: Credit & Return Report
+            // Index 8: Credit & Return Report (CHANGED from 9 to 8)
             hasRefreshedReturnReport == true
                 ? BlocProvider(
                 create: (_) => ReportBloc(),
@@ -446,4 +424,3 @@ class _DashBoardState extends State<DashBoard> {
     );
   }
 }
-

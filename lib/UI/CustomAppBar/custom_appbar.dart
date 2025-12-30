@@ -147,20 +147,20 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           icon: Icons.people_outline,
                           label: "Customers",
                           onTap: () {
-                            widget.onTabSelected(5);
+                            widget.onTabSelected(4);  // Changed from 5 to 4
                             _removeDropdownOverlay();
                           },
-                          isSelected: widget.selectedIndex == 5,
+                          isSelected: widget.selectedIndex == 4,  // Changed from 5 to 4
                         ),
                         const Divider(height: 1, color: Colors.grey),
                         _buildDropdownItem(
                           icon: Icons.restaurant,
                           label: "Catering Booking",
                           onTap: () {
-                            widget.onTabSelected(6);
+                            widget.onTabSelected(5);  // Changed from 6 to 5
                             _removeDropdownOverlay();
                           },
-                          isSelected: widget.selectedIndex == 6,
+                          isSelected: widget.selectedIndex == 5,  // Changed from 6 to 5
                         ),
                       ],
                     ),
@@ -224,10 +224,10 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           label: "Credit",
                           onTap: () {
                             // Navigate to Credit page
-                            widget.onTabSelected(7); // Index 7 for Credit
+                            widget.onTabSelected(6); // Changed from 7 to 6
                             _removeDropdownOverlay();
                           },
-                          isSelected: widget.selectedIndex == 7,
+                          isSelected: widget.selectedIndex == 6, // Changed from 7 to 6
                         ),
                         const Divider(height: 1, color: Colors.grey),
                         // Return option
@@ -236,10 +236,10 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           label: "Return",
                           onTap: () {
                             // Navigate to Return page
-                            widget.onTabSelected(8); // Index 8 for Return
+                            widget.onTabSelected(7); // Changed from 8 to 7
                             _removeDropdownOverlay();
                           },
-                          isSelected: widget.selectedIndex == 8,
+                          isSelected: widget.selectedIndex == 7, // Changed from 8 to 7
                         ),
                         const Divider(height: 1, color: Colors.grey),
                         // Report option
@@ -248,10 +248,10 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           label: "Report",
                           onTap: () {
                             // Navigate to Credit & Return Report page
-                            widget.onTabSelected(9); // Index 9 for Report
+                            widget.onTabSelected(8); // Changed from 9 to 8
                             _removeDropdownOverlay();
                           },
-                          isSelected: widget.selectedIndex == 9,
+                          isSelected: widget.selectedIndex == 8, // Changed from 9 to 8
                         ),
                       ],
                     ),
@@ -351,11 +351,11 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           ),
                           SizedBox(width: isCompactMode ? 8 : 16),
                         ],
-                        // Accounts dropdown button
-                        _buildAccountsDropdownButton(isCompactMode),
-                        SizedBox(width: isCompactMode ? 8 : 16),
-                        // Catering dropdown button
+                        // Catering dropdown button (MOVED BEFORE Accounts)
                         _buildCateringDropdownButton(isCompactMode),
+                        SizedBox(width: isCompactMode ? 8 : 16),
+                        // Accounts dropdown button (MOVED AFTER Catering)
+                        _buildAccountsDropdownButton(isCompactMode),
                         SizedBox(width: isCompactMode ? 8 : 16),
                       ],
                     ),
@@ -407,7 +407,8 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
   }
 
   Widget _buildCateringDropdownButton(bool isCompactMode) {
-    final isCateringSelected = widget.selectedIndex == 5 || widget.selectedIndex == 6;
+    // Updated indices: Catering is now 4-5 (Customers: 4, Catering Booking: 5)
+    final isCateringSelected = widget.selectedIndex == 4 || widget.selectedIndex == 5;
 
     return Container(
       key: _cateringButtonKey,
@@ -447,7 +448,8 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
   }
 
   Widget _buildAccountsDropdownButton(bool isCompactMode) {
-    final isAccountsSelected = widget.selectedIndex == 7 || widget.selectedIndex == 8 || widget.selectedIndex == 9;
+    // Updated indices: Accounts is now 6-8 (Credit: 6, Return: 7, Report: 8)
+    final isAccountsSelected = widget.selectedIndex == 6 || widget.selectedIndex == 7 || widget.selectedIndex == 8;
 
     return Container(
       key: _accountsButtonKey,

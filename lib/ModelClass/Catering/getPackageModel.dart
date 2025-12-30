@@ -109,7 +109,7 @@ class Data {
     _image = json['image'];
     _sortOrder = json['sortOrder'];
     _location =
-        json['location'] != null ? Location.fromJson(json['location']) : null;
+    json['location'] != null ? Location.fromJson(json['location']) : null;
     if (json['addons'] != null) {
       _addons = [];
       json['addons'].forEach((v) {
