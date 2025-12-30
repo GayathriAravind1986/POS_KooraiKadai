@@ -8,6 +8,7 @@ import 'package:simple/Bloc/StockIn/stock_in_bloc.dart';
 import 'package:simple/Bloc/demo/demo_bloc.dart';
 import 'package:simple/Bloc/Customer/customer_bloc.dart';
 import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
+import 'package:simple/UI/Accounts/credit_screen.dart';
 import 'package:simple/UI/Catering/catering_booking.dart';
 import 'package:simple/UI/CustomAppBar/custom_appbar.dart';
 import 'package:simple/UI/Customer/customer.dart';
@@ -17,9 +18,12 @@ import 'package:simple/UI/Order/order_tab_page.dart';
 import 'package:simple/UI/StockIn/stock_in.dart';
 import '../../Bloc/Report/accounts_report_bloc.dart';
 import '../Accounts/accounts_report.dart';
+
+import '../Accounts/return_screen.dart';
 import '../Report/report_order.dart';
 import 'package:simple/Bloc/Accounts/credit_bloc.dart';
-import 'package:simple/UI/Accounts/credit_screen.dart';
+
+import 'package:simple/Bloc/Accounts/return_bloc.dart'; // Add this import
 
 class DashBoardScreen extends StatelessWidget {
   final int? selectTab;
@@ -76,9 +80,11 @@ class _DashBoardState extends State<DashBoard> {
   GlobalKey<CateringViewViewState>();
   final GlobalKey<ReturnReportViewState> returnReportKey =
   GlobalKey<ReturnReportViewState>();
-  // Add Credit key
   final GlobalKey<CreditViewViewState> creditKey =
   GlobalKey<CreditViewViewState>();
+  // Add Return key
+  final GlobalKey<ReturnViewViewState> returnKey =
+  GlobalKey<ReturnViewViewState>();
 
   int selectedIndex = 0;
   bool orderLoad = false;
@@ -89,7 +95,8 @@ class _DashBoardState extends State<DashBoard> {
   bool hasRefreshedCustomer = false;
   bool hasRefreshedCateringBooking = false;
   bool hasRefreshedReturnReport = false;
-  bool hasRefreshedCredit = false; // Add this
+  bool hasRefreshedCredit = false;
+  bool hasRefreshedReturn = false; // Add this
 
   @override
   void initState() {
@@ -162,11 +169,18 @@ class _DashBoardState extends State<DashBoard> {
     }
   }
 
-  // Add this function for Credit
   void _refreshCredit() {
     final creditKeyState = creditKey.currentState;
     if (creditKeyState != null) {
       creditKeyState.refreshCredit();
+    }
+  }
+
+  // Add this function for Return
+  void _refreshReturn() {
+    final returnKeyState = returnKey.currentState;
+    if (returnKeyState != null) {
+      returnKeyState.refreshReturn();
     }
   }
 
@@ -189,7 +203,8 @@ class _DashBoardState extends State<DashBoard> {
             hasRefreshedCustomer = false;
             hasRefreshedCateringBooking = false;
             hasRefreshedReturnReport = false;
-            hasRefreshedCredit = false; // Reset credit flag
+            hasRefreshedCredit = false;
+            hasRefreshedReturn = false; // Reset return flag
 
             // Set the appropriate flag and trigger refresh
             switch (index) {
@@ -241,7 +256,10 @@ class _DashBoardState extends State<DashBoard> {
                 });
                 break;
               case 8: // Return
-              // TODO: Implement Return page
+                hasRefreshedReturn = true; // Set return flag
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _refreshReturn();
+                });
                 break;
               case 9: // Credit & Return Report
                 hasRefreshedReturnReport = true;
@@ -381,11 +399,19 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 8: Return (Placeholder)
-            const Center(
-              child: Text(
-                "Return Page - Coming Soon",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            // Index 8: Return - Replace placeholder with actual Return screen
+            hasRefreshedReturn == true
+                ? BlocProvider(
+                create: (_) => ReturnBloc(),
+                child: ReturnViewView( // Use CreditViewView which is actually your Return screen
+                  key: returnKey,
+                  hasRefreshedCredit: hasRefreshedReturn,
+                ))
+                : BlocProvider(
+              create: (_) => ReturnBloc(),
+              child: ReturnView( // Use CreditView which is actually your Return screen
+                key: returnKey,
+                hasRefreshedReturn: hasRefreshedReturn,
               ),
             ),
 
@@ -420,3 +446,4 @@ class _DashBoardState extends State<DashBoard> {
     );
   }
 }
+

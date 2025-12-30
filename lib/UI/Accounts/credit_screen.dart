@@ -8,15 +8,12 @@ import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Accounts/credit_bloc.dart';
 import 'package:simple/ModelClass/Accounts/GetAllCreditsModel.dart';
 import 'package:simple/ModelClass/Accounts/PostCreditModel.dart' hide Data;
+import 'package:simple/ModelClass/Accounts/PutCreditModel.dart' hide Data;
 import 'package:simple/ModelClass/Customer/GetCustomerModel.dart' hide Data;
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart' hide Data;
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
-
-import '../../Bloc/Customer/customer_bloc.dart' hide FetchLocations;
-
-// Add import for the new model
 import 'package:simple/ModelClass/Accounts/GetCustomerByCreditIdModel.dart' hide Data;
 
 class CreditView extends StatelessWidget {
@@ -52,8 +49,9 @@ class CreditViewViewState extends State<CreditViewView> {
   GetLocationModel getLocationModel = GetLocationModel();
   GetAllCreditsModel getAllCreditsModel = GetAllCreditsModel();
   PostCreditModel postCreditModel = PostCreditModel();
+  PutCreditModel putCreditModel = PutCreditModel();
   GetCustomerModel getCustomerModel = GetCustomerModel();
-  GetCustomerByCreditIdModel getCustomerByCreditIdModel = GetCustomerByCreditIdModel(); // Add this
+  GetCustomerByCreditIdModel getCustomerByCreditIdModel = GetCustomerByCreditIdModel();
 
   final TextEditingController dateController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
@@ -73,7 +71,6 @@ class CreditViewViewState extends State<CreditViewView> {
   String? selectedCustomerId;
   String? selectedCustomerName;
 
-  // Pagination variables
   int currentPage = 1;
   int rowsPerPage = 10;
   num totalItems = 0;
@@ -83,7 +80,6 @@ class CreditViewViewState extends State<CreditViewView> {
   DateTime? selectedToDate;
   DateTime? selectedCreditDate;
 
-  // Function to get current page items
   List<Data> _getCurrentPageItems() {
     if (getAllCreditsModel.data == null || getAllCreditsModel.data!.isEmpty) {
       return [];
@@ -103,7 +99,6 @@ class CreditViewViewState extends State<CreditViewView> {
     return getAllCreditsModel.data!.sublist(startIndex, endIndex);
   }
 
-  // Catering-style UI for pagination bar
   Widget buildPaginationBar() {
     int start = ((currentPage - 1) * rowsPerPage) + 1;
     int end = currentPage * rowsPerPage;
@@ -155,7 +150,6 @@ class CreditViewViewState extends State<CreditViewView> {
     );
   }
 
-  // Page navigation function
   void _goToPage(int page) {
     if (page >= 1 && page <= totalPages) {
       setState(() {
@@ -199,10 +193,10 @@ class CreditViewViewState extends State<CreditViewView> {
       isEdit = false;
       creditId = null;
       editLoad = false;
+      saveLoad = false;
     });
   }
 
-  // Function to handle edit icon click
   void _onEditCredit(String creditId) {
     setState(() {
       isEdit = true;
@@ -210,14 +204,67 @@ class CreditViewViewState extends State<CreditViewView> {
       editLoad = true;
     });
 
-    // Fetch credit details for editing
     context.read<CreditBloc>().add(FetchCreditById(creditId: creditId));
+  }
+
+  void _updateCredit() {
+    if (selectedCustomerId == null || selectedCustomerId!.isEmpty) {
+      showToast("Please select a customer", context, color: false);
+      return;
+    }
+
+    if (amountController.text.isEmpty) {
+      showToast("Please enter amount", context, color: false);
+      return;
+    }
+
+    if (getLocationModel.data?.locationName == null) {
+      showToast("Location not found", context, color: false);
+      return;
+    }
+
+    if (selectedCustomerName == null || selectedCustomerName!.isEmpty) {
+      showToast("Customer name not found", context, color: false);
+      return;
+    }
+
+    if (creditId == null || creditId!.isEmpty) {
+      showToast("Credit ID not found", context, color: false);
+      return;
+    }
+
+    setState(() {
+      editLoad = true;
+    });
+
+    String creditDate = selectedCreditDate != null
+        ? DateFormat('yyyy-MM-dd').format(selectedCreditDate!)
+        : DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    try {
+      double.parse(amountController.text);
+    } catch (e) {
+      showToast("Please enter a valid amount", context, color: false);
+      setState(() {
+        editLoad = false;
+      });
+      return;
+    }
+
+    context.read<CreditBloc>().add(UpdateCredit(
+      creditId: creditId!,
+      date: creditDate,
+      locationId: locationId ?? "",
+      customerId: selectedCustomerId!,
+      customerName: selectedCustomerName!,
+      price: double.parse(amountController.text),
+      description: descriptionController.text,
+    ));
   }
 
   @override
   void initState() {
     super.initState();
-    // Set default dates
     selectedFromDate = DateTime.now().subtract(const Duration(days: 30));
     selectedToDate = DateTime.now();
     selectedCreditDate = DateTime.now();
@@ -270,17 +317,29 @@ class CreditViewViewState extends State<CreditViewView> {
   @override
   Widget build(BuildContext context) {
     Widget mainContainer() {
-      return Padding(
-        padding: const EdgeInsets.all(20),
+      return Container(
+        color: Colors.grey.shade50, // Light grey background for the page
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Add/Edit Credit Section
-              Card(
-                elevation: 3,
+              // Add/Edit Credit Section Card
+              Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -288,7 +347,11 @@ class CreditViewViewState extends State<CreditViewView> {
                         children: [
                           Text(
                             isEdit ? "Edit Credit" : "Add Credit",
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                           ),
                           if (isEdit)
                             IconButton(
@@ -305,7 +368,7 @@ class CreditViewViewState extends State<CreditViewView> {
                         ],
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
                       // Row 1: Date and Location in one row
                       Row(
@@ -315,11 +378,14 @@ class CreditViewViewState extends State<CreditViewView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   "Date*",
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
                                 ),
-                                const SizedBox(height: 5),
+                                const SizedBox(height: 8),
                                 InkWell(
                                   onTap: () async {
                                     final DateTime? picked = await showDatePicker(
@@ -338,8 +404,9 @@ class CreditViewViewState extends State<CreditViewView> {
                                   child: Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: greyColor),
-                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: Colors.white,
                                     ),
                                     child: Row(
                                       children: [
@@ -357,24 +424,28 @@ class CreditViewViewState extends State<CreditViewView> {
                             ),
                           ),
 
-                          const SizedBox(width: 15),
+                          const SizedBox(width: 16),
 
                           // Location Field
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   "Location",
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
                                 ),
-                                const SizedBox(height: 5),
+                                const SizedBox(height: 8),
                                 getLocationModel.data?.locationName != null
                                     ? Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: greyColor),
-                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
                                   ),
                                   child: Row(
                                     children: [
@@ -392,10 +463,14 @@ class CreditViewViewState extends State<CreditViewView> {
                                     : Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: greyColor),
-                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
                                   ),
-                                  child: const Text("No location selected"),
+                                  child: const Text(
+                                    "No location selected",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
                                 ),
                               ],
                             ),
@@ -403,7 +478,7 @@ class CreditViewViewState extends State<CreditViewView> {
                         ],
                       ),
 
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 20),
 
                       Row(
                         children: [
@@ -411,32 +486,38 @@ class CreditViewViewState extends State<CreditViewView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   "Customer*",
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
                                 ),
-                                const SizedBox(height: 5),
+                                const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: greyColor),
-                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
                                   ),
                                   child: DropdownButtonHideUnderline(
                                     child: DropdownButton<String>(
                                       value: selectedCustomerId,
-                                      hint: const Text("Select Customer"),
+                                      hint: const Text("Select Customer", style: TextStyle(color: Colors.grey)),
                                       isExpanded: true,
                                       items: getCustomerModel.data?.map((customer) {
                                         return DropdownMenuItem<String>(
                                           value: customer.id,
-                                          child: Text(customer.name ?? ""),
+                                          child: Text(
+                                            customer.name ?? "",
+                                            style: const TextStyle(color: Colors.black87),
+                                          ),
                                         );
                                       }).toList() ?? [],
                                       onChanged: (value) {
                                         setState(() {
                                           selectedCustomerId = value;
-                                          // Find and store the customer name
                                           selectedCustomerName = getCustomerModel.data
                                               ?.firstWhere((c) => c.id == value)
                                               ?.name;
@@ -449,24 +530,42 @@ class CreditViewViewState extends State<CreditViewView> {
                             ),
                           ),
 
-                          const SizedBox(width: 15),
+                          const SizedBox(width: 16),
 
                           // Amount Field
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   "Amount*",
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
                                 ),
-                                const SizedBox(height: 5),
+                                const SizedBox(height: 8),
                                 TextField(
                                   controller: amountController,
                                   keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     hintText: "Enter amount",
-                                    border: OutlineInputBorder(),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: Colors.grey),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(color: appPrimaryColor),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -475,22 +574,40 @@ class CreditViewViewState extends State<CreditViewView> {
                         ],
                       ),
 
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 20),
 
-                      // Row 3: Description
+                      // Description
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             "Description",
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: 8),
                           TextField(
                             controller: descriptionController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: "Enter description",
-                              border: OutlineInputBorder(),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: Colors.grey),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: appPrimaryColor),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -504,22 +621,21 @@ class CreditViewViewState extends State<CreditViewView> {
                             ? editLoad
                             ? SpinKitCircle(color: appPrimaryColor, size: 30)
                             : ElevatedButton(
-                          onPressed: () {
-                            // TODO: Implement update functionality
-                            showToast("Update functionality to be implemented", context, color: false);
-                          },
+                          onPressed: _updateCredit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: appPrimaryColor,
                             minimumSize: const Size(0, 50),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
+                            elevation: 3,
                           ),
                           child: const Text(
                             "UPDATE CREDIT",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
+                              fontSize: 16,
                             ),
                           ),
                         )
@@ -560,12 +676,14 @@ class CreditViewViewState extends State<CreditViewView> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
+                            elevation: 3,
                           ),
                           child: const Text(
                             "SAVE CREDIT",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
+                              fontSize: 16,
                             ),
                           ),
                         ),
@@ -575,290 +693,359 @@ class CreditViewViewState extends State<CreditViewView> {
                 ),
               ),
 
-              const SizedBox(height: 30),
-
-              // Credit Management Section
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Credit Management",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              // Credit Management Section Card
+              Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Filters Section
-              Card(
-                elevation: 3,
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Filters",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Search
-                      TextField(
-                        controller: searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search by customer name...',
-                          prefixIcon: Icon(Icons.search),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                          border: OutlineInputBorder(),
+                        "Credit Management",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        onChanged: (value) {
-                          setState(() {
-                            currentPage = 1;
-                            creditLoad = true;
-                          });
-                          String fromDate = selectedFromDate != null
-                              ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
-                              : '';
-                          String toDate = selectedToDate != null
-                              ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
-                              : '';
-
-                          context.read<CreditBloc>().add(FetchAllCredits(
-                            fromDate: fromDate,
-                            toDate: toDate,
-                            search: value,
-                            limit: rowsPerPage,
-                            offset: 0,
-                          ));
-                        },
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      // Date Range Filters
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "From Date",
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 5),
-                                InkWell(
-                                  onTap: () async {
-                                    final DateTime? picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: selectedFromDate ?? DateTime.now().subtract(const Duration(days: 30)),
-                                      firstDate: DateTime(2000),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (picked != null && picked != selectedFromDate) {
-                                      setState(() {
-                                        selectedFromDate = picked;
-                                        fromDateController.text = DateFormat('dd-MM-yyyy').format(picked);
-                                        creditLoad = true;
-                                      });
-                                      _goToPage(1);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: greyColor),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          fromDateController.text,
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(width: 15),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "To Date",
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 5),
-                                InkWell(
-                                  onTap: () async {
-                                    final DateTime? picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: selectedToDate ?? DateTime.now(),
-                                      firstDate: DateTime(2000),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (picked != null && picked != selectedToDate) {
-                                      setState(() {
-                                        selectedToDate = picked;
-                                        toDateController.text = DateFormat('dd-MM-yyyy').format(picked);
-                                        creditLoad = true;
-                                      });
-                                      _goToPage(1);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: greyColor),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          toDateController.text,
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
                       ),
 
                       const SizedBox(height: 20),
 
-                      // Clear Filters Button
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _refreshData,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: appPrimaryColor,
-                            minimumSize: const Size(0, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: const Text(
-                            "CLEAR FILTERS",
-                            style: TextStyle(color: whiteColor),
-                          ),
+                      // Filters Section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade200),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Credits Table
-              creditLoad
-                  ? Container(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).size.height * 0.1,
-                ),
-                alignment: Alignment.center,
-                child: const SpinKitChasingDots(
-                  color: appPrimaryColor,
-                  size: 30,
-                ),
-              )
-                  : getAllCreditsModel.data == null || getAllCreditsModel.data!.isEmpty
-                  ? Container(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).size.height * 0.1,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  "No Credits Found !!!",
-                  style: MyTextStyle.f16(
-                    greyColor,
-                    weight: FontWeight.w500,
-                  ),
-                ),
-              )
-                  : LayoutBuilder(
-                builder: (context, constraints) {
-                  final currentPageItems = _getCurrentPageItems();
-
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minWidth: constraints.maxWidth,
-                      ),
-                      child: Card(
-                        elevation: 2,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            DataTable(
-                              headingRowColor: MaterialStateProperty.all(greyColor200),
-                              columnSpacing: 32,
-                              columns: const [
-                                DataColumn(label: Text('Date')),
-                                DataColumn(label: Text('Location')),
-                                DataColumn(label: Text('Code')),
-                                DataColumn(label: Text('Customer')),
-                                DataColumn(label: Text('Amount')),
-                                DataColumn(label: Text('Action')),
-                              ],
-                              rows: currentPageItems.map((credit) {
-                                return DataRow(
-                                  cells: [
-                                    DataCell(Text(
-                                      credit.date != null
-                                          ? DateFormat('dd/MM/yyyy').format(
-                                          DateTime.parse(credit.date!))
-                                          : 'N/A',
-                                    )),
-                                    DataCell(Text(credit.location?.name ?? 'N/A')),
-                                    DataCell(Text(credit.creditCode ?? 'N/A')),
-                                    DataCell(Text(credit.customer?.name ?? 'N/A')),
-                                    DataCell(Text(
-                                      '${credit.price?.toStringAsFixed(2) ?? '0.00'}',
-                                    )),
-                                    DataCell(
-                                      Row(
-                                        children: [
-                                          InkWell(
-                                            onTap: () {
-                                              _onEditCredit(credit.id!);
-                                            },
-                                            child: const Icon(
-                                              Icons.edit,
-                                              color: appPrimaryColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
+                            const Text(
+                              "Filters",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: buildPaginationBar(),
+                            const SizedBox(height: 15),
+
+                            // Search
+                            TextField(
+                              controller: searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Search by customer name...',
+                                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.grey),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: appPrimaryColor),
+                                ),
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  currentPage = 1;
+                                  creditLoad = true;
+                                });
+                                String fromDate = selectedFromDate != null
+                                    ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
+                                    : '';
+                                String toDate = selectedToDate != null
+                                    ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
+                                    : '';
+
+                                context.read<CreditBloc>().add(FetchAllCredits(
+                                  fromDate: fromDate,
+                                  toDate: toDate,
+                                  search: value,
+                                  limit: rowsPerPage,
+                                  offset: 0,
+                                ));
+                              },
+                            ),
+
+                            const SizedBox(height: 15),
+
+                            // Date Range Filters
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "From Date",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      InkWell(
+                                        onTap: () async {
+                                          final DateTime? picked = await showDatePicker(
+                                            context: context,
+                                            initialDate: selectedFromDate ?? DateTime.now().subtract(const Duration(days: 30)),
+                                            firstDate: DateTime(2000),
+                                            lastDate: DateTime(2100),
+                                          );
+                                          if (picked != null && picked != selectedFromDate) {
+                                            setState(() {
+                                              selectedFromDate = picked;
+                                              fromDateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                              creditLoad = true;
+                                            });
+                                            _goToPage(1);
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey.shade300),
+                                            borderRadius: BorderRadius.circular(8),
+                                            color: Colors.white,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                fromDateController.text,
+                                                style: const TextStyle(fontSize: 16),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(width: 16),
+
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "To Date",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      InkWell(
+                                        onTap: () async {
+                                          final DateTime? picked = await showDatePicker(
+                                            context: context,
+                                            initialDate: selectedToDate ?? DateTime.now(),
+                                            firstDate: DateTime(2000),
+                                            lastDate: DateTime(2100),
+                                          );
+                                          if (picked != null && picked != selectedToDate) {
+                                            setState(() {
+                                              selectedToDate = picked;
+                                              toDateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                              creditLoad = true;
+                                            });
+                                            _goToPage(1);
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey.shade300),
+                                            borderRadius: BorderRadius.circular(8),
+                                            color: Colors.white,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                toDateController.text,
+                                                style: const TextStyle(fontSize: 16),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Clear Filters Button
+                            Center(
+                              child: ElevatedButton(
+                                onPressed: _refreshData,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  minimumSize: const Size(0, 45),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    side: BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  elevation: 2,
+                                ),
+                                child: const Text(
+                                  "CLEAR FILTERS",
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  );
-                },
+
+                      const SizedBox(height: 20),
+
+                      // Credits Table
+                      creditLoad
+                          ? Container(
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.of(context).size.height * 0.1,
+                        ),
+                        alignment: Alignment.center,
+                        child: const SpinKitChasingDots(
+                          color: appPrimaryColor,
+                          size: 30,
+                        ),
+                      )
+                          : getAllCreditsModel.data == null || getAllCreditsModel.data!.isEmpty
+                          ? Container(
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.of(context).size.height * 0.05,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "No Credits Found !!!",
+                          style: MyTextStyle.f16(
+                            Colors.grey,
+                            weight: FontWeight.w500,
+                          ),
+                        ),
+                      )
+                          : LayoutBuilder(
+                        builder: (context, constraints) {
+                          final currentPageItems = _getCurrentPageItems();
+
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minWidth: constraints.maxWidth,
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Column(
+                                  children: [
+                                    DataTable(
+                                      headingRowColor: MaterialStateProperty.all(Colors.grey.shade100),
+                                      columnSpacing: 32,
+                                      dataRowMinHeight: 48,
+                                      dataRowMaxHeight: 60,
+                                      headingTextStyle: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                      columns: const [
+                                        DataColumn(label: Text('Date')),
+                                        DataColumn(label: Text('Location')),
+                                        DataColumn(label: Text('Code')),
+                                        DataColumn(label: Text('Customer')),
+                                        DataColumn(label: Text('Amount')),
+                                        DataColumn(label: Text('Action')),
+                                      ],
+                                      rows: currentPageItems.map((credit) {
+                                        return DataRow(
+                                          cells: [
+                                            DataCell(Text(
+                                              credit.date != null
+                                                  ? DateFormat('dd/MM/yyyy').format(
+                                                  DateTime.parse(credit.date!))
+                                                  : 'N/A',
+                                            )),
+                                            DataCell(Text(credit.location?.name ?? 'N/A')),
+                                            DataCell(Text(credit.creditCode ?? 'N/A')),
+                                            DataCell(Text(credit.customer?.name ?? 'N/A')),
+                                            DataCell(Text(
+                                              '${credit.price?.toStringAsFixed(2) ?? '0.00'}',
+                                            )),
+                                            DataCell(
+                                              Row(
+                                                children: [
+                                                  InkWell(
+                                                    onTap: () {
+                                                      _onEditCredit(credit.id!);
+                                                    },
+                                                    child: Container(
+                                                      padding: const EdgeInsets.all(6),
+                                                      decoration: BoxDecoration(
+                                                        color: appPrimaryColor.withOpacity(0.1),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.edit,
+                                                        color: appPrimaryColor,
+                                                        size: 20,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: buildPaginationBar(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -876,7 +1063,6 @@ class CreditViewViewState extends State<CreditViewView> {
           }
           if (getLocationModel.success == true) {
             locationId = getLocationModel.data?.locationId;
-            // Fetch credits after getting location
             String fromDate = selectedFromDate != null
                 ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
                 : '';
@@ -891,7 +1077,6 @@ class CreditViewViewState extends State<CreditViewView> {
               limit: rowsPerPage,
               offset: 0,
             ));
-            // Fetch customers for dropdown
             _fetchCustomers();
             setState(() {
               creditLoad = true;
@@ -939,7 +1124,6 @@ class CreditViewViewState extends State<CreditViewView> {
           }
           if (postCreditModel.success == true) {
             showToast("Credit Added Successfully", context, color: true);
-            // Refresh credits after adding
             setState(() {
               currentPage = 1;
             });
@@ -990,7 +1174,6 @@ class CreditViewViewState extends State<CreditViewView> {
           return true;
         }
 
-        // Add handler for GetCustomerByCreditIdModel
         if (current is GetCustomerByCreditIdModel) {
           getCustomerByCreditIdModel = current;
 
@@ -1000,12 +1183,10 @@ class CreditViewViewState extends State<CreditViewView> {
           }
 
           if (getCustomerByCreditIdModel.success == true) {
-            // Populate form fields with the fetched credit data
             if (getCustomerByCreditIdModel.data != null) {
               final creditData = getCustomerByCreditIdModel.data!;
 
               setState(() {
-                // Set date
                 if (creditData.date != null) {
                   try {
                     selectedCreditDate = DateTime.parse(creditData.date!);
@@ -1015,22 +1196,14 @@ class CreditViewViewState extends State<CreditViewView> {
                   }
                 }
 
-                // Set customer
                 selectedCustomerId = creditData.customerId?.id;
                 selectedCustomerName = creditData.customerId?.name;
 
-                // Set amount
                 amountController.text = creditData.price?.toString() ?? '';
 
-                // Set description
                 descriptionController.text = creditData.description ?? '';
 
-                // Update location display if needed
                 if (creditData.locationId != null && getLocationModel.data == null) {
-                  // getLocationModel.data = GetLocationModelData(
-                  //   locationId: creditData.locationId!.id,
-                  //   locationName: creditData.locationId!.name,
-                  // );
                   locationId = creditData.locationId!.id;
                 }
               });
@@ -1046,6 +1219,50 @@ class CreditViewViewState extends State<CreditViewView> {
             showToast(getCustomerByCreditIdModel.errorResponse?.message ?? "Failed to fetch credit details", context, color: false);
           }
           return true;
+        }
+
+        if (current is Map<String, dynamic>) {
+          if (current['type'] == 'update_success') {
+            putCreditModel = current['data'];
+
+            showToast(current['message'] ?? "Credit updated successfully!", context, color: true);
+
+            setState(() {
+              currentPage = 1;
+              editLoad = false;
+            });
+
+            String fromDate = selectedFromDate != null
+                ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
+                : '';
+            String toDate = selectedToDate != null
+                ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
+                : '';
+
+            context.read<CreditBloc>().add(FetchAllCredits(
+              fromDate: fromDate,
+              toDate: toDate,
+              search: searchController.text,
+              limit: rowsPerPage,
+              offset: 0,
+            ));
+
+            Future.delayed(Duration(milliseconds: 100), () {
+              clearCreditForm();
+            });
+
+            return true;
+          }
+
+          if (current['type'] == 'update_error' || current['type'] == 'update_exception') {
+            setState(() {
+              editLoad = false;
+            });
+
+            showToast(current['message'] ?? "Failed to update credit", context, color: false);
+
+            return true;
+          }
         }
 
         return false;

@@ -31,8 +31,11 @@ import 'package:simple/ModelClass/Waiter/getWaiterModel.dart';
 import 'package:simple/Reusable/constant.dart';
 
 import '../ModelClass/Accounts/GetAllCreditsModel.dart';
+import '../ModelClass/Accounts/GetAllReturnsModel.dart';
+import '../ModelClass/Accounts/GetBalanceModel.dart';
 import '../ModelClass/Accounts/GetCustomerByCreditIdModel.dart';
 import '../ModelClass/Accounts/PostCreditModel.dart';
+import '../ModelClass/Accounts/PostReturnModel.dart';
 import '../ModelClass/Accounts/PutCreditModel.dart';
 import '../ModelClass/Customer/GetCustomerByIdModel.dart';
 import '../ModelClass/Customer/GetCustomerModel.dart';
@@ -886,6 +889,213 @@ class ApiProvider {
       return GetCustomerModel()..errorResponse = errorResponse;
     } catch (error) {
       return GetCustomerModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Get All Returns API Integration
+  Future<GetAllReturnsModel> getAllReturnsAPI(
+      String fromDate,
+      String toDate,
+      String search,
+      int limit,
+      int offset,
+      ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/return?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      debugPrint("📥 Get All Returns API Status: ${response.statusCode}");
+      debugPrint("📥 Get All Returns API Response: ${response.data}");
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetAllReturnsModel getAllReturnsResponse = GetAllReturnsModel.fromJson(response.data);
+          debugPrint("✅ Returns fetched successfully");
+          debugPrint("✅ Total Returns: ${getAllReturnsResponse.total}");
+          debugPrint("✅ Returns Count: ${getAllReturnsResponse.data?.length}");
+          return getAllReturnsResponse;
+        } else {
+          // Handle API returning success: false
+          return GetAllReturnsModel.error(
+            response.data['message'] ?? 'Failed to fetch returns',
+          )..errorResponse = ErrorResponse(
+            message: response.data['message'] ?? 'Failed to fetch returns',
+            statusCode: response.statusCode,
+          );
+        }
+      } else {
+        return GetAllReturnsModel.error(
+          "Error: ${response.data?['message'] ?? 'Unknown error'}",
+        )..errorResponse = ErrorResponse(
+          message: "Error: ${response.data?['message'] ?? 'Unknown error'}",
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      debugPrint("❌ GetAllReturnsAPI Dio Error: ${errorResponse.message}");
+      return GetAllReturnsModel.error(
+        errorResponse.message ?? 'Network error',
+      )..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      debugPrint("❌ GetAllReturnsAPI General Error: $error");
+      return GetAllReturnsModel.error(
+        errorResponse.message ?? 'Unexpected error',
+      )..errorResponse = errorResponse;
+    }
+  }
+
+  /// Create Return (POST) API Integration
+  Future<PostReturnModel> postReturnAPI(
+      String date,
+      String locationId,
+      String customerId,
+      String creditId,
+      num price,
+      String description,
+      ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    var userId = sharedPreferences.getString("userId");
+
+    try {
+      final dataMap = {
+        "date": date,
+        "locationId": locationId,
+        "customerId": customerId,
+        "creditId": creditId,
+        "price": price,
+        "description": description,
+      };
+
+      debugPrint("📤 POST /api/accounts/return");
+      debugPrint("📤 Request Data: $dataMap");
+
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/return',
+        options: Options(
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: json.encode(dataMap),
+      );
+
+      debugPrint("📥 PostReturn Response Status: ${response.statusCode}");
+      debugPrint("📥 PostReturn Response Body: ${response.data}");
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        if (response.data['success'] == true) {
+          final model = PostReturnModel.fromJson(response.data);
+          debugPrint("✅ Return created successfully");
+          debugPrint("✅ Return Code: ${model.data?.returnCode}");
+          debugPrint("✅ Return ID: ${model.data?.id}");
+          return model;
+        } else {
+          return PostReturnModel.error(
+            response.data['message'] ?? 'Return creation failed',
+          )..errorResponse = ErrorResponse(
+            message: response.data['message'] ?? 'Return creation failed',
+            statusCode: response.statusCode,
+          );
+        }
+      } else {
+        return PostReturnModel.error(
+          "Error: ${response.data['message'] ?? 'Unknown error'}",
+        )..errorResponse = ErrorResponse(
+          message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (dioError) {
+      debugPrint("❌ PostReturnAPI Dio Error: ${dioError.message}");
+      debugPrint("❌ Dio Error Response: ${dioError.response?.data}");
+      final errorResponse = handleError(dioError);
+      return PostReturnModel.error(
+        errorResponse.message ?? 'Network error',
+      )..errorResponse = errorResponse;
+    } catch (error) {
+      debugPrint("❌ PostReturnAPI General Error: $error");
+      final errorResponse = handleError(error);
+      return PostReturnModel.error(
+        errorResponse.message ?? 'Unexpected error',
+      )..errorResponse = errorResponse;
+    }
+  }
+
+  /// Get Balance for Customer with filters API Integration
+  Future<GetBalanceModel> getBalanceAPIWithFilters(
+      String customerId,
+      ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/return/balance/$customerId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      debugPrint("📥 Get Balance API Status: ${response.statusCode}");
+      debugPrint("📥 Get Balance API Response: ${response.data}");
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetBalanceModel getBalanceResponse = GetBalanceModel.fromJson(response.data);
+          debugPrint("✅ Balance fetched successfully for customer: $customerId");
+          debugPrint("✅ Balance Records: ${getBalanceResponse.data?.length}");
+          // debugPrint("✅ Total: ${getBalanceResponse.total}");
+          return getBalanceResponse;
+        } else {
+          // Handle API returning success: false
+          return GetBalanceModel.error(
+            response.data['message'] ?? 'Failed to fetch balance',
+          )..errorResponse = ErrorResponse(
+            message: response.data['message'] ?? 'Failed to fetch balance',
+            statusCode: response.statusCode,
+          );
+        }
+      } else {
+        return GetBalanceModel.error(
+          "Error: ${response.data?['message'] ?? 'Unknown error'}",
+        )..errorResponse = ErrorResponse(
+          message: "Error: ${response.data?['message'] ?? 'Unknown error'}",
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      debugPrint("❌ GetBalanceAPI Dio Error: ${errorResponse.message}");
+      return GetBalanceModel.error(
+        errorResponse.message ?? 'Network error',
+      )..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      debugPrint("❌ GetBalanceAPI General Error: $error");
+      return GetBalanceModel.error(
+        errorResponse.message ?? 'Unexpected error',
+      )..errorResponse = errorResponse;
     }
   }
 
