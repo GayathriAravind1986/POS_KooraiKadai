@@ -21,7 +21,7 @@ import 'package:simple/ModelClass/Accounts/GetAllReturnsModel.dart' hide Data;
 import 'package:simple/ModelClass/Accounts/PostReturnModel.dart' hide Data;
 
 class ReturnView extends StatelessWidget {
-  final GlobalKey<ReturnViewViewState>? returnKey; // FIXED: Changed to ReturnViewViewState
+  final GlobalKey<ReturnViewViewState>? returnKey;
   bool? hasRefreshedReturn;
   ReturnView({
     super.key,
@@ -46,7 +46,7 @@ class ReturnViewView extends StatefulWidget {
   });
 
   @override
-  ReturnViewViewState createState() => ReturnViewViewState(); // FIXED: Correct state class
+  ReturnViewViewState createState() => ReturnViewViewState();
 }
 
 class ReturnViewViewState extends State<ReturnViewView> {
@@ -176,6 +176,7 @@ class ReturnViewViewState extends State<ReturnViewView> {
         search: searchController.text,
         limit: rowsPerPage,
         offset: (page - 1) * rowsPerPage,
+        locid: locationId ?? '', // Added locid parameter
       ));
     }
   }
@@ -249,12 +250,32 @@ class ReturnViewViewState extends State<ReturnViewView> {
   void _refreshData() {
     setState(() {
       searchController.clear();
+      fromDateController.clear();
+      toDateController.clear();
+      selectedFromDate = DateTime.now().subtract(const Duration(days: 30));
+      selectedToDate = DateTime.now();
+      fromDateController.text = DateFormat('dd-MM-yyyy').format(selectedFromDate!);
+      toDateController.text = DateFormat('dd-MM-yyyy').format(selectedToDate!);
       currentPage = 1;
       returnLoad = true;
       clearReturnForm();
     });
-    context.read<ReturnBloc>().add(FetchLocations());
-    widget.returnKey?.currentState?.refreshCredit();
+
+    String fromDate = selectedFromDate != null
+        ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
+        : '';
+    String toDate = selectedToDate != null
+        ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
+        : '';
+
+    context.read<ReturnBloc>().add(FetchAllReturns(
+      fromDate: fromDate,
+      toDate: toDate,
+      search: '',
+      limit: rowsPerPage,
+      offset: 0,
+      locid: locationId ?? '', // Added locid parameter
+    ));
   }
 
   void refreshReturn() {
@@ -264,7 +285,6 @@ class ReturnViewViewState extends State<ReturnViewView> {
       returnLoad = true;
     });
   }
-
 
   void _fetchCustomers() {
     if (locationId != null && locationId!.isNotEmpty) {
@@ -277,76 +297,259 @@ class ReturnViewViewState extends State<ReturnViewView> {
 
   @override
   Widget build(BuildContext context) {
-    Widget mainContainer() {
-      return Container(
-        color: Colors.grey.shade50,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Add Return Section Card
-              Container(
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+    return BlocBuilder<ReturnBloc, dynamic>(
+      buildWhen: ((previous, current) {
+        if (current is GetLocationModel) {
+          getLocationModel = current;
+          if (getLocationModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getLocationModel.success == true) {
+            locationId = getLocationModel.data?.locationId;
+            String fromDate = selectedFromDate != null
+                ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
+                : '';
+            String toDate = selectedToDate != null
+                ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
+                : '';
+
+            context.read<ReturnBloc>().add(FetchAllReturns(
+              fromDate: fromDate,
+              toDate: toDate,
+              search: searchController.text,
+              limit: rowsPerPage,
+              offset: 0,
+              locid: locationId ?? '', // Added locid parameter
+            ));
+            _fetchCustomers();
+            setState(() {
+              returnLoad = true;
+            });
+          } else {
+            setState(() {
+              returnLoad = false;
+            });
+            showToast("No Location found", context, color: false);
+          }
+          return true;
+        }
+
+        if (current is GetAllReturnsModel) {
+          getAllReturnsModel = current;
+
+          if (getAllReturnsModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+
+          if (getAllReturnsModel.success == true) {
+            totalItems = getAllReturnsModel.total?.toInt() ?? 0;
+            totalPages = totalItems > 0 ? (totalItems / rowsPerPage).ceil() : 1;
+
+            setState(() {
+              returnLoad = false;
+            });
+          } else {
+            setState(() {
+              returnLoad = false;
+            });
+            String errorMsg = getAllReturnsModel.errorResponse?.message ??
+                "No Returns found";
+            showToast(errorMsg, context, color: false);
+          }
+          return true;
+        }
+
+        if (current is GetCustomerModel) {
+          getCustomerModel = current;
+          if (getCustomerModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getCustomerModel.success == true) {
+            setState(() {
+              customerLoad = false;
+            });
+          } else {
+            setState(() {
+              customerLoad = false;
+            });
+          }
+          return true;
+        }
+
+        if (current is GetBalanceModel) {
+          getBalanceApiWithFilterModel = current;
+
+          if (getBalanceApiWithFilterModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+
+          setState(() {
+            balanceLoad = false;
+          });
+
+          if (!getBalanceApiWithFilterModel.success!) {
+            showToast(getBalanceApiWithFilterModel.errorResponse?.message ?? "Failed to fetch credit entries",
+                context, color: false);
+          }
+
+          return true;
+        }
+
+        if (current is Map<String, dynamic>) {
+          if (current['type'] == 'return_success') {
+            postReturnModel = current['data'];
+
+            showToast(current['message'] ?? "Return added successfully!", context, color: true);
+
+            setState(() {
+              currentPage = 1;
+              saveLoad = false;
+            });
+
+            String fromDate = selectedFromDate != null
+                ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
+                : '';
+            String toDate = selectedToDate != null
+                ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
+                : '';
+
+            context.read<ReturnBloc>().add(FetchAllReturns(
+              fromDate: fromDate,
+              toDate: toDate,
+              search: searchController.text,
+              limit: rowsPerPage,
+              offset: 0,
+              locid: locationId ?? '', // Added locid parameter
+            ));
+
+            Future.delayed(Duration(milliseconds: 100), () {
+              clearReturnForm();
+            });
+
+            return true;
+          }
+
+          if (current['type'] == 'return_error' || current['type'] == 'return_exception') {
+            setState(() {
+              saveLoad = false;
+            });
+
+            showToast(current['message'] ?? "Failed to add return", context, color: false);
+
+            return true;
+          }
+        }
+
+        return false;
+      }),
+      builder: (context, dynamic) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Return Management",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+
+                  // Add Return Section
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Add Return",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Add Return",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 20),
 
-                      const SizedBox(height: 24),
-
-                      // Row 1: Date and Location in one row
-                      Row(
-                        children: [
-                          // Date Field
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Date",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                        // Row 1: Date and Location
+                        Row(
+                          children: [
+                            // Date Field
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Date",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                InkWell(
-                                  onTap: () async {
-                                    final DateTime? picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: selectedReturnDate ?? DateTime.now(),
-                                      firstDate: DateTime(2000),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (picked != null && picked != selectedReturnDate) {
-                                      setState(() {
-                                        selectedReturnDate = picked;
-                                        dateController.text = DateFormat('dd-MM-yyyy').format(picked);
-                                      });
-                                    }
-                                  },
-                                  child: Container(
+                                  const SizedBox(height: 8),
+                                  InkWell(
+                                    onTap: () async {
+                                      final DateTime? picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: selectedReturnDate ?? DateTime.now(),
+                                        firstDate: DateTime(2000),
+                                        lastDate: DateTime(2100),
+                                      );
+                                      if (picked != null && picked != selectedReturnDate) {
+                                        setState(() {
+                                          selectedReturnDate = picked;
+                                          dateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey.shade300),
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: Colors.white,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            dateController.text,
+                                            style: const TextStyle(fontSize: 16),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(width: 16),
+
+                            // Location Field
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Location",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  getLocationModel.data?.locationName != null
+                                      ? Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       border: Border.all(color: Colors.grey.shade300),
@@ -355,395 +558,339 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                        const Icon(Icons.location_on, size: 20, color: appPrimaryColor),
                                         const SizedBox(width: 10),
-                                        Text(
-                                          dateController.text,
-                                          style: const TextStyle(fontSize: 16),
+                                        Expanded(
+                                          child: Text(
+                                            getLocationModel.data!.locationName!,
+                                            style: const TextStyle(fontSize: 16),
+                                          ),
                                         ),
                                       ],
                                     ),
+                                  )
+                                      : Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: Colors.white,
+                                    ),
+                                    child: const Text(
+                                      "No location selected",
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
+                        ),
 
-                          const SizedBox(width: 16),
+                        const SizedBox(height: 20),
 
-                          // Location Field
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Location",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                        // Row 2: Customer and Credit Entry
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Customer",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                getLocationModel.data?.locationName != null
-                                    ? Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey.shade300),
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.white,
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: Colors.white,
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        value: selectedCustomerId,
+                                        hint: const Text("Select Customer", style: TextStyle(color: Colors.grey)),
+                                        isExpanded: true,
+                                        items: getCustomerModel.data?.map((customer) {
+                                          return DropdownMenuItem<String>(
+                                            value: customer.id,
+                                            child: Text(
+                                              customer.name ?? "",
+                                              style: const TextStyle(color: Colors.black87),
+                                            ),
+                                          );
+                                        }).toList() ?? [],
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedCustomerId = value;
+                                            selectedCustomerName = getCustomerModel.data
+                                                ?.firstWhere((c) => c.id == value)
+                                                ?.name;
+                                            selectedCreditEntryId = null;
+                                            selectedCreditEntryBalance = null;
+                                          });
+                                          _fetchBalanceWithFilter();
+                                        },
+                                      ),
+                                    ),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.location_on, size: 20, color: appPrimaryColor),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          getLocationModel.data!.locationName!,
-                                          style: const TextStyle(fontSize: 16),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(width: 16),
+
+                            // Credit Entry Field
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Credit Entry",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: Colors.white,
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        value: selectedCreditEntryId,
+                                        hint: const Text("Select a credit entry to see balance",
+                                            style: TextStyle(color: Colors.grey)),
+                                        isExpanded: true,
+                                        items: getBalanceApiWithFilterModel.data?.map((entry) {
+                                          return DropdownMenuItem<String>(
+                                            value: entry.creditId,
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  "${entry.creditCode ?? 'N/A'}",
+                                                  style: const TextStyle(color: Colors.black87),
+                                                ),
+                                                Text(
+                                                  "Balance: ${entry.balanceAmount?.toStringAsFixed(2) ?? '0.00'}",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList() ?? [],
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedCreditEntryId = value;
+                                            final selectedEntry = getBalanceApiWithFilterModel.data
+                                                ?.firstWhere((e) => e.creditId == value);
+                                            selectedCreditEntryBalance = selectedEntry?.balanceAmount?.toStringAsFixed(2);
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  if (selectedCreditEntryBalance != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(
+                                        "Balance: $selectedCreditEntryBalance",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.green.shade700,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                )
-                                    : Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey.shade300),
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.white,
-                                  ),
-                                  child: const Text(
-                                    "No location selected",
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                ),
-                              ],
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                      // Row 2: Customer and Credit Entry
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Customer",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey.shade300),
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.white,
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: selectedCustomerId,
-                                      hint: const Text("Select Customer", style: TextStyle(color: Colors.grey)),
-                                      isExpanded: true,
-                                      items: getCustomerModel.data?.map((customer) {
-                                        return DropdownMenuItem<String>(
-                                          value: customer.id,
-                                          child: Text(
-                                            customer.name ?? "",
-                                            style: const TextStyle(color: Colors.black87),
-                                          ),
-                                        );
-                                      }).toList() ?? [],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          selectedCustomerId = value;
-                                          selectedCustomerName = getCustomerModel.data
-                                              ?.firstWhere((c) => c.id == value)
-                                              ?.name;
-                                          selectedCreditEntryId = null;
-                                          selectedCreditEntryBalance = null;
-                                        });
-                                        _fetchBalanceWithFilter();
-                                      },
+                        // Row 3: Amount and Description
+                        Row(
+                          children: [
+                            // Amount Field
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Amount *",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(width: 16),
-
-                          // Credit Entry Field
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Credit Entry",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey.shade300),
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.white,
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: selectedCreditEntryId,
-                                      hint: const Text("Select a credit entry to see balance",
-                                          style: TextStyle(color: Colors.grey)),
-                                      isExpanded: true,
-                                      items: getBalanceApiWithFilterModel.data?.map((entry) {
-                                        return DropdownMenuItem<String>(
-                                          value: entry.creditId,
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                "${entry.creditCode ?? 'N/A'}",
-                                                style: const TextStyle(color: Colors.black87),
-                                              ),
-                                              Text(
-                                                "Balance: ${entry.balanceAmount?.toStringAsFixed(2) ?? '0.00'}",
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey.shade600,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList() ?? [],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          selectedCreditEntryId = value;
-                                          final selectedEntry = getBalanceApiWithFilterModel.data
-                                              ?.firstWhere((e) => e.creditId == value);
-                                          selectedCreditEntryBalance = selectedEntry?.balanceAmount?.toStringAsFixed(2);
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                if (selectedCreditEntryBalance != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
-                                    child: Text(
-                                      "Balance: $selectedCreditEntryBalance",
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.green.shade700,
-                                        fontWeight: FontWeight.w600,
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller: amountController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      hintText: "Enter amount",
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(color: Colors.grey),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(color: appPrimaryColor),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
                                       ),
                                     ),
                                   ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
 
-                      const SizedBox(height: 20),
+                            const SizedBox(width: 16),
 
-                      // Row 3: Amount and Description
-                      Row(
-                        children: [
-                          // Amount Field
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Amount *",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                TextField(
-                                  controller: amountController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: InputDecoration(
-                                    hintText: "Enter amount",
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: Colors.grey),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: appPrimaryColor),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
+                            // Description
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Description",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(width: 16),
-
-                          // Description
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Description",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                TextField(
-                                  controller: descriptionController,
-                                  decoration: InputDecoration(
-                                    hintText: "Enter description",
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: Colors.grey),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(color: appPrimaryColor),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller: descriptionController,
+                                    decoration: InputDecoration(
+                                      hintText: "Enter description",
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(color: Colors.grey),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(color: appPrimaryColor),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
 
-                      const SizedBox(height: 30),
+                        const SizedBox(height: 30),
 
-                      // Save Button
-                      Center(
-                        child: saveLoad
-                            ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                            : ElevatedButton(
-                          onPressed: () {
-                            if (selectedCustomerId == null || selectedCustomerId!.isEmpty) {
-                              showToast("Please select a customer", context, color: false);
-                            } else if (selectedCreditEntryId == null || selectedCreditEntryId!.isEmpty) {
-                              showToast("Please select a credit entry", context, color: false);
-                            } else if (amountController.text.isEmpty) {
-                              showToast("Please enter amount", context, color: false);
-                            } else if (getLocationModel.data?.locationName == null) {
-                              showToast("Location not found", context, color: false);
-                            } else if (selectedCustomerName == null || selectedCustomerName!.isEmpty) {
-                              showToast("Customer name not found", context, color: false);
-                            } else {
-                              setState(() {
-                                saveLoad = true;
-                              });
+                        // Save Button
+                        Center(
+                          child: saveLoad
+                              ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                              : ElevatedButton(
+                            onPressed: () {
+                              if (selectedCustomerId == null || selectedCustomerId!.isEmpty) {
+                                showToast("Please select a customer", context, color: false);
+                              } else if (selectedCreditEntryId == null || selectedCreditEntryId!.isEmpty) {
+                                showToast("Please select a credit entry", context, color: false);
+                              } else if (amountController.text.isEmpty) {
+                                showToast("Please enter amount", context, color: false);
+                              } else if (getLocationModel.data?.locationName == null) {
+                                showToast("Location not found", context, color: false);
+                              } else if (selectedCustomerName == null || selectedCustomerName!.isEmpty) {
+                                showToast("Customer name not found", context, color: false);
+                              } else {
+                                setState(() {
+                                  saveLoad = true;
+                                });
 
-                              String returnDate = selectedReturnDate != null
-                                  ? DateFormat('yyyy-MM-dd').format(selectedReturnDate!)
-                                  : DateFormat('yyyy-MM-dd').format(DateTime.now());
+                                String returnDate = selectedReturnDate != null
+                                    ? DateFormat('yyyy-MM-dd').format(selectedReturnDate!)
+                                    : DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-                              context.read<ReturnBloc>().add(CreateReturn(
-                                date: returnDate,
-                                locationId: locationId ?? "",
-                                customerId: selectedCustomerId!,
-                                creditId: selectedCreditEntryId!,
-                                price: double.parse(amountController.text),
-                                description: descriptionController.text,
-                              ));
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: appPrimaryColor,
-                            minimumSize: const Size(0, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                                context.read<ReturnBloc>().add(CreateReturn(
+                                  date: returnDate,
+                                  locationId: locationId ?? "",
+                                  customerId: selectedCustomerId!,
+                                  creditId: selectedCreditEntryId!,
+                                  price: double.parse(amountController.text),
+                                  description: descriptionController.text,
+                                ));
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: appPrimaryColor,
+                              minimumSize: const Size(0, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              elevation: 3,
                             ),
-                            elevation: 3,
-                          ),
-                          child: const Text(
-                            "SAVE RETURN",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontSize: 16,
+                            child: const Text(
+                              "SAVE RETURN",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Return Management Section Card
-              Container(
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      ],
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Return List Section
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Return Management",
+                        "Return List",
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         ),
                       ),
-
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
 
                       // Filters Section
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
+                          border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -796,6 +943,7 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                   search: value,
                                   limit: rowsPerPage,
                                   offset: 0,
+                                  locid: locationId ?? '', // Added locid parameter
                                 ));
                               },
                             ),
@@ -969,228 +1117,144 @@ class ReturnViewViewState extends State<ReturnViewView> {
                           ),
                         ),
                       )
-                          : LayoutBuilder(
-                        builder: (context, constraints) {
-                          final currentPageItems = _getCurrentPageItems();
-
-                          return SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minWidth: constraints.maxWidth,
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey.shade200),
+                          : Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Column(
+                          children: [
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: MediaQuery.of(context).size.width - 40,
                                 ),
-                                child: Column(
-                                  children: [
-                                    DataTable(
-                                      headingRowColor: MaterialStateProperty.all(Colors.grey.shade100),
-                                      columnSpacing: 32,
-                                      dataRowMinHeight: 48,
-                                      dataRowMaxHeight: 60,
-                                      headingTextStyle: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
+                                child: DataTable(
+                                  dataRowHeight: 50,
+                                  headingRowHeight: 50,
+                                  horizontalMargin: 20,
+                                  columnSpacing: 32,
+                                  headingRowColor: MaterialStateProperty.all(Colors.grey.shade100),
+                                  columns: const [
+                                    DataColumn(
+                                      label: Text(
+                                        'Date',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
-                                      columns: const [
-                                        DataColumn(label: Text('Date')),
-                                        DataColumn(label: Text('Location')),
-                                        DataColumn(label: Text('Code')),
-                                        DataColumn(label: Text('Customer')),
-                                        DataColumn(label: Text('Amount')),
-                                      ],
-                                      rows: currentPageItems.map((returnItem) {
-                                        return DataRow(
-                                          cells: [
-                                            DataCell(Text(
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Location',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Code',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Customer',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Amount',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                  rows: _getCurrentPageItems().map((returnItem) {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(
+                                          Container(
+                                            constraints: BoxConstraints(
+                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
+                                            ),
+                                            child: Text(
                                               returnItem.date != null
                                                   ? DateFormat('dd/MM/yyyy').format(
                                                   DateTime.parse(returnItem.date!))
                                                   : 'N/A',
-                                            )),
-                                            DataCell(Text(returnItem.location?.name ?? 'N/A')),
-                                            DataCell(Text(returnItem.returnCode ?? 'N/A')),
-                                            DataCell(Text(returnItem.customer?.name ?? 'N/A')),
-                                            DataCell(Text(
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Container(
+                                            constraints: BoxConstraints(
+                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
+                                            ),
+                                            child: Text(
+                                              returnItem.location?.name ?? 'N/A',
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Container(
+                                            constraints: BoxConstraints(
+                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
+                                            ),
+                                            child: Text(
+                                              returnItem.returnCode ?? 'N/A',
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Container(
+                                            constraints: BoxConstraints(
+                                              maxWidth: MediaQuery.of(context).size.width * 0.2,
+                                            ),
+                                            child: Text(
+                                              returnItem.customer?.name ?? 'N/A',
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Container(
+                                            constraints: BoxConstraints(
+                                              maxWidth: MediaQuery.of(context).size.width * 0.1,
+                                            ),
+                                            child: Text(
                                               '${returnItem.price?.toStringAsFixed(2) ?? '0.00'}',
-                                            )),
-                                          ],
-                                        );
-                                      }).toList(),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: buildPaginationBar(),
-                                    ),
-                                  ],
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
                               ),
                             ),
-                          );
-                        },
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(color: Colors.grey.shade300),
+                                ),
+                              ),
+                              child: buildPaginationBar(),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      );
-    }
-
-    return BlocBuilder<ReturnBloc, dynamic>(
-      buildWhen: ((previous, current) {
-        if (current is GetLocationModel) {
-          getLocationModel = current;
-          if (getLocationModel.errorResponse?.isUnauthorized == true) {
-            _handle401Error();
-            return true;
-          }
-          if (getLocationModel.success == true) {
-            locationId = getLocationModel.data?.locationId;
-            String fromDate = selectedFromDate != null
-                ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
-                : '';
-            String toDate = selectedToDate != null
-                ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
-                : '';
-
-            context.read<ReturnBloc>().add(FetchAllReturns(
-              fromDate: fromDate,
-              toDate: toDate,
-              search: searchController.text,
-              limit: rowsPerPage,
-              offset: 0,
-            ));
-            _fetchCustomers();
-            setState(() {
-              returnLoad = true;
-            });
-          } else {
-            setState(() {
-              returnLoad = false;
-            });
-            showToast("No Location found", context, color: false);
-          }
-          return true;
-        }
-
-        if (current is GetAllReturnsModel) {
-          getAllReturnsModel = current;
-
-          if (getAllReturnsModel.errorResponse?.isUnauthorized == true) {
-            _handle401Error();
-            return true;
-          }
-
-          if (getAllReturnsModel.success == true) {
-            totalItems = getAllReturnsModel.total?.toInt() ?? 0;
-            totalPages = totalItems > 0 ? (totalItems / rowsPerPage).ceil() : 1;
-
-            setState(() {
-              returnLoad = false;
-            });
-          } else {
-            setState(() {
-              returnLoad = false;
-            });
-            String errorMsg = getAllReturnsModel.errorResponse?.message ??
-                "No Returns found";
-            showToast(errorMsg, context, color: false);
-          }
-          return true;
-        }
-
-        if (current is GetCustomerModel) {
-          getCustomerModel = current;
-          if (getCustomerModel.errorResponse?.isUnauthorized == true) {
-            _handle401Error();
-            return true;
-          }
-          if (getCustomerModel.success == true) {
-            setState(() {
-              customerLoad = false;
-            });
-          } else {
-            setState(() {
-              customerLoad = false;
-            });
-          }
-          return true;
-        }
-
-        if (current is GetBalanceModel) {
-          getBalanceApiWithFilterModel = current;
-
-          if (getBalanceApiWithFilterModel.errorResponse?.isUnauthorized == true) {
-            _handle401Error();
-            return true;
-          }
-
-          setState(() {
-            balanceLoad = false;
-          });
-
-          if (!getBalanceApiWithFilterModel.success!) {
-            showToast(getBalanceApiWithFilterModel.errorResponse?.message ?? "Failed to fetch credit entries",
-                context, color: false);
-          }
-
-          return true;
-        }
-
-        if (current is Map<String, dynamic>) {
-          if (current['type'] == 'return_success') {
-            postReturnModel = current['data'];
-
-            showToast(current['message'] ?? "Return added successfully!", context, color: true);
-
-            setState(() {
-              currentPage = 1;
-              saveLoad = false;
-            });
-
-            String fromDate = selectedFromDate != null
-                ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
-                : '';
-            String toDate = selectedToDate != null
-                ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
-                : '';
-
-            context.read<ReturnBloc>().add(FetchAllReturns(
-              fromDate: fromDate,
-              toDate: toDate,
-              search: searchController.text,
-              limit: rowsPerPage,
-              offset: 0,
-            ));
-
-            Future.delayed(Duration(milliseconds: 100), () {
-              clearReturnForm();
-            });
-
-            return true;
-          }
-
-          if (current['type'] == 'return_error' || current['type'] == 'return_exception') {
-            setState(() {
-              saveLoad = false;
-            });
-
-            showToast(current['message'] ?? "Failed to add return", context, color: false);
-
-            return true;
-          }
-        }
-
-        return false;
-      }),
-      builder: (context, dynamic) {
-        return mainContainer();
+        );
       },
     );
   }

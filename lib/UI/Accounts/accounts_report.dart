@@ -48,7 +48,7 @@ class ReturnReportViewState extends State<ReturnReportView> {
       toDate: formatter.format(toDate),
       search: searchController.text,
       limit: rowsPerPage,
-      offset: offset,
+      offset: offset, locid: '',
     ));
   }
 
@@ -186,42 +186,71 @@ class ReturnReportViewState extends State<ReturnReportView> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Centered Content Area
+                  // Full Screen Responsive Table
                   if (isLoading)
-                    const Center(
+                    Center(
                         child: Padding(
-                          padding: EdgeInsets.all(40.0),
-                          child: SpinKitChasingDots(
+                          padding: EdgeInsets.only(
+                            top: MediaQuery.of(context).size.height * 0.1,
+                          ),
+                          child: const SpinKitChasingDots(
                               color: appPrimaryColor, size: 40),
                         ))
                   else if (reportModel.data == null ||
                       reportModel.data!.isEmpty)
-                    const Center(
+                    Center(
                       child: Padding(
-                        padding: EdgeInsets.all(40.0),
-                        child: Text(
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.of(context).size.height * 0.05,
+                        ),
+                        child: const Text(
                           "No data available",
                           style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                       ),
                     )
                   else
-                    Center(
-                      child: Column(
-                        children: [
-                          // Data Table with horizontal scroll
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Full Width Responsive Table
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minWidth: MediaQuery.of(context).size.width - 40,
+                            ),
                             child: DataTable(
                               headingRowColor:
                               MaterialStateProperty.all(Colors.grey[100]),
+                              columnSpacing: 24,
+                              dataRowMinHeight: 48,
+                              dataRowMaxHeight: 60,
                               columns: const [
-                                DataColumn(label: Text('Customer Name')),
-                                DataColumn(label: Text('Total Credit')),
-                                DataColumn(label: Text('Total Return')),
-                                DataColumn(label: Text('Balance Due')),
-                                DataColumn(label: Text('Credit Count')),
-                                DataColumn(label: Text('Return Count')),
+                                DataColumn(
+                                    label: Text('Customer Name',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                DataColumn(
+                                    label: Text('Total Credit',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                DataColumn(
+                                    label: Text('Total Return',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                DataColumn(
+                                    label: Text('Balance Due',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                DataColumn(
+                                    label: Text('Credit Count',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                DataColumn(
+                                    label: Text('Return Count',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
                               ],
                               rows: reportModel.data!.map((item) {
                                 return DataRow(cells: [
@@ -230,19 +259,20 @@ class ReturnReportViewState extends State<ReturnReportView> {
                                   DataCell(Text("₹${item.totalReturn ?? 0}")),
                                   DataCell(Text("₹${item.balanceDue ?? 0}",
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
+                                          fontWeight: FontWeight.bold,
+                                          ))),
                                   DataCell(Text("${item.creditCount ?? 0}")),
                                   DataCell(Text("${item.returnCount ?? 0}")),
                                 ]);
                               }).toList(),
                             ),
                           ),
+                        ),
 
-                          // Pagination centered below table
-                          const SizedBox(height: 16),
-                          _buildPaginationBar(),
-                        ],
-                      ),
+                        // Pagination centered below table
+                        const SizedBox(height: 16),
+                        _buildPaginationBar(),
+                      ],
                     ),
                 ],
               ),
@@ -281,6 +311,18 @@ class ReturnReportViewState extends State<ReturnReportView> {
   }
 
   Widget _buildPaginationBar() {
+    int start = ((currentPage - 1) * rowsPerPage) + 1;
+    int end = currentPage * rowsPerPage;
+
+    if (end > totalItems) {
+      end = totalItems.toInt();
+    }
+
+    if (totalItems == 0) {
+      start = 0;
+      end = 0;
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -300,6 +342,8 @@ class ReturnReportViewState extends State<ReturnReportView> {
           },
         ),
         const SizedBox(width: 20),
+        Text("$start - $end of $totalItems"),
+        const SizedBox(width: 20),
         IconButton(
           icon: const Icon(Icons.chevron_left),
           onPressed: currentPage > 1
@@ -308,10 +352,6 @@ class ReturnReportViewState extends State<ReturnReportView> {
             _fetchReport();
           }
               : null,
-        ),
-        Text(
-          "${((currentPage - 1) * rowsPerPage) + 1} - ${currentPage * rowsPerPage > totalItems ? totalItems : currentPage * rowsPerPage} of $totalItems",
-          style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right),

@@ -28,7 +28,8 @@ class ReturnReportModel {
         _data?.add(ReturnReportData.fromJson(v));
       });
     }
-    _totalRecords = json['totalRecords'];
+    // FIX: Map both totalCount and totalRecords from API
+    _totalRecords = json['totalCount'] ?? json['totalRecords'];
     _offset = json['offset'];
     _limit = json['limit'];
     _summary = json['summary'] != null
@@ -67,6 +68,7 @@ class ReturnReportModel {
       map['data'] = _data?.map((v) => v.toJson()).toList();
     }
     map['totalRecords'] = _totalRecords;
+    map['totalCount'] = _totalRecords; // Also include totalCount for consistency
     map['offset'] = _offset;
     map['limit'] = _limit;
     if (_summary != null) {

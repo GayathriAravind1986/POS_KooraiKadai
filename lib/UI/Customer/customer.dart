@@ -56,6 +56,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   TextEditingController searchController = TextEditingController();
+  TextEditingController fromDateController = TextEditingController();
+  TextEditingController toDateController = TextEditingController();
 
   String? locationId;
   bool saveLoad = false;
@@ -65,14 +67,54 @@ class CustomerViewViewState extends State<CustomerViewView> {
   bool isEdit = false;
   String? errorMessage;
   String? customerId;
+  DateTime? selectedFromDate;
+  DateTime? selectedToDate;
 
-  // KEEP YOUR ORIGINAL WORKING PAGINATION VARIABLES
   int currentPage = 1;
   int rowsPerPage = 10;
   num totalItems = 0;
   int totalPages = 1;
 
-  // Function to get current page items - THIS IS CRITICAL
+  String _formatDate(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isFromDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isFromDate ? selectedFromDate ?? DateTime.now() : selectedToDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isFromDate) {
+          selectedFromDate = picked;
+          fromDateController.text = DateFormat('dd/MM/yyyy').format(picked);
+        } else {
+          selectedToDate = picked;
+          toDateController.text = DateFormat('dd/MM/yyyy').format(picked);
+        }
+      });
+
+      if (selectedFromDate != null && selectedToDate != null) {
+        setState(() {
+          currentPage = 1;
+          customerLoad = true;
+        });
+        context.read<CustomerBloc>().add(FetchAllCustomers(
+          searchController.text,
+          locationId ?? "",
+          rowsPerPage,
+          0,
+          _formatDate(selectedFromDate!),
+          _formatDate(selectedToDate!),
+        ));
+      }
+    }
+  }
+
   List<dynamic> _getCurrentPageItems() {
     if (getCustomerModel.data == null || getCustomerModel.data!.isEmpty) {
       return [];
@@ -92,7 +134,6 @@ class CustomerViewViewState extends State<CustomerViewView> {
     return getCustomerModel.data!.sublist(startIndex, endIndex);
   }
 
-  // Catering-style UI for pagination bar
   Widget buildPaginationBar() {
     int start = ((currentPage - 1) * rowsPerPage) + 1;
     int end = currentPage * rowsPerPage;
@@ -104,7 +145,6 @@ class CustomerViewViewState extends State<CustomerViewView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // ---- Rows Per Page Dropdown ----
         const Text("Rows per page: "),
         DropdownButton<int>(
           value: rowsPerPage,
@@ -114,18 +154,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
           onChanged: (value) {
             setState(() {
               rowsPerPage = value!;
-              currentPage = 1; // Reset to first page when changing rows
+              currentPage = 1;
             });
             _goToPage(currentPage);
           },
         ),
-
         const SizedBox(width: 20),
-
-        // ---- Page X of Y ----
         Text("$start - $end of $totalItems"),
-
-        // ---- Prev Button ----
         IconButton(
           icon: const Icon(Icons.chevron_left),
           onPressed: currentPage > 1
@@ -134,8 +169,6 @@ class CustomerViewViewState extends State<CustomerViewView> {
           }
               : null,
         ),
-
-        // ---- Next Button ----
         IconButton(
           icon: const Icon(Icons.chevron_right),
           onPressed: currentPage < totalPages
@@ -148,7 +181,6 @@ class CustomerViewViewState extends State<CustomerViewView> {
     );
   }
 
-  // Your original working page navigation function
   void _goToPage(int page) {
     if (page >= 1 && page <= totalPages) {
       setState(() {
@@ -159,12 +191,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
         searchController.text,
         locationId ?? "",
         rowsPerPage,
-        (page - 1) * rowsPerPage, // This is your offset calculation
+        (page - 1) * rowsPerPage,
+        selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+        selectedToDate != null ? _formatDate(selectedToDate!) : "",
       ));
     }
   }
 
-  // Your original rows per page change function
   void _changeRowsPerPage(int? newValue) {
     if (newValue != null) {
       setState(() {
@@ -177,6 +210,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
         locationId ?? "",
         newValue,
         0,
+        selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+        selectedToDate != null ? _formatDate(selectedToDate!) : "",
       ));
     }
   }
@@ -187,6 +222,15 @@ class CustomerViewViewState extends State<CustomerViewView> {
     setState(() {
       customerLoad = true;
     });
+
+    context.read<CustomerBloc>().add(FetchAllCustomers(
+      searchController.text,
+      locationId ?? "",
+      rowsPerPage,
+      (currentPage - 1) * rowsPerPage,
+      selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+      selectedToDate != null ? _formatDate(selectedToDate!) : "",
+    ));
   }
 
   void clearCustomerForm() {
@@ -201,6 +245,12 @@ class CustomerViewViewState extends State<CustomerViewView> {
   @override
   void initState() {
     super.initState();
+
+    selectedFromDate = DateTime.now().subtract(const Duration(days: 30));
+    selectedToDate = DateTime.now();
+    fromDateController.text = DateFormat('dd/MM/yyyy').format(selectedFromDate!);
+    toDateController.text = DateFormat('dd/MM/yyyy').format(selectedToDate!);
+
     if (widget.hasRefreshedCustomer == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
@@ -219,11 +269,21 @@ class CustomerViewViewState extends State<CustomerViewView> {
   void _refreshData() {
     setState(() {
       searchController.clear();
+      fromDateController.clear();
+      toDateController.clear();
+      selectedFromDate = null;
+      selectedToDate = null;
       currentPage = 1;
       customerLoad = true;
     });
-    context.read<CustomerBloc>().add(FetchLocations());
-    widget.customerKey?.currentState?.refreshCustomer();
+    context.read<CustomerBloc>().add(FetchAllCustomers(
+      "",
+      locationId ?? "",
+      rowsPerPage,
+      0,
+      "",
+      "",
+    ));
   }
 
   void _refreshEditData() {
@@ -240,412 +300,18 @@ class CustomerViewViewState extends State<CustomerViewView> {
 
   @override
   void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
+    addressController.dispose();
+    searchController.dispose();
+    fromDateController.dispose();
+    toDateController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget mainContainer() {
-      return Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    isEdit ? "Edit Customer" : "Add Customer",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  if (isEdit)
-                    IconButton(
-                      onPressed: () {
-                        _refreshEditData();
-                      },
-                      icon: const Icon(
-                        Icons.refresh,
-                        color: appPrimaryColor,
-                        size: 28,
-                      ),
-                      tooltip: 'Refresh Customers',
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              Row(
-                children: [
-                  getLocationModel.data?.locationName != null
-                      ? Expanded(
-                    child: TextFormField(
-                      enabled: false,
-                      initialValue: getLocationModel.data!.locationName!,
-                      decoration: InputDecoration(
-                        labelText: 'Location',
-                        labelStyle: TextStyle(color: appPrimaryColor),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: greyColor),
-                        ),
-                        disabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: greyColor),
-                        ),
-                      ),
-                    ),
-                  )
-                      : const SizedBox.shrink()
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Customer Name *",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: TextField(
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: "Phone Number *",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: "Email Address",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              TextField(
-                controller: addressController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: "Address",
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              isEdit == true
-                  ? Center(
-                child: editLoad
-                    ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                    : ElevatedButton(
-                  onPressed: () {
-                    if (getLocationModel.data?.locationName ==
-                        null) {
-                      showToast("Location not found", context,
-                          color: false);
-                    } else if (nameController.text.isEmpty) {
-                      showToast("Enter customer name", context,
-                          color: false);
-                    } else if (phoneController.text.isEmpty) {
-                      showToast("Enter phone number", context,
-                          color: false);
-                    } else {
-                      setState(() {
-                        editLoad = true;
-                        context.read<CustomerBloc>().add(
-                          UpdateCustomer(
-                            customerId.toString(),
-                            nameController.text,
-                            phoneController.text,
-                            emailController.text,
-                            addressController.text,
-                            locationId.toString(),
-                          ),
-                        );
-                      });
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: appPrimaryColor,
-                    minimumSize: const Size(0, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text(
-                    "Update Customer",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              )
-                  : Center(
-                child: saveLoad
-                    ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                    : ElevatedButton(
-                  onPressed: () {
-                    if (getLocationModel.data?.locationName ==
-                        null) {
-                      showToast("Location not found", context,
-                          color: false);
-                    } else if (nameController.text.isEmpty) {
-                      showToast("Enter customer name", context,
-                          color: false);
-                    } else if (phoneController.text.isEmpty) {
-                      showToast("Enter phone number", context,
-                          color: false);
-                    } else {
-                      setState(() {
-                        saveLoad = true;
-                        context.read<CustomerBloc>().add(
-                          SaveCustomer(
-                            nameController.text,
-                            phoneController.text,
-                            emailController.text,
-                            addressController.text,
-                            locationId.toString(),
-                          ),
-                        );
-                      });
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: appPrimaryColor,
-                    minimumSize: const Size(0, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text(
-                    "SAVE CUSTOMER",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Customers List",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Filters",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search by name or phone...',
-                        prefixIcon: Icon(Icons.search),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          currentPage = 1;
-                          customerLoad = true;
-                        });
-                        context.read<CustomerBloc>().add(FetchAllCustomers(
-                          value,
-                          locationId ?? "",
-                          rowsPerPage,
-                          0,
-                        ));
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  ElevatedButton(
-                    onPressed: () {
-                      searchController.clear();
-                      _refreshData();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: appPrimaryColor,
-                      minimumSize: const Size(0, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: const Text(
-                      "CLEAR FILTERS",
-                      style: TextStyle(color: whiteColor),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              customerLoad
-                  ? Container(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).size.height * 0.1,
-                ),
-                alignment: Alignment.center,
-                child: const SpinKitChasingDots(
-                  color: appPrimaryColor,
-                  size: 30,
-                ),
-              )
-                  : getCustomerModel.data == null ||
-                  getCustomerModel.data!.isEmpty
-                  ? Container(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).size.height * 0.1,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  "No Customers Found !!!",
-                  style: MyTextStyle.f16(
-                    greyColor,
-                    weight: FontWeight.w500,
-                  ),
-                ),
-              )
-                  : LayoutBuilder(
-                builder: (context, constraints) {
-                  // Get only current page items
-                  final currentPageItems = _getCurrentPageItems();
-
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minWidth: constraints.maxWidth,
-                      ),
-                      child: Card(
-                        elevation: 2,
-                        child: Column(
-                          children: [
-                            DataTable(
-                              headingRowColor:
-                              MaterialStateProperty.all(
-                                greyColor200,
-                              ),
-                              columnSpacing: 32,
-                              columns: const [
-                                DataColumn(label: Text('Name')),
-                                DataColumn(label: Text('Phone')),
-                                DataColumn(label: Text('Email')),
-                                DataColumn(label: Text('Address')),
-                                DataColumn(label: Text('Location')),
-                                DataColumn(label: Text('Actions')),
-                              ],
-                              // Use currentPageItems instead of getCustomerModel.data!
-                              rows: currentPageItems.map((item) {
-                                return DataRow(
-                                  cells: [
-                                    DataCell(Text(item.name ?? "")),
-                                    DataCell(Text(item.phone ?? "")),
-                                    DataCell(
-                                        Text(item.email ?? "N/A")),
-                                    DataCell(
-                                        Text(item.address ?? "N/A")),
-                                    DataCell(Text(
-                                        item.location?.name ?? "")),
-                                    DataCell(
-                                      Row(
-                                        children: [
-                                          InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                isEdit = true;
-                                                customerId =
-                                                    item.id?.toString();
-                                              });
-                                              if (item.id != null) {
-                                                context
-                                                    .read<
-                                                    CustomerBloc>()
-                                                    .add(
-                                                  FetchCustomerById(
-                                                    item.id!
-                                                        .toString(),
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                            child: const Icon(
-                                              Icons.edit,
-                                              color: appPrimaryColor,
-                                            ),
-                                          ),
-                                          // const SizedBox(width: 12),
-                                          // InkWell(
-                                          //   onTap: () {
-                                          //     // Add delete functionality here
-                                          //   },
-                                          //   // child: const Icon(
-                                          //   //   Icons.delete,
-                                          //   //   color: redColor,
-                                          //   // ),
-                                          // ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: buildPaginationBar(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return BlocBuilder<CustomerBloc, dynamic>(
       buildWhen: ((previous, current) {
         if (current is GetLocationModel) {
@@ -656,12 +322,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
           }
           if (getLocationModel.success == true) {
             locationId = getLocationModel.data?.locationId;
-            // Fetch customers after getting location
             context.read<CustomerBloc>().add(FetchAllCustomers(
               searchController.text,
               locationId ?? "",
               rowsPerPage,
               0,
+              selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+              selectedToDate != null ? _formatDate(selectedToDate!) : "",
             ));
             setState(() {
               customerLoad = true;
@@ -709,7 +376,6 @@ class CustomerViewViewState extends State<CustomerViewView> {
           }
           if (postCustomerModel.success == true) {
             showToast("Customer Added Successfully", context, color: true);
-            // Refresh customers after adding
             setState(() {
               currentPage = 1;
             });
@@ -718,6 +384,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
               locationId ?? "",
               rowsPerPage,
               0,
+              selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+              selectedToDate != null ? _formatDate(selectedToDate!) : "",
             ));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCustomerForm();
@@ -767,12 +435,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
           if (putCustomerByIdModel.success == true) {
             showToast("Customer Updated Successfully", context, color: true);
             _refreshEditData();
-            // Refresh customers after updating
             context.read<CustomerBloc>().add(FetchAllCustomers(
               searchController.text,
               locationId ?? "",
               rowsPerPage,
               (currentPage - 1) * rowsPerPage,
+              selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+              selectedToDate != null ? _formatDate(selectedToDate!) : "",
             ));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCustomerForm();
@@ -791,7 +460,476 @@ class CustomerViewViewState extends State<CustomerViewView> {
         return false;
       }),
       builder: (context, dynamic) {
-        return mainContainer();
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      isEdit ? "Edit Customer" : "Add Customer",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    if (isEdit)
+                      IconButton(
+                        onPressed: () {
+                          _refreshEditData();
+                        },
+                        icon: const Icon(
+                          Icons.refresh,
+                          color: appPrimaryColor,
+                          size: 28,
+                        ),
+                        tooltip: 'Refresh Customers',
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    getLocationModel.data?.locationName != null
+                        ? Expanded(
+                      child: TextFormField(
+                        enabled: false,
+                        initialValue: getLocationModel.data!.locationName!,
+                        decoration: InputDecoration(
+                          labelText: 'Location',
+                          labelStyle: TextStyle(color: appPrimaryColor),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(color: greyColor),
+                          ),
+                          disabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: greyColor),
+                          ),
+                        ),
+                      ),
+                    )
+                        : const SizedBox.shrink()
+                  ],
+                ),
+                const SizedBox(height: 15),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: "Customer Name *",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: TextField(
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: "Phone Number *",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          labelText: "Email Address",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: addressController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: "Address",
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                isEdit == true
+                    ? Center(
+                  child: editLoad
+                      ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                      : ElevatedButton(
+                    onPressed: () {
+                      if (getLocationModel.data?.locationName ==
+                          null) {
+                        showToast("Location not found", context,
+                            color: false);
+                      } else if (nameController.text.isEmpty) {
+                        showToast("Enter customer name", context,
+                            color: false);
+                      } else if (phoneController.text.isEmpty) {
+                        showToast("Enter phone number", context,
+                            color: false);
+                      } else {
+                        setState(() {
+                          editLoad = true;
+                          context.read<CustomerBloc>().add(
+                            UpdateCustomer(
+                              customerId.toString(),
+                              nameController.text,
+                              phoneController.text,
+                              emailController.text,
+                              addressController.text,
+                              locationId.toString(),
+                            ),
+                          );
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: appPrimaryColor,
+                      minimumSize: const Size(0, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text(
+                      "Update Customer",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                )
+                    : Center(
+                  child: saveLoad
+                      ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                      : ElevatedButton(
+                    onPressed: () {
+                      if (getLocationModel.data?.locationName ==
+                          null) {
+                        showToast("Location not found", context,
+                            color: false);
+                      } else if (nameController.text.isEmpty) {
+                        showToast("Enter customer name", context,
+                            color: false);
+                      } else if (phoneController.text.isEmpty) {
+                        showToast("Enter phone number", context,
+                            color: false);
+                      } else {
+                        setState(() {
+                          saveLoad = true;
+                          context.read<CustomerBloc>().add(
+                            SaveCustomer(
+                              nameController.text,
+                              phoneController.text,
+                              emailController.text,
+                              addressController.text,
+                              locationId.toString(),
+                            ),
+                          );
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: appPrimaryColor,
+                      minimumSize: const Size(0, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text(
+                      "SAVE CUSTOMER",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Customers List",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Filters",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search by name or phone...',
+                          prefixIcon: Icon(Icons.search),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            currentPage = 1;
+                            customerLoad = true;
+                          });
+                          context.read<CustomerBloc>().add(FetchAllCustomers(
+                            value,
+                            locationId ?? "",
+                            rowsPerPage,
+                            0,
+                            selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+                            selectedToDate != null ? _formatDate(selectedToDate!) : "",
+                          ));
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: TextField(
+                        controller: fromDateController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          hintText: 'From Date',
+                          prefixIcon: Icon(Icons.calendar_today, color: appPrimaryColor),
+                          border: const OutlineInputBorder(),
+                        ),
+                        onTap: () => _selectDate(context, true),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: TextField(
+                        controller: toDateController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          hintText: 'To Date',
+                          prefixIcon: Icon(Icons.calendar_today, color: appPrimaryColor),
+                          border: const OutlineInputBorder(),
+                        ),
+                        onTap: () => _selectDate(context, false),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    ElevatedButton(
+                      onPressed: () {
+                        _refreshData();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: appPrimaryColor,
+                        minimumSize: const Size(0, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        "CLEAR FILTERS",
+                        style: TextStyle(color: whiteColor),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                customerLoad
+                    ? Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).size.height * 0.1,
+                  ),
+                  alignment: Alignment.center,
+                  child: const SpinKitChasingDots(
+                    color: appPrimaryColor,
+                    size: 30,
+                  ),
+                )
+                    : getCustomerModel.data == null ||
+                    getCustomerModel.data!.isEmpty
+                    ? Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).size.height * 0.1,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    "No Customers Found !!!",
+                    style: MyTextStyle.f16(
+                      greyColor,
+                      weight: FontWeight.w500,
+                    ),
+                  ),
+                )
+                    : Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Column(
+                    children: [
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: MediaQuery.of(context).size.width - 40,
+                          ),
+                          child: DataTable(
+                            dataRowHeight: 50,
+                            headingRowHeight: 50,
+                            horizontalMargin: 20,
+                            columnSpacing: 32,
+                            headingRowColor:
+                            MaterialStateProperty.all(greyColor200),
+                            columns: const [
+                              DataColumn(
+                                label: Text(
+                                  'Name',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Phone',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Email',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Address',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Location',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Actions',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                            rows: _getCurrentPageItems().map((item) {
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Container(
+                                      constraints: BoxConstraints(
+                                        maxWidth: MediaQuery.of(context).size.width * 0.15,
+                                      ),
+                                      child: Text(
+                                        item.name ?? "",
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(Text(item.phone ?? "")),
+                                  DataCell(
+                                    Container(
+                                      constraints: BoxConstraints(
+                                        maxWidth: MediaQuery.of(context).size.width * 0.15,
+                                      ),
+                                      child: Text(
+                                        item.email ?? "N/A",
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Container(
+                                      constraints: BoxConstraints(
+                                        maxWidth: MediaQuery.of(context).size.width * 0.2,
+                                      ),
+                                      child: Text(
+                                        item.address ?? "N/A",
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Container(
+                                      constraints: BoxConstraints(
+                                        maxWidth: MediaQuery.of(context).size.width * 0.15,
+                                      ),
+                                      child: Text(
+                                        item.location?.name ?? "",
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Row(
+                                      children: [
+                                        InkWell(
+                                          onTap: () {
+                                            setState(() {
+                                              isEdit = true;
+                                              customerId =
+                                                  item.id?.toString();
+                                            });
+                                            if (item.id != null) {
+                                              context
+                                                  .read<
+                                                  CustomerBloc>()
+                                                  .add(
+                                                FetchCustomerById(
+                                                  item.id!
+                                                      .toString(),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: const Icon(
+                                            Icons.edit,
+                                            color: appPrimaryColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        child: buildPaginationBar(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }

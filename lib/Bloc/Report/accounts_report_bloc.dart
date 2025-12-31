@@ -9,6 +9,7 @@ class FetchReturnReport extends ReportEvent {
   final String search;
   final int limit;
   final int offset;
+  final String locid;
 
   FetchReturnReport({
     required this.fromDate,
@@ -16,6 +17,7 @@ class FetchReturnReport extends ReportEvent {
     required this.search,
     required this.limit,
     required this.offset,
+    required this.locid,
   });
 }
 
@@ -29,6 +31,7 @@ class ReportBloc extends Bloc<ReportEvent, dynamic> {
           event.search,
           event.limit,
           event.offset,
+          event.locid
         );
 
         emit(value);

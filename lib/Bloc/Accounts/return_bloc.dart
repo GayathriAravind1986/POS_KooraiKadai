@@ -46,6 +46,7 @@ class FetchAllReturns extends ReturnEvent {
   final String search;
   final int limit;
   final int offset;
+  final String locid;
 
   FetchAllReturns({
     required this.fromDate,
@@ -53,6 +54,7 @@ class FetchAllReturns extends ReturnEvent {
     required this.search,
     required this.limit,
     required this.offset,
+    required this.locid,
   });
 }
 
@@ -136,6 +138,7 @@ class ReturnBloc extends Bloc<ReturnEvent, dynamic> {
           event.search,
           event.limit,
           event.offset,
+          event.locid,
         );
 
         print("🟢 All Returns API Response received");

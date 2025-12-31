@@ -18,6 +18,7 @@ class FetchAllCredits extends CreditEvent {
   final String search;
   final int limit;
   final int offset;
+  final String locid;
 
   FetchAllCredits({
     required this.fromDate,
@@ -25,6 +26,7 @@ class FetchAllCredits extends CreditEvent {
     required this.search,
     required this.limit,
     required this.offset,
+    required this.locid,
   });
 }
 
@@ -106,6 +108,7 @@ class CreditBloc extends Bloc<CreditEvent, dynamic> {
           event.search,
           event.limit,
           event.offset,
+          event.locid
         );
 
         emit(value);

@@ -865,12 +865,19 @@ class ApiProvider {
 
   /// catering and Customer
   /// Get All Customers API Integration
-  Future<GetCustomerModel> getAllCustomerAPI(String search) async {
+  Future<GetCustomerModel> getAllCustomerAPI(
+      String search,
+      String locId,
+      int limit,
+      int offset,
+      String fromDate,
+      String toDate,
+      ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
 
     final url =
-        '${Constants.baseUrl}api/catering/customer?limit=100&offset=0&search=$search';
+        '${Constants.baseUrl}api/catering/customer?limit=$limit&offset=$offset&search=$search&locationId=$locId&from_date=$fromDate&to_date=$toDate';
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1406,6 +1413,7 @@ class ApiProvider {
     String? search,
     int? limit,
     int? offset,
+      String? locid
   ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
@@ -1413,7 +1421,7 @@ class ApiProvider {
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/credit?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset',
+        '${Constants.baseUrl}api/accounts/credit?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset&locationId=$locid',
         options: Options(
           method: 'GET',
           headers: {
@@ -1649,6 +1657,7 @@ class ApiProvider {
     String search,
     int limit,
     int offset,
+      String locid,
   ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
@@ -1656,7 +1665,7 @@ class ApiProvider {
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/return?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset',
+        '${Constants.baseUrl}api/accounts/return?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset&locationId=$locid',
         options: Options(
           method: 'GET',
           headers: {
@@ -1822,7 +1831,7 @@ class ApiProvider {
 
   /// returns API Integration
   Future<ReturnReportModel> getReturnReportAPI(String fromDate, String toDate,
-      String search, int limit, int offset) async {
+      String search, int limit, int offset,String locid) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
     debugPrint("token:$token");
@@ -1830,7 +1839,7 @@ class ApiProvider {
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/return/report?limit=$limit&offset=$offset&from_date=$fromDate&to_date=$toDate&search=$search',
+        '${Constants.baseUrl}api/accounts/return/report?limit=$limit&offset=$offset&from_date=$fromDate&to_date=$toDate&search=$search&locationId=$locid',
         options: Options(
           method: 'GET',
           headers: {

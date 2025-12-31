@@ -8,10 +8,12 @@ class FetchLocations extends CustomerEvent {}
 class FetchAllCustomers extends CustomerEvent {
   final String search;
   final String locId;
-  final int limit;
+   int limit;
   final int offset;
+  final String fromdate;
+  final String todate;
 
-  FetchAllCustomers(this.search, this.locId, this.limit, this.offset);
+  FetchAllCustomers(this.search, this.locId, this.limit, this.offset,this.fromdate, this.todate);
 }
 
 class SaveCustomer extends CustomerEvent {
@@ -56,6 +58,11 @@ class CustomerBloc extends Bloc<CustomerEvent, dynamic> {
       try {
         final value = await ApiProvider().getAllCustomerAPI(
             event.search,
+            event.locId,
+            event.limit,
+            event.offset,
+            event.fromdate,
+            event.todate
         );
         emit(value);
       } catch (error) {
