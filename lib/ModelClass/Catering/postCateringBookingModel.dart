@@ -76,75 +76,65 @@ class PostCateringBookingModel {
 
 class Data {
   Data({
-    String? locationId,
+    String? id,
     String? date,
-    String? customerId,
-    String? packageId,
-    List<String>? items,
-    List<String>? addons,
-    num? packageamount,
     num? quantity,
+    num? packageamount,
     num? addonsamount,
-    String? paymenttype,
-    num? paidamount,
-    num? finalamount,
-    String? discounttype,
-    num? discountvalue,
     num? discountamount,
     num? totalamount,
+    num? finalamount,
+    num? paidamount,
     num? balanceamount,
+    String? discounttype,
+    num? discountvalue,
+    String? paymenttype,
     String? paymentmode,
     List<Paymentdetails>? paymentdetails,
     String? createdBy,
-    String? id,
-    String? createdAt,
-    String? updatedAt,
-    num? v,
+    String? locationName,
+    String? customerName,
+    String? packageName,
+    List<String>? addonNames,
+    List<String>? itemNames,
   }) {
-    _locationId = locationId;
+    _id = id;
     _date = date;
-    _customerId = customerId;
-    _packageId = packageId;
-    _items = items;
-    _addons = addons;
-    _packageamount = packageamount;
     _quantity = quantity;
+    _packageamount = packageamount;
     _addonsamount = addonsamount;
-    _paymenttype = paymenttype;
-    _paidamount = paidamount;
-    _finalamount = finalamount;
-    _discounttype = discounttype;
-    _discountvalue = discountvalue;
     _discountamount = discountamount;
     _totalamount = totalamount;
+    _finalamount = finalamount;
+    _paidamount = paidamount;
     _balanceamount = balanceamount;
+    _discounttype = discounttype;
+    _discountvalue = discountvalue;
+    _paymenttype = paymenttype;
     _paymentmode = paymentmode;
     _paymentdetails = paymentdetails;
     _createdBy = createdBy;
-    _id = id;
-    _createdAt = createdAt;
-    _updatedAt = updatedAt;
-    _v = v;
+    _locationName = locationName;
+    _customerName = customerName;
+    _packageName = packageName;
+    _addonNames = addonNames;
+    _itemNames = itemNames;
   }
 
   Data.fromJson(dynamic json) {
-    _locationId = json['locationId'];
+    _id = json['_id'];
     _date = json['date'];
-    _customerId = json['customerId'];
-    _packageId = json['packageId'];
-    _items = json['items'] != null ? json['items'].cast<String>() : [];
-    _addons = json['addons'] != null ? json['addons'].cast<String>() : [];
-    _packageamount = json['packageamount'];
     _quantity = json['quantity'];
+    _packageamount = json['packageamount'];
     _addonsamount = json['addonsamount'];
-    _paymenttype = json['paymenttype'];
-    _paidamount = json['paidamount'];
-    _finalamount = json['finalamount'];
-    _discounttype = json['discounttype'];
-    _discountvalue = json['discountvalue'];
     _discountamount = json['discountamount'];
     _totalamount = json['totalamount'];
+    _finalamount = json['finalamount'];
+    _paidamount = json['paidamount'];
     _balanceamount = json['balanceamount'];
+    _discounttype = json['discounttype'];
+    _discountvalue = json['discountvalue'];
+    _paymenttype = json['paymenttype'];
     _paymentmode = json['paymentmode'];
     if (json['paymentdetails'] != null) {
       _paymentdetails = [];
@@ -153,140 +143,128 @@ class Data {
       });
     }
     _createdBy = json['createdBy'];
-    _id = json['_id'];
-    _createdAt = json['createdAt'];
-    _updatedAt = json['updatedAt'];
-    _v = json['__v'];
+    _locationName = json['locationName'];
+    _customerName = json['customerName'];
+    _packageName = json['packageName'];
+    _addonNames =
+        json['addonNames'] != null ? json['addonNames'].cast<String>() : [];
+    _itemNames =
+        json['itemNames'] != null ? json['itemNames'].cast<String>() : [];
   }
-  String? _locationId;
+  String? _id;
   String? _date;
-  String? _customerId;
-  String? _packageId;
-  List<String>? _items;
-  List<String>? _addons;
-  num? _packageamount;
   num? _quantity;
+  num? _packageamount;
   num? _addonsamount;
-  String? _paymenttype;
-  num? _paidamount;
-  num? _finalamount;
-  String? _discounttype;
-  num? _discountvalue;
   num? _discountamount;
   num? _totalamount;
+  num? _finalamount;
+  num? _paidamount;
   num? _balanceamount;
+  String? _discounttype;
+  num? _discountvalue;
+  String? _paymenttype;
   String? _paymentmode;
   List<Paymentdetails>? _paymentdetails;
   String? _createdBy;
-  String? _id;
-  String? _createdAt;
-  String? _updatedAt;
-  num? _v;
+  String? _locationName;
+  String? _customerName;
+  String? _packageName;
+  List<String>? _addonNames;
+  List<String>? _itemNames;
   Data copyWith({
-    String? locationId,
+    String? id,
     String? date,
-    String? customerId,
-    String? packageId,
-    List<String>? items,
-    List<String>? addons,
-    num? packageamount,
     num? quantity,
+    num? packageamount,
     num? addonsamount,
-    String? paymenttype,
-    num? paidamount,
-    num? finalamount,
-    String? discounttype,
-    num? discountvalue,
     num? discountamount,
     num? totalamount,
+    num? finalamount,
+    num? paidamount,
     num? balanceamount,
+    String? discounttype,
+    num? discountvalue,
+    String? paymenttype,
     String? paymentmode,
     List<Paymentdetails>? paymentdetails,
     String? createdBy,
-    String? id,
-    String? createdAt,
-    String? updatedAt,
-    num? v,
+    String? locationName,
+    String? customerName,
+    String? packageName,
+    List<String>? addonNames,
+    List<String>? itemNames,
   }) =>
       Data(
-        locationId: locationId ?? _locationId,
+        id: id ?? _id,
         date: date ?? _date,
-        customerId: customerId ?? _customerId,
-        packageId: packageId ?? _packageId,
-        items: items ?? _items,
-        addons: addons ?? _addons,
-        packageamount: packageamount ?? _packageamount,
         quantity: quantity ?? _quantity,
+        packageamount: packageamount ?? _packageamount,
         addonsamount: addonsamount ?? _addonsamount,
-        paymenttype: paymenttype ?? _paymenttype,
-        paidamount: paidamount ?? _paidamount,
-        finalamount: finalamount ?? _finalamount,
-        discounttype: discounttype ?? _discounttype,
-        discountvalue: discountvalue ?? _discountvalue,
         discountamount: discountamount ?? _discountamount,
         totalamount: totalamount ?? _totalamount,
+        finalamount: finalamount ?? _finalamount,
+        paidamount: paidamount ?? _paidamount,
         balanceamount: balanceamount ?? _balanceamount,
+        discounttype: discounttype ?? _discounttype,
+        discountvalue: discountvalue ?? _discountvalue,
+        paymenttype: paymenttype ?? _paymenttype,
         paymentmode: paymentmode ?? _paymentmode,
         paymentdetails: paymentdetails ?? _paymentdetails,
         createdBy: createdBy ?? _createdBy,
-        id: id ?? _id,
-        createdAt: createdAt ?? _createdAt,
-        updatedAt: updatedAt ?? _updatedAt,
-        v: v ?? _v,
+        locationName: locationName ?? _locationName,
+        customerName: customerName ?? _customerName,
+        packageName: packageName ?? _packageName,
+        addonNames: addonNames ?? _addonNames,
+        itemNames: itemNames ?? _itemNames,
       );
-  String? get locationId => _locationId;
+  String? get id => _id;
   String? get date => _date;
-  String? get customerId => _customerId;
-  String? get packageId => _packageId;
-  List<String>? get items => _items;
-  List<String>? get addons => _addons;
-  num? get packageamount => _packageamount;
   num? get quantity => _quantity;
+  num? get packageamount => _packageamount;
   num? get addonsamount => _addonsamount;
-  String? get paymenttype => _paymenttype;
-  num? get paidamount => _paidamount;
-  num? get finalamount => _finalamount;
-  String? get discounttype => _discounttype;
-  num? get discountvalue => _discountvalue;
   num? get discountamount => _discountamount;
   num? get totalamount => _totalamount;
+  num? get finalamount => _finalamount;
+  num? get paidamount => _paidamount;
   num? get balanceamount => _balanceamount;
+  String? get discounttype => _discounttype;
+  num? get discountvalue => _discountvalue;
+  String? get paymenttype => _paymenttype;
   String? get paymentmode => _paymentmode;
   List<Paymentdetails>? get paymentdetails => _paymentdetails;
   String? get createdBy => _createdBy;
-  String? get id => _id;
-  String? get createdAt => _createdAt;
-  String? get updatedAt => _updatedAt;
-  num? get v => _v;
+  String? get locationName => _locationName;
+  String? get customerName => _customerName;
+  String? get packageName => _packageName;
+  List<String>? get addonNames => _addonNames;
+  List<String>? get itemNames => _itemNames;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
-    map['locationId'] = _locationId;
+    map['_id'] = _id;
     map['date'] = _date;
-    map['customerId'] = _customerId;
-    map['packageId'] = _packageId;
-    map['items'] = _items;
-    map['addons'] = _addons;
-    map['packageamount'] = _packageamount;
     map['quantity'] = _quantity;
+    map['packageamount'] = _packageamount;
     map['addonsamount'] = _addonsamount;
-    map['paymenttype'] = _paymenttype;
-    map['paidamount'] = _paidamount;
-    map['finalamount'] = _finalamount;
-    map['discounttype'] = _discounttype;
-    map['discountvalue'] = _discountvalue;
     map['discountamount'] = _discountamount;
     map['totalamount'] = _totalamount;
+    map['finalamount'] = _finalamount;
+    map['paidamount'] = _paidamount;
     map['balanceamount'] = _balanceamount;
+    map['discounttype'] = _discounttype;
+    map['discountvalue'] = _discountvalue;
+    map['paymenttype'] = _paymenttype;
     map['paymentmode'] = _paymentmode;
     if (_paymentdetails != null) {
       map['paymentdetails'] = _paymentdetails?.map((v) => v.toJson()).toList();
     }
     map['createdBy'] = _createdBy;
-    map['_id'] = _id;
-    map['createdAt'] = _createdAt;
-    map['updatedAt'] = _updatedAt;
-    map['__v'] = _v;
+    map['locationName'] = _locationName;
+    map['customerName'] = _customerName;
+    map['packageName'] = _packageName;
+    map['addonNames'] = _addonNames;
+    map['itemNames'] = _itemNames;
     return map;
   }
 }
@@ -298,32 +276,40 @@ class Paymentdetails {
   Paymentdetails({
     String? mode,
     num? amount,
+    String? date,
   }) {
     _mode = mode;
     _amount = amount;
+    _date = date;
   }
 
   Paymentdetails.fromJson(dynamic json) {
     _mode = json['mode'];
     _amount = json['amount'];
+    _date = json['date'];
   }
   String? _mode;
   num? _amount;
+  String? _date;
   Paymentdetails copyWith({
     String? mode,
     num? amount,
+    String? date,
   }) =>
       Paymentdetails(
         mode: mode ?? _mode,
         amount: amount ?? _amount,
+        date: date ?? _date,
       );
   String? get mode => _mode;
   num? get amount => _amount;
+  String? get date => _date;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     map['mode'] = _mode;
     map['amount'] = _amount;
+    map['date'] = _date;
     return map;
   }
 }

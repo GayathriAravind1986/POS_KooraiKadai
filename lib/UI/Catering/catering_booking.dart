@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -14,11 +16,18 @@ import 'package:simple/ModelClass/Catering/getPackageModel.dart';
 import 'package:simple/ModelClass/Catering/getSingleCateringDetailsModel.dart';
 import 'package:simple/ModelClass/Catering/postCateringBookingModel.dart';
 import 'package:simple/ModelClass/Catering/putCateringBookingModel.dart';
+import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
 import 'package:simple/Reusable/color.dart';
+import 'package:simple/Reusable/space.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
 import 'package:simple/UI/Catering/Helper/catering_payload_helper.dart';
+import 'package:simple/UI/Catering/Helper/print_catering_helper.dart';
+import 'package:simple/UI/Catering/Helper/printer_catering_update_helper.dart';
+import 'package:simple/UI/Home_screen/Widget/another_imin_printer/imin_abstract.dart';
+import 'package:simple/UI/Home_screen/Widget/another_imin_printer/mock_imin_printer_chrome.dart';
+import 'package:simple/UI/Home_screen/Widget/another_imin_printer/real_device_printer.dart';
 import 'package:simple/UI/Order/Helper/time_formatter.dart';
 
 class CateringView extends StatelessWidget {
@@ -57,6 +66,9 @@ class CateringViewViewState extends State<CateringViewView> {
   GetPackageModel getPackageModel = GetPackageModel();
   GetItemAddonsForPackageModel getItemAddonsForPackageModel =
       GetItemAddonsForPackageModel();
+  GetStockMaintanencesModel getStockMaintanencesModel =
+      GetStockMaintanencesModel();
+  bool stockLoad = false;
   PostCateringBookingModel postCateringBookingModel =
       PostCateringBookingModel();
   GetSingleCateringDetailsModel getSingleCateringDetailsModel =
@@ -753,6 +765,8 @@ class CateringViewViewState extends State<CateringViewView> {
       discountAmount.clear();
       balanceAmount.clear();
       paidAmount.clear();
+      selectedItems.clear();
+      selectedAddons.clear();
     });
   }
 
@@ -821,9 +835,321 @@ class CateringViewViewState extends State<CateringViewView> {
   void refreshCatering() {
     if (!mounted || !context.mounted) return;
     context.read<CateringBloc>().add(CateringLocation());
+    context.read<CateringBloc>().add(StockDetails());
     setState(() {
       locLoad = true;
+      stockLoad = true;
     });
+  }
+
+  /// print option
+  /// Imin printer
+  late IPrinterService printerService;
+  GlobalKey normalReceiptKey = GlobalKey();
+  Future<void> _ensureIminServiceReady() async {
+    try {
+      // Try to reinitialize the service to ensure it's pointing to IMIN
+      await printerService.init();
+    } catch (e) {
+      debugPrint("Error reinitializing IMIN service: $e");
+    }
+  }
+
+  Future<void> _printBillToIminOnly(BuildContext context) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: appPrimaryColor,
+              ),
+              SizedBox(height: 16),
+              Text("Printing to IMIN device...",
+                  style: TextStyle(color: whiteColor)),
+            ],
+          ),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      await WidgetsBinding.instance.endOfFrame;
+
+      Uint8List? imageBytes =
+          await captureMonochromeCateringReceipt(normalReceiptKey);
+
+      if (imageBytes != null) {
+        await printerService.init();
+        await printerService.printBitmap(imageBytes);
+        await printerService.fullCut();
+
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Bill printed successfully to IMIN device!"),
+            backgroundColor: greenColor,
+          ),
+        );
+      } else {
+        throw Exception("Image capture failed: normalReceiptKey returned null");
+      }
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("IMIN Print failed: $e"),
+          backgroundColor: redColor,
+        ),
+      );
+    }
+  }
+
+  Future<void> _updatePrintBillToIminOnly(BuildContext context) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: appPrimaryColor,
+              ),
+              SizedBox(height: 16),
+              Text("Printing to IMIN device...",
+                  style: TextStyle(color: whiteColor)),
+            ],
+          ),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      await WidgetsBinding.instance.endOfFrame;
+
+      Uint8List? imageBytes =
+          await captureMonochromePutCateringReceipt(normalReceiptKey);
+
+      if (imageBytes != null) {
+        await printerService.init();
+        await printerService.printBitmap(imageBytes);
+        await printerService.fullCut();
+
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Bill printed successfully to IMIN device!"),
+            backgroundColor: greenColor,
+          ),
+        );
+      } else {
+        throw Exception("Image capture failed: normalReceiptKey returned null");
+      }
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("IMIN Print failed: $e"),
+          backgroundColor: redColor,
+        ),
+      );
+    }
+  }
+
+  /// Catering Booking Printer
+  Future<void> postPrintCateringBooking(
+      PostCateringBookingModel booking) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final stock = getStockMaintanencesModel.data;
+      if (stock == null) {
+        Navigator.pop(context);
+        showToast("Stock details not available", context, color: false);
+        return;
+      }
+
+      final location = stock.location;
+
+      final businessName = stock.name ?? '';
+      final address =
+          "${location?.address ?? ''} ${location?.city ?? ''}-${location?.zipCode ?? ''}";
+      final gst = stock.gstNumber ?? '';
+      final phone = stock.contactNumber ?? '';
+
+      Navigator.of(context).pop();
+
+      await showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 80),
+                child: SingleChildScrollView(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: whiteColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: RepaintBoundary(
+                      key: normalReceiptKey,
+                      child: getCateringReceiptWidget(
+                        businessName: businessName,
+                        address: address,
+                        gst: gst,
+                        phone: phone,
+                        booking: booking, // 🔥 PASS BOOKING
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        await _ensureIminServiceReady();
+                        await _printBillToIminOnly(context);
+                      },
+                      icon: const Icon(Icons.print),
+                      label: const Text("Imin"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: greenColor,
+                        foregroundColor: whiteColor,
+                      ),
+                    ),
+                    horizontalSpace(width: 10),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("CLOSE"),
+                    )
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+  }
+
+  Future<void> updatePrintCateringBooking(
+      PutCateringBookingModel booking) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final stock = getStockMaintanencesModel.data;
+      if (stock == null) {
+        Navigator.pop(context);
+        showToast("Stock details not available", context, color: false);
+        return;
+      }
+
+      final location = stock.location;
+
+      final businessName = stock.name ?? '';
+      final address =
+          "${location?.address ?? ''} ${location?.city ?? ''}-${location?.zipCode ?? ''}";
+      final gst = stock.gstNumber ?? '';
+      final phone = stock.contactNumber ?? '';
+
+      Navigator.of(context).pop();
+
+      await showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 80),
+                child: SingleChildScrollView(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: whiteColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: RepaintBoundary(
+                      key: normalReceiptKey,
+                      child: getPutCateringReceiptWidget(
+                        businessName: businessName,
+                        address: address,
+                        gst: gst,
+                        phone: phone,
+                        booking: booking, // 🔥 PASS BOOKING
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        await _ensureIminServiceReady();
+                        await _updatePrintBillToIminOnly(context);
+                      },
+                      icon: const Icon(Icons.print),
+                      label: const Text("Imin"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: greenColor,
+                        foregroundColor: whiteColor,
+                      ),
+                    ),
+                    horizontalSpace(width: 10),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("CLOSE"),
+                    )
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
   }
 
   @override
@@ -831,6 +1157,13 @@ class CateringViewViewState extends State<CateringViewView> {
     super.initState();
     dateController.text =
         "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}";
+    if (kIsWeb) {
+      printerService = MockPrinterService();
+    } else if (Platform.isAndroid) {
+      printerService = RealPrinterService();
+    } else {
+      printerService = MockPrinterService();
+    }
     if (widget.hasRefreshedCatering == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
@@ -841,9 +1174,10 @@ class CateringViewViewState extends State<CateringViewView> {
       });
     } else {
       context.read<CateringBloc>().add(CateringLocation());
-
+      context.read<CateringBloc>().add(StockDetails());
       setState(() {
         locLoad = true;
+        stockLoad = true;
       });
     }
   }
@@ -858,6 +1192,7 @@ class CateringViewViewState extends State<CateringViewView> {
       selectedCustomerFilter = null;
       cusIdFilter = null;
       locLoad = true;
+      stockLoad = true;
       offset = 0;
       currentPage = 0;
       rowsPerPage = 10;
@@ -865,6 +1200,7 @@ class CateringViewViewState extends State<CateringViewView> {
       totalPages = 1;
     });
     context.read<CateringBloc>().add(CateringLocation());
+    context.read<CateringBloc>().add(StockDetails());
     context.read<CateringBloc>().add(CateringBooking(
         searchController.text,
         locationId ?? "",
@@ -901,6 +1237,7 @@ class CateringViewViewState extends State<CateringViewView> {
       paidAmount.clear();
     });
     context.read<CateringBloc>().add(CateringLocation());
+    context.read<CateringBloc>().add(StockDetails());
     widget.cateringKey?.currentState?.refreshCatering();
   }
 
@@ -1157,6 +1494,8 @@ class CateringViewViewState extends State<CateringViewView> {
                           .toList(),
                       onChanged: (value) {
                         setState(() {
+                          selectedItems.clear();
+                          selectedAddons.clear();
                           showPackageError = false;
                           packageErrorText = null;
                           packageId = value;
@@ -1870,281 +2209,281 @@ class CateringViewViewState extends State<CateringViewView> {
               const SizedBox(height: 30),
               isEdit == true
                   ? Center(
-                child: editLoad
-                    ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                    : ElevatedButton(
-                  onPressed: () async {
-                    if (!validateForm()) {
-                      return;
-                    }
-                    if (selectedPaymentType == "Partially Paid") {
-                      if (partialPaidDateController.text.isEmpty &&
-                          partialPayments.isEmpty) {
-                        showValidationSnackBar(
-                            'Please select paid date');
-                        return;
-                      }
-                      // ❌ BLOCK: amount entered but no payment mode
-                      if (partialPaidAmountController
-                          .text.isNotEmpty &&
-                          selectedPartialPaymentMode == null) {
-                        showValidationSnackBar(
-                            'Please select payment mode');
-                        return;
-                      }
+                      child: editLoad
+                          ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                          : ElevatedButton(
+                              onPressed: () async {
+                                if (!validateForm()) {
+                                  return;
+                                }
+                                if (selectedPaymentType == "Partially Paid") {
+                                  if (partialPaidDateController.text.isEmpty &&
+                                      partialPayments.isEmpty) {
+                                    showValidationSnackBar(
+                                        'Please select paid date');
+                                    return;
+                                  }
+                                  // ❌ BLOCK: amount entered but no payment mode
+                                  if (partialPaidAmountController
+                                          .text.isNotEmpty &&
+                                      selectedPartialPaymentMode == null) {
+                                    showValidationSnackBar(
+                                        'Please select payment mode');
+                                    return;
+                                  }
 
-                      // ✅ Auto-add if user typed but didn't click +
-                      if (selectedPartialPaymentMode != null &&
-                          partialPaidAmountController
-                              .text.isNotEmpty) {
-                        double amount = double.tryParse(
-                            partialPaidAmountController.text) ??
-                            0.0;
-                        double finalAmt =
-                            double.tryParse(finalAmount.text) ??
-                                0.0;
+                                  // ✅ Auto-add if user typed but didn't click +
+                                  if (selectedPartialPaymentMode != null &&
+                                      partialPaidAmountController
+                                          .text.isNotEmpty) {
+                                    double amount = double.tryParse(
+                                            partialPaidAmountController.text) ??
+                                        0.0;
+                                    double finalAmt =
+                                        double.tryParse(finalAmount.text) ??
+                                            0.0;
 
-                        double totalPaid = partialPayments.fold(0.0,
-                                (sum, p) => sum + (p['amount'] ?? 0.0));
+                                    double totalPaid = partialPayments.fold(0.0,
+                                        (sum, p) => sum + (p['amount'] ?? 0.0));
 
-                        if (amount <= 0) {
-                          showValidationSnackBar(
-                              'Please enter valid payment amount');
-                          return;
-                        }
+                                    if (amount <= 0) {
+                                      showValidationSnackBar(
+                                          'Please enter valid payment amount');
+                                      return;
+                                    }
 
-                        if ((totalPaid + amount) > finalAmt) {
-                          showValidationSnackBar(
-                              'Paid amount exceeds final amount. Please adjust.');
-                          return;
-                        }
+                                    if ((totalPaid + amount) > finalAmt) {
+                                      showValidationSnackBar(
+                                          'Paid amount exceeds final amount. Please adjust.');
+                                      return;
+                                    }
 
-                        addPartialPayment();
-                        await Future.delayed(
-                            const Duration(milliseconds: 100));
-                      }
+                                    addPartialPayment();
+                                    await Future.delayed(
+                                        const Duration(milliseconds: 100));
+                                  }
 
-                      // ❌ No partial payments added
-                      if (partialPayments.isEmpty) {
-                        showValidationSnackBar(
-                            'Please add at least one partial payment');
-                        return;
-                      }
+                                  // ❌ No partial payments added
+                                  if (partialPayments.isEmpty) {
+                                    showValidationSnackBar(
+                                        'Please add at least one partial payment');
+                                    return;
+                                  }
 
-                      // ❌ Overpayment check
-                      double finalAmt =
-                          double.tryParse(finalAmount.text) ?? 0.0;
-                      double totalPaid = partialPayments.fold(0.0,
-                              (sum, p) => sum + (p['amount'] ?? 0.0));
+                                  // ❌ Overpayment check
+                                  double finalAmt =
+                                      double.tryParse(finalAmount.text) ?? 0.0;
+                                  double totalPaid = partialPayments.fold(0.0,
+                                      (sum, p) => sum + (p['amount'] ?? 0.0));
 
-                      if (totalPaid > finalAmt) {
-                        showValidationSnackBar(
-                            'Total paid exceeds final amount. Please adjust.');
-                        return;
-                      }
-                    }
+                                  if (totalPaid > finalAmt) {
+                                    showValidationSnackBar(
+                                        'Total paid exceeds final amount. Please adjust.');
+                                    return;
+                                  }
+                                }
 
-                    String? discountTypeForApi;
-                    if (selectedDiscount == 'Fixed') {
-                      discountTypeForApi = 'FIXED';
-                    } else if (selectedDiscount == 'Percentage') {
-                      discountTypeForApi = 'PERCENTAGE';
-                    }
+                                String? discountTypeForApi;
+                                if (selectedDiscount == 'Fixed') {
+                                  discountTypeForApi = 'FIXED';
+                                } else if (selectedDiscount == 'Percentage') {
+                                  discountTypeForApi = 'PERCENTAGE';
+                                }
 
-                    final basePayload =
-                    BookingPayloadHelper.buildCommonPayload(
-                      locationId: locationId.toString(),
-                      customerId: selectedCustomer!,
-                      packageId: selectedPackage!,
-                      date: dateController.text,
-                      quantity: int.tryParse(quantity.text) ?? 1,
-                      selectedItems: selectedItems,
-                      selectedAddons: selectedAddons,
-                      selectedDiscount:
-                      discountTypeForApi.toString(),
-                      packageAmount: packageAmount.text,
-                      addonsAmount: addonsAmount.text,
-                      totalAmount: totalAmount.text,
-                      discountInput: discountAmount.text,
-                      discountCalculated:
-                      discountAmountCalculated.text,
-                      finalAmount: finalAmount.text,
-                      paidAmount: paidAmount.text,
-                      balanceAmount: balanceAmount.text,
-                    );
+                                final basePayload =
+                                    BookingPayloadHelper.buildCommonPayload(
+                                  locationId: locationId.toString(),
+                                  customerId: selectedCustomer!,
+                                  packageId: selectedPackage!,
+                                  date: dateController.text,
+                                  quantity: int.tryParse(quantity.text) ?? 1,
+                                  selectedItems: selectedItems,
+                                  selectedAddons: selectedAddons,
+                                  selectedDiscount:
+                                      discountTypeForApi.toString(),
+                                  packageAmount: packageAmount.text,
+                                  addonsAmount: addonsAmount.text,
+                                  totalAmount: totalAmount.text,
+                                  discountInput: discountAmount.text,
+                                  discountCalculated:
+                                      discountAmountCalculated.text,
+                                  finalAmount: finalAmount.text,
+                                  paidAmount: paidAmount.text,
+                                  balanceAmount: balanceAmount.text,
+                                );
 
-                    final payload =
-                    BookingPayloadHelper.buildFinalPayload(
-                      basePayload: basePayload,
-                      paymentType: selectedPaymentType ?? "",
-                      paymentMode: selectedPaymentMode,
-                      partialPayments: partialPayments,
-                    );
+                                final payload =
+                                    BookingPayloadHelper.buildFinalPayload(
+                                  basePayload: basePayload,
+                                  paymentType: selectedPaymentType ?? "",
+                                  paymentMode: selectedPaymentMode,
+                                  partialPayments: partialPayments,
+                                );
 
-                    debugPrint("Payload:${jsonEncode(payload)}");
+                                debugPrint("Payload:${jsonEncode(payload)}");
 
-                    setState(() {
-                      editLoad = true;
-                      context.read<CateringBloc>().add(
-                        UpdateCatering(
-                            jsonEncode(payload), cateringId),
-                      );
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: appPrimaryColor,
-                    minimumSize: const Size(0, 50), // Height only
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text(
-                    "Update Booking",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                ),
-              )
+                                setState(() {
+                                  editLoad = true;
+                                  context.read<CateringBloc>().add(
+                                        UpdateCatering(
+                                            jsonEncode(payload), cateringId),
+                                      );
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: appPrimaryColor,
+                                minimumSize: const Size(0, 50), // Height only
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: const Text(
+                                "Update Booking",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
+                            ),
+                    )
                   : Center(
-                child: saveLoad
-                    ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                    : ElevatedButton(
-                  onPressed: () async {
-                    if (!validateForm()) {
-                      return;
-                    }
-                    if (selectedPaymentType == "Partially Paid") {
-                      if (partialPaidDateController.text.isEmpty &&
-                          partialPayments.isEmpty) {
-                        showValidationSnackBar(
-                            'Please select paid date');
-                        return;
-                      }
-                      // ❌ BLOCK: amount entered but no payment mode
-                      if (partialPaidAmountController
-                          .text.isNotEmpty &&
-                          selectedPartialPaymentMode == null) {
-                        showValidationSnackBar(
-                            'Please select payment mode');
-                        return;
-                      }
+                      child: saveLoad
+                          ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                          : ElevatedButton(
+                              onPressed: () async {
+                                if (!validateForm()) {
+                                  return;
+                                }
+                                if (selectedPaymentType == "Partially Paid") {
+                                  if (partialPaidDateController.text.isEmpty &&
+                                      partialPayments.isEmpty) {
+                                    showValidationSnackBar(
+                                        'Please select paid date');
+                                    return;
+                                  }
+                                  // ❌ BLOCK: amount entered but no payment mode
+                                  if (partialPaidAmountController
+                                          .text.isNotEmpty &&
+                                      selectedPartialPaymentMode == null) {
+                                    showValidationSnackBar(
+                                        'Please select payment mode');
+                                    return;
+                                  }
 
-                      // ✅ Auto-add if user typed but didn't click +
-                      if (selectedPartialPaymentMode != null &&
-                          partialPaidAmountController
-                              .text.isNotEmpty) {
-                        double amount = double.tryParse(
-                            partialPaidAmountController.text) ??
-                            0.0;
-                        double finalAmt =
-                            double.tryParse(finalAmount.text) ??
-                                0.0;
+                                  // ✅ Auto-add if user typed but didn't click +
+                                  if (selectedPartialPaymentMode != null &&
+                                      partialPaidAmountController
+                                          .text.isNotEmpty) {
+                                    double amount = double.tryParse(
+                                            partialPaidAmountController.text) ??
+                                        0.0;
+                                    double finalAmt =
+                                        double.tryParse(finalAmount.text) ??
+                                            0.0;
 
-                        double totalPaid = partialPayments.fold(0.0,
-                                (sum, p) => sum + (p['amount'] ?? 0.0));
+                                    double totalPaid = partialPayments.fold(0.0,
+                                        (sum, p) => sum + (p['amount'] ?? 0.0));
 
-                        if (amount <= 0) {
-                          showValidationSnackBar(
-                              'Please enter valid payment amount');
-                          return;
-                        }
+                                    if (amount <= 0) {
+                                      showValidationSnackBar(
+                                          'Please enter valid payment amount');
+                                      return;
+                                    }
 
-                        if ((totalPaid + amount) > finalAmt) {
-                          showValidationSnackBar(
-                              'Paid amount exceeds final amount. Please adjust.');
-                          return;
-                        }
+                                    if ((totalPaid + amount) > finalAmt) {
+                                      showValidationSnackBar(
+                                          'Paid amount exceeds final amount. Please adjust.');
+                                      return;
+                                    }
 
-                        addPartialPayment();
-                        await Future.delayed(
-                            const Duration(milliseconds: 100));
-                      }
+                                    addPartialPayment();
+                                    await Future.delayed(
+                                        const Duration(milliseconds: 100));
+                                  }
 
-                      // ❌ No partial payments added
-                      if (partialPayments.isEmpty) {
-                        showValidationSnackBar(
-                            'Please add at least one partial payment');
-                        return;
-                      }
+                                  // ❌ No partial payments added
+                                  if (partialPayments.isEmpty) {
+                                    showValidationSnackBar(
+                                        'Please add at least one partial payment');
+                                    return;
+                                  }
 
-                      // ❌ Overpayment check
-                      double finalAmt =
-                          double.tryParse(finalAmount.text) ?? 0.0;
-                      double totalPaid = partialPayments.fold(0.0,
-                              (sum, p) => sum + (p['amount'] ?? 0.0));
+                                  // ❌ Overpayment check
+                                  double finalAmt =
+                                      double.tryParse(finalAmount.text) ?? 0.0;
+                                  double totalPaid = partialPayments.fold(0.0,
+                                      (sum, p) => sum + (p['amount'] ?? 0.0));
 
-                      if (totalPaid > finalAmt) {
-                        showValidationSnackBar(
-                            'Total paid exceeds final amount. Please adjust.');
-                        return;
-                      }
-                    }
+                                  if (totalPaid > finalAmt) {
+                                    showValidationSnackBar(
+                                        'Total paid exceeds final amount. Please adjust.');
+                                    return;
+                                  }
+                                }
 
-                    // Build discount type
-                    String? discountTypeForApi;
-                    if (selectedDiscount == 'Fixed') {
-                      discountTypeForApi = 'FIXED';
-                    } else if (selectedDiscount == 'Percentage') {
-                      discountTypeForApi = 'PERCENTAGE';
-                    }
-                    debugPrint("discountType:$discountTypeForApi");
+                                // Build discount type
+                                String? discountTypeForApi;
+                                if (selectedDiscount == 'Fixed') {
+                                  discountTypeForApi = 'FIXED';
+                                } else if (selectedDiscount == 'Percentage') {
+                                  discountTypeForApi = 'PERCENTAGE';
+                                }
+                                debugPrint("discountType:$discountTypeForApi");
 
-                    // Build payload
-                    final basePayload =
-                    BookingPayloadHelper.buildCommonPayload(
-                      locationId: locationId.toString(),
-                      customerId: selectedCustomer!,
-                      packageId: selectedPackage!,
-                      date: dateController.text,
-                      quantity: int.tryParse(quantity.text) ?? 1,
-                      selectedItems: selectedItems,
-                      selectedAddons: selectedAddons,
-                      selectedDiscount:
-                      discountTypeForApi.toString(),
-                      packageAmount: packageAmount.text,
-                      addonsAmount: addonsAmount.text,
-                      totalAmount: totalAmount.text,
-                      discountInput: discountAmount.text,
-                      discountCalculated:
-                      discountAmountCalculated.text,
-                      finalAmount: finalAmount.text,
-                      paidAmount: paidAmount.text,
-                      balanceAmount: balanceAmount.text,
-                    );
+                                // Build payload
+                                final basePayload =
+                                    BookingPayloadHelper.buildCommonPayload(
+                                  locationId: locationId.toString(),
+                                  customerId: selectedCustomer!,
+                                  packageId: selectedPackage!,
+                                  date: dateController.text,
+                                  quantity: int.tryParse(quantity.text) ?? 1,
+                                  selectedItems: selectedItems,
+                                  selectedAddons: selectedAddons,
+                                  selectedDiscount:
+                                      discountTypeForApi.toString(),
+                                  packageAmount: packageAmount.text,
+                                  addonsAmount: addonsAmount.text,
+                                  totalAmount: totalAmount.text,
+                                  discountInput: discountAmount.text,
+                                  discountCalculated:
+                                      discountAmountCalculated.text,
+                                  finalAmount: finalAmount.text,
+                                  paidAmount: paidAmount.text,
+                                  balanceAmount: balanceAmount.text,
+                                );
 
-                    final payload =
-                    BookingPayloadHelper.buildFinalPayload(
-                      basePayload: basePayload,
-                      paymentType: selectedPaymentType ?? "",
-                      paymentMode: selectedPaymentMode,
-                      partialPayments: partialPayments,
-                    );
+                                final payload =
+                                    BookingPayloadHelper.buildFinalPayload(
+                                  basePayload: basePayload,
+                                  paymentType: selectedPaymentType ?? "",
+                                  paymentMode: selectedPaymentMode,
+                                  partialPayments: partialPayments,
+                                );
 
-                    debugPrint("Payload:${jsonEncode(payload)}");
+                                debugPrint("Payload:${jsonEncode(payload)}");
 
-                    setState(() {
-                      saveLoad = true;
-                      context.read<CateringBloc>().add(
-                        SaveCatering(jsonEncode(payload)),
-                      );
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: appPrimaryColor,
-                    minimumSize: const Size(0, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                                setState(() {
+                                  saveLoad = true;
+                                  context.read<CateringBloc>().add(
+                                        SaveCatering(jsonEncode(payload)),
+                                      );
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: appPrimaryColor,
+                                minimumSize: const Size(0, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: const Text(
+                                "SAVE",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
+                            ),
                     ),
-                  ),
-                  child: const Text(
-                    "SAVE",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                ),
-              ),
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -2585,6 +2924,24 @@ class CateringViewViewState extends State<CateringViewView> {
           }
           return true;
         }
+        if (current is GetStockMaintanencesModel) {
+          getStockMaintanencesModel = current;
+          if (getStockMaintanencesModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getStockMaintanencesModel.success == true) {
+            setState(() {
+              stockLoad = false;
+            });
+          } else {
+            setState(() {
+              stockLoad = false;
+            });
+            showToast("No Stock found", context, color: false);
+          }
+          return true;
+        }
         if (current is GetCateringModel) {
           getCateringModel = current;
           if (getCateringModel.errorResponse?.isUnauthorized == true) {
@@ -2613,7 +2970,16 @@ class CateringViewViewState extends State<CateringViewView> {
             return true;
           }
           if (postCateringBookingModel.success == true) {
-            showToast("Catering Added Successfully", context, color: true);
+            setState(() {
+              saveLoad = false;
+              if ((getStockMaintanencesModel.data != null ||
+                      getStockMaintanencesModel.data?.location != null) &&
+                  (postCateringBookingModel.data != null)) {
+                showToast("Catering Added Successfully", context, color: true);
+                postPrintCateringBooking(postCateringBookingModel);
+              }
+            });
+
             context.read<CateringBloc>().add(CateringBooking(
                 searchController.text,
                 locationId ?? "",
@@ -2624,9 +2990,6 @@ class CateringViewViewState extends State<CateringViewView> {
                 rowsPerPage));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCateringForm();
-            });
-            setState(() {
-              saveLoad = false;
             });
           } else {
             setState(() {
@@ -2724,8 +3087,17 @@ class CateringViewViewState extends State<CateringViewView> {
             return true;
           }
           if (putCateringBooking.success == true) {
-            showToast("Catering Updated Successfully", context, color: true);
-            _refreshEditData();
+            setState(() {
+              editLoad = false;
+              if ((getStockMaintanencesModel.data != null ||
+                      getStockMaintanencesModel.data?.location != null) &&
+                  (putCateringBooking.data != null)) {
+                showToast("Catering Updated Successfully", context,
+                    color: true);
+                _refreshEditData();
+                updatePrintCateringBooking(putCateringBooking);
+              }
+            });
             context.read<CateringBloc>().add(CateringBooking(
                 searchController.text,
                 locationId ?? "",
@@ -2736,9 +3108,6 @@ class CateringViewViewState extends State<CateringViewView> {
                 rowsPerPage));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCateringForm();
-            });
-            setState(() {
-              editLoad = false;
             });
           } else {
             setState(() {

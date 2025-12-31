@@ -3,6 +3,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Bloc/Response/errorResponse.dart';
+import 'package:simple/ModelClass/Accounts/GetAllCreditsModel.dart';
+import 'package:simple/ModelClass/Accounts/GetAllReturnsModel.dart';
+import 'package:simple/ModelClass/Accounts/GetBalanceModel.dart';
+import 'package:simple/ModelClass/Accounts/GetCustomerByCreditIdModel.dart';
+import 'package:simple/ModelClass/Accounts/GetReportModel.dart';
+import 'package:simple/ModelClass/Accounts/PostCreditModel.dart';
+import 'package:simple/ModelClass/Accounts/PostReturnModel.dart';
+import 'package:simple/ModelClass/Accounts/PutCreditModel.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart';
 import 'package:simple/ModelClass/Catering/deleteCateringModel.dart';
@@ -13,6 +21,10 @@ import 'package:simple/ModelClass/Catering/getPackageModel.dart';
 import 'package:simple/ModelClass/Catering/getSingleCateringDetailsModel.dart';
 import 'package:simple/ModelClass/Catering/postCateringBookingModel.dart';
 import 'package:simple/ModelClass/Catering/putCateringBookingModel.dart';
+import 'package:simple/ModelClass/Customer/GetCustomerByIdModel.dart';
+import 'package:simple/ModelClass/Customer/GetCustomerModel.dart';
+import 'package:simple/ModelClass/Customer/PostCustomerModel.dart';
+import 'package:simple/ModelClass/Customer/PutCustomerByIdModel.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_product_by_catId_model.dart';
 import 'package:simple/ModelClass/Order/Delete_order_model.dart';
@@ -26,24 +38,10 @@ import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
 import 'package:simple/ModelClass/StockIn/getSupplierLocationModel.dart';
 import 'package:simple/ModelClass/StockIn/get_add_product_model.dart';
 import 'package:simple/ModelClass/StockIn/saveStockInModel.dart';
+import 'package:simple/ModelClass/Table/Get_table_model.dart';
 import 'package:simple/ModelClass/User/getUserModel.dart';
 import 'package:simple/ModelClass/Waiter/getWaiterModel.dart';
 import 'package:simple/Reusable/constant.dart';
-
-import '../ModelClass/Accounts/GetAllCreditsModel.dart';
-import '../ModelClass/Accounts/GetAllReturnsModel.dart';
-import '../ModelClass/Accounts/GetBalanceModel.dart';
-import '../ModelClass/Accounts/GetCustomerByCreditIdModel.dart';
-import '../ModelClass/Accounts/PostCreditModel.dart';
-import '../ModelClass/Accounts/PostReturnModel.dart';
-import '../ModelClass/Accounts/PutCreditModel.dart';
-import '../ModelClass/Customer/GetCustomerByIdModel.dart';
-import '../ModelClass/Customer/GetCustomerModel.dart';
-import '../ModelClass/Customer/PostCustomerModel.dart';
-import '../ModelClass/Customer/PutCustomerByIdModel.dart';
-import '../ModelClass/Customer/getCategoryByLocationModel.dart';
-import '../ModelClass/Accounts/GetReportModel.dart';
-import '../ModelClass/Table/Get_table_model.dart';
 
 /// All API Integration in ApiProvider
 class ApiProvider {
@@ -636,469 +634,6 @@ class ApiProvider {
     }
   }
 
-  /// Get All Credits API Integration
-  Future<GetAllCreditsModel> getAllCreditsAPI(
-      String? fromDate,
-      String? toDate,
-      String? search,
-      int? limit,
-      int? offset,
-      ) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/credit?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset',
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          GetAllCreditsModel getAllCreditsResponse =
-          GetAllCreditsModel.fromJson(response.data);
-          return getAllCreditsResponse;
-        }
-      } else {
-        return GetAllCreditsModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-      return GetAllCreditsModel()
-        ..errorResponse = ErrorResponse(
-          message: "Unexpected error occurred.",
-          statusCode: 500,
-        );
-    } on DioException catch (dioError) {
-      final errorResponse = handleError(dioError);
-      return GetAllCreditsModel()..errorResponse = errorResponse;
-    } catch (error) {
-      return GetAllCreditsModel()..errorResponse = handleError(error);
-    }
-  }
-
-  /// PostCredit API Integration - Create a new credit
-  Future<PostCreditModel> postCreditAPI(
-      String date,
-      String locationId,
-      String customerId,
-      String customerName, // Add this parameter
-      num price,
-      String description,
-      ) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-    var userId = sharedPreferences.getString("userId");
-
-    try {
-      final dataMap = {
-        "date": date,
-        "locationId": locationId,
-        "customerId": customerId,
-        "customerName": customerName, // Add this
-        "price": price,
-        "description": description,
-      };
-
-      debugPrint("📤 POST /api/credits");
-      debugPrint("📤 Request Data: $dataMap");
-
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/credit',
-        options: Options(
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        ),
-        data: json.encode(dataMap),
-      );
-
-      debugPrint("📥 PostCredit Response Status: ${response.statusCode}");
-      debugPrint("📥 PostCredit Response Body: ${response.data}");
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final model = PostCreditModel.fromJson(response.data);
-        debugPrint("✅ Credit created successfully");
-        debugPrint("✅ Credit Code: ${model.data?.creditCode}");
-        debugPrint("✅ Credit ID: ${model.data?.id}");
-        return model;
-      } else {
-        return PostCreditModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-    } on DioException catch (dioError) {
-      debugPrint("❌ PostCredit Dio Error: ${dioError.message}");
-      debugPrint("❌ Dio Error Response: ${dioError.response?.data}");
-      return PostCreditModel()..errorResponse = handleError(dioError);
-    } catch (error) {
-      debugPrint("❌ PostCredit General Error: $error");
-      return PostCreditModel()..errorResponse = handleError(error);
-    }
-  }
-
-  /// Get Credit by ID API Integration
-  Future<GetCustomerByCreditIdModel> getCreditByIdAPI(String creditId) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/credit/$creditId',
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          GetCustomerByCreditIdModel getCreditByIdResponse =
-          GetCustomerByCreditIdModel.fromJson(response.data);
-          return getCreditByIdResponse;
-        }
-      } else {
-        return GetCustomerByCreditIdModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-      return GetCustomerByCreditIdModel()
-        ..errorResponse = ErrorResponse(
-          message: "Unexpected error occurred.",
-          statusCode: 500,
-        );
-    } on DioException catch (dioError) {
-      final errorResponse = handleError(dioError);
-      return GetCustomerByCreditIdModel()..errorResponse = errorResponse;
-    } catch (error) {
-      return GetCustomerByCreditIdModel()..errorResponse = handleError(error);
-    }
-  }
-
-  /// Update Credit by ID API Integration
-  Future<PutCreditModel> updateCreditAPI(String creditId, Map<String, dynamic> payload) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/credit/$creditId',
-        options: Options(
-          method: 'PUT',
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        ),
-        data: payload,
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          PutCreditModel updateCreditResponse = PutCreditModel.fromJson(response.data);
-          return updateCreditResponse;
-        } else {
-          // Handle API returning success: false
-          return PutCreditModel.error(
-            response.data['message'] ?? 'Update failed',
-          )..errorResponse = ErrorResponse(
-            message: response.data['message'] ?? 'Update failed',
-            statusCode: response.statusCode,
-          );
-        }
-      } else {
-        return PutCreditModel.error(
-          "Error: ${response.data?['message'] ?? 'Unknown error'}",
-        )..errorResponse = ErrorResponse(
-          message: "Error: ${response.data?['message'] ?? 'Unknown error'}",
-          statusCode: response.statusCode,
-        );
-      }
-    } on DioException catch (dioError) {
-      final errorResponse = handleError(dioError);
-      return PutCreditModel.error(
-        errorResponse.message ?? 'Network error',
-      )..errorResponse = errorResponse;
-    } catch (error) {
-      final errorResponse = handleError(error);
-      return PutCreditModel.error(
-        errorResponse.message ?? 'Unexpected error',
-      )..errorResponse = errorResponse;
-    }
-  }
-
-  /// Get Customers for Credits API Integration
-  Future<GetCustomerModel> getCustomersForCreditsAPI(
-      String? locationId,
-      String? search,
-      ) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/catering/customer?locationId=$locationId&search=$search&limit=100&offset=0',
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          GetCustomerModel getCustomerResponse =
-          GetCustomerModel.fromJson(response.data);
-          return getCustomerResponse;
-        }
-      } else {
-        return GetCustomerModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-      return GetCustomerModel()
-        ..errorResponse = ErrorResponse(
-          message: "Unexpected error occurred.",
-          statusCode: 500,
-        );
-    } on DioException catch (dioError) {
-      final errorResponse = handleError(dioError);
-      return GetCustomerModel()..errorResponse = errorResponse;
-    } catch (error) {
-      return GetCustomerModel()..errorResponse = handleError(error);
-    }
-  }
-
-  /// Get All Returns API Integration
-  Future<GetAllReturnsModel> getAllReturnsAPI(
-      String fromDate,
-      String toDate,
-      String search,
-      int limit,
-      int offset,
-      ) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/return?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset',
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      debugPrint("📥 Get All Returns API Status: ${response.statusCode}");
-      debugPrint("📥 Get All Returns API Response: ${response.data}");
-
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          GetAllReturnsModel getAllReturnsResponse = GetAllReturnsModel.fromJson(response.data);
-          debugPrint("✅ Returns fetched successfully");
-          debugPrint("✅ Total Returns: ${getAllReturnsResponse.total}");
-          debugPrint("✅ Returns Count: ${getAllReturnsResponse.data?.length}");
-          return getAllReturnsResponse;
-        } else {
-          // Handle API returning success: false
-          return GetAllReturnsModel.error(
-            response.data['message'] ?? 'Failed to fetch returns',
-          )..errorResponse = ErrorResponse(
-            message: response.data['message'] ?? 'Failed to fetch returns',
-            statusCode: response.statusCode,
-          );
-        }
-      } else {
-        return GetAllReturnsModel.error(
-          "Error: ${response.data?['message'] ?? 'Unknown error'}",
-        )..errorResponse = ErrorResponse(
-          message: "Error: ${response.data?['message'] ?? 'Unknown error'}",
-          statusCode: response.statusCode,
-        );
-      }
-    } on DioException catch (dioError) {
-      final errorResponse = handleError(dioError);
-      debugPrint("❌ GetAllReturnsAPI Dio Error: ${errorResponse.message}");
-      return GetAllReturnsModel.error(
-        errorResponse.message ?? 'Network error',
-      )..errorResponse = errorResponse;
-    } catch (error) {
-      final errorResponse = handleError(error);
-      debugPrint("❌ GetAllReturnsAPI General Error: $error");
-      return GetAllReturnsModel.error(
-        errorResponse.message ?? 'Unexpected error',
-      )..errorResponse = errorResponse;
-    }
-  }
-
-  /// Create Return (POST) API Integration
-  Future<PostReturnModel> postReturnAPI(
-      String date,
-      String locationId,
-      String customerId,
-      String creditId,
-      num price,
-      String description,
-      ) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-    var userId = sharedPreferences.getString("userId");
-
-    try {
-      final dataMap = {
-        "date": date,
-        "locationId": locationId,
-        "customerId": customerId,
-        "creditId": creditId,
-        "price": price,
-        "description": description,
-      };
-
-      debugPrint("📤 POST /api/accounts/return");
-      debugPrint("📤 Request Data: $dataMap");
-
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/return',
-        options: Options(
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        ),
-        data: json.encode(dataMap),
-      );
-
-      debugPrint("📥 PostReturn Response Status: ${response.statusCode}");
-      debugPrint("📥 PostReturn Response Body: ${response.data}");
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        if (response.data['success'] == true) {
-          final model = PostReturnModel.fromJson(response.data);
-          debugPrint("✅ Return created successfully");
-          debugPrint("✅ Return Code: ${model.data?.returnCode}");
-          debugPrint("✅ Return ID: ${model.data?.id}");
-          return model;
-        } else {
-          return PostReturnModel.error(
-            response.data['message'] ?? 'Return creation failed',
-          )..errorResponse = ErrorResponse(
-            message: response.data['message'] ?? 'Return creation failed',
-            statusCode: response.statusCode,
-          );
-        }
-      } else {
-        return PostReturnModel.error(
-          "Error: ${response.data['message'] ?? 'Unknown error'}",
-        )..errorResponse = ErrorResponse(
-          message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-          statusCode: response.statusCode,
-        );
-      }
-    } on DioException catch (dioError) {
-      debugPrint("❌ PostReturnAPI Dio Error: ${dioError.message}");
-      debugPrint("❌ Dio Error Response: ${dioError.response?.data}");
-      final errorResponse = handleError(dioError);
-      return PostReturnModel.error(
-        errorResponse.message ?? 'Network error',
-      )..errorResponse = errorResponse;
-    } catch (error) {
-      debugPrint("❌ PostReturnAPI General Error: $error");
-      final errorResponse = handleError(error);
-      return PostReturnModel.error(
-        errorResponse.message ?? 'Unexpected error',
-      )..errorResponse = errorResponse;
-    }
-  }
-
-  /// Get Balance for Customer with filters API Integration
-  Future<GetBalanceModel> getBalanceAPIWithFilters(
-      String customerId,
-      ) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/return/balance/$customerId',
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      debugPrint("📥 Get Balance API Status: ${response.statusCode}");
-      debugPrint("📥 Get Balance API Response: ${response.data}");
-
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          GetBalanceModel getBalanceResponse = GetBalanceModel.fromJson(response.data);
-          debugPrint("✅ Balance fetched successfully for customer: $customerId");
-          debugPrint("✅ Balance Records: ${getBalanceResponse.data?.length}");
-          // debugPrint("✅ Total: ${getBalanceResponse.total}");
-          return getBalanceResponse;
-        } else {
-          // Handle API returning success: false
-          return GetBalanceModel.error(
-            response.data['message'] ?? 'Failed to fetch balance',
-          )..errorResponse = ErrorResponse(
-            message: response.data['message'] ?? 'Failed to fetch balance',
-            statusCode: response.statusCode,
-          );
-        }
-      } else {
-        return GetBalanceModel.error(
-          "Error: ${response.data?['message'] ?? 'Unknown error'}",
-        )..errorResponse = ErrorResponse(
-          message: "Error: ${response.data?['message'] ?? 'Unknown error'}",
-          statusCode: response.statusCode,
-        );
-      }
-    } on DioException catch (dioError) {
-      final errorResponse = handleError(dioError);
-      debugPrint("❌ GetBalanceAPI Dio Error: ${errorResponse.message}");
-      return GetBalanceModel.error(
-        errorResponse.message ?? 'Network error',
-      )..errorResponse = errorResponse;
-    } catch (error) {
-      final errorResponse = handleError(error);
-      debugPrint("❌ GetBalanceAPI General Error: $error");
-      return GetBalanceModel.error(
-        errorResponse.message ?? 'Unexpected error',
-      )..errorResponse = errorResponse;
-    }
-  }
-
   /// Update Generate Order - Post API Integration
   Future<UpdateGenerateOrderModel> updateGenerateOrderAPI(
       final String orderPayloadJson, String? orderId) async {
@@ -1141,289 +676,6 @@ class ApiProvider {
       return UpdateGenerateOrderModel()..errorResponse = errorResponse;
     } catch (error) {
       return UpdateGenerateOrderModel()..errorResponse = handleError(error);
-    }
-  }
-
-  Future<ReturnReportModel> getReturnReportAPI(
-      String fromDate,
-      String toDate,
-      String search,
-      int limit,
-      int offset) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/accounts/return/report?limit=$limit&offset=$offset&from_date=$fromDate&to_date=$toDate&search=$search',
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      debugPrint("📥 API Response Status: ${response.statusCode}");
-      debugPrint("📥 API Response Data: ${response.data}");
-
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          ReturnReportModel getReportResponse =
-          ReturnReportModel.fromJson(response.data);
-          return getReportResponse;
-        }
-      }
-
-      return ReturnReportModel()
-        ..errorResponse = ErrorResponse(
-          message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-          statusCode: response.statusCode,
-        );
-    } on DioException catch (dioError) {
-      debugPrint("❌ DioException: $dioError");
-      final errorResponse = handleError(dioError);
-      return ReturnReportModel()..errorResponse = errorResponse;
-    } catch (error) {
-      debugPrint("❌ General Error: $error");
-      final errorResponse = handleError(error);
-      return ReturnReportModel()..errorResponse = errorResponse;
-    }
-  }
-
-  // /// Category By Location API Integration
-  Future<GetCategoryByLocationModel> getCategoryByLocationAPI(
-      String? locationId) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/expensescategory?locationId=$locationId',
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          GetCategoryByLocationModel getCategoryByLocationResponse =
-              GetCategoryByLocationModel.fromJson(response.data);
-          return getCategoryByLocationResponse;
-        }
-      } else {
-        return GetCategoryByLocationModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-      return GetCategoryByLocationModel()
-        ..errorResponse = ErrorResponse(
-          message: "Unexpected error occurred.",
-          statusCode: 500,
-        );
-    } on DioException catch (dioError) {
-      final errorResponse = handleError(dioError);
-      return GetCategoryByLocationModel()..errorResponse = errorResponse;
-    } catch (error) {
-      final errorResponse = handleError(error);
-      return GetCategoryByLocationModel()..errorResponse = errorResponse;
-    }
-  }
-
-  /// Get All Customers API Integration
-  Future<GetCustomerModel> getAllCustomerAPI(String search) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    final url =
-        '${Constants.baseUrl}api/catering/customer?limit=100&offset=0&search=';
-    debugPrint("📡 Customer API URL: $url");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        url,
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      // ✅ Debug the response
-      debugPrint("📥 Customer API Status: ${response.statusCode}");
-      debugPrint("📥 Customer API Response: ${response.data}");
-
-      if (response.statusCode == 200 && response.data != null) {
-        final model = GetCustomerModel.fromJson(response.data);
-        debugPrint("✅ Model Success: ${model.success}");
-        debugPrint("✅ Model Data Count: ${model.data?.length}");
-        debugPrint("✅ Model Total: ${model.total}");
-        return model;
-      } else {
-        return GetCustomerModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-    } on DioException catch (dioError) {
-      debugPrint("❌ DioException: ${dioError.message}");
-      debugPrint("❌ Response: ${dioError.response?.data}");
-      return GetCustomerModel()..errorResponse = handleError(dioError);
-    } catch (error) {
-      debugPrint("❌ Error: $error");
-      return GetCustomerModel()..errorResponse = handleError(error);
-    }
-  }
-
-  /// Get Customer By ID API Integration
-  Future<GetCustomerByIdModel> getCustomerByIdAPI(String? customerId) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    try {
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/catering/customer/$customerId',
-        options: Options(
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return GetCustomerByIdModel.fromJson(response.data);
-      } else {
-        return GetCustomerByIdModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-    } on DioException catch (dioError) {
-      return GetCustomerByIdModel()..errorResponse = handleError(dioError);
-    } catch (error) {
-      return GetCustomerByIdModel()..errorResponse = handleError(error);
-    }
-  }
-
-  Future<PostCustomerModel> postCustomerAPI(
-    String name,
-    String phone,
-    String email,
-    String address,
-    String locId,
-  ) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-
-    try {
-      final dataMap = {
-        "name": name,
-        "phone": phone,
-        "email": email,
-        "address": address,
-        "locationId": locId
-      };
-
-      // Add debugging
-      print("📤 POST /api/catering/customer");
-      print("📤 Token: ${token != null ? 'Present' : 'Missing'}");
-      print("📤 Request Data: $dataMap");
-
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/catering/customer',
-        options: Options(
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json', // ✅ ADD THIS
-          },
-        ),
-        data: json.encode(dataMap),
-      );
-
-      print("📥 Response Status: ${response.statusCode}");
-      print("📥 Response Body: ${response.data}");
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return PostCustomerModel.fromJson(response.data);
-      } else {
-        return PostCustomerModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-    } on DioException catch (dioError) {
-      print("❌ Dio Error: ${dioError.message}");
-      print("❌ Dio Error Response: ${dioError.response?.data}");
-      print("❌ Dio Error Status: ${dioError.response?.statusCode}");
-      return PostCustomerModel()..errorResponse = handleError(dioError);
-    } catch (error) {
-      print("❌ General Error: $error");
-      return PostCustomerModel()..errorResponse = handleError(error);
-    }
-  }
-
-  /// Update Customer (PUT) API Integration
-  Future<PutCustomerByIdModel> putCustomerAPI(
-    String customerId,
-    String name,
-    String phone,
-    String email,
-    String address,
-    String locId,
-  ) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    var token = sharedPreferences.getString("token");
-    try {
-      final dataMap = {
-        "name": name,
-        "phone": phone,
-        "email": email,
-        "address": address,
-        "locationId": locId
-      };
-      var dio = Dio();
-      var response = await dio.request(
-        '${Constants.baseUrl}api/catering/customer/$customerId',
-        options: Options(
-          method: 'PUT',
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-        data: json.encode(dataMap),
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return PutCustomerByIdModel.fromJson(response.data);
-      } else {
-        return PutCustomerByIdModel()
-          ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
-            statusCode: response.statusCode,
-          );
-      }
-    } on DioException catch (dioError) {
-      return PutCustomerByIdModel()..errorResponse = handleError(dioError);
-    } catch (error) {
-      return PutCustomerByIdModel()..errorResponse = handleError(error);
     }
   }
 
@@ -1611,7 +863,171 @@ class ApiProvider {
     }
   }
 
-  /// catering
+  /// catering and Customer
+  /// Get All Customers API Integration
+  Future<GetCustomerModel> getAllCustomerAPI(String search) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    final url =
+        '${Constants.baseUrl}api/catering/customer?limit=100&offset=0&search=$search';
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        url,
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final model = GetCustomerModel.fromJson(response.data);
+        return model;
+      } else {
+        return GetCustomerModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return GetCustomerModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return GetCustomerModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Get Customer By ID API Integration
+  Future<GetCustomerByIdModel> getCustomerByIdAPI(String? customerId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/customer/$customerId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return GetCustomerByIdModel.fromJson(response.data);
+      } else {
+        return GetCustomerByIdModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return GetCustomerByIdModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return GetCustomerByIdModel()..errorResponse = handleError(error);
+    }
+  }
+
+  Future<PostCustomerModel> postCustomerAPI(
+    String name,
+    String phone,
+    String email,
+    String address,
+    String locId,
+  ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      final dataMap = {
+        "name": name,
+        "phone": phone,
+        "email": email,
+        "address": address,
+        "locationId": locId
+      };
+
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/customer',
+        options: Options(
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: json.encode(dataMap),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return PostCustomerModel.fromJson(response.data);
+      } else {
+        return PostCustomerModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return PostCustomerModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return PostCustomerModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Update Customer (PUT) API Integration
+  Future<PutCustomerByIdModel> putCustomerAPI(
+    String customerId,
+    String name,
+    String phone,
+    String email,
+    String address,
+    String locId,
+  ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      final dataMap = {
+        "name": name,
+        "phone": phone,
+        "email": email,
+        "address": address,
+        "locationId": locId
+      };
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/customer/$customerId',
+        options: Options(
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode(dataMap),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return PutCustomerByIdModel.fromJson(response.data);
+      } else {
+        return PutCustomerByIdModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return PutCustomerByIdModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return PutCustomerByIdModel()..errorResponse = handleError(error);
+    }
+  }
+
   /// catering List - API Integration
   Future<GetCateringModel> cateringListAPI(
       String search,
@@ -1639,7 +1055,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetCateringModel getCateringResponse =
-          GetCateringModel.fromJson(response.data);
+              GetCateringModel.fromJson(response.data);
           return getCateringResponse;
         }
       } else {
@@ -1728,7 +1144,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetPackageModel getPackageResponse =
-          GetPackageModel.fromJson(response.data);
+              GetPackageModel.fromJson(response.data);
           return getPackageResponse;
         }
       } else {
@@ -1752,7 +1168,6 @@ class ApiProvider {
     }
   }
 
-
   /// get Item-Addons by package API - Integration
   Future<GetItemAddonsForPackageModel> getItemAddonsAPI(
       String? packageId) async {
@@ -1775,7 +1190,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetItemAddonsForPackageModel getItemAddonsForPackageResponse =
-          GetItemAddonsForPackageModel.fromJson(response.data);
+              GetItemAddonsForPackageModel.fromJson(response.data);
           return getItemAddonsForPackageResponse;
         }
       } else {
@@ -1824,7 +1239,7 @@ class ApiProvider {
       if (response.statusCode == 201 && response.data != null) {
         try {
           PostCateringBookingModel postCateringBookingResponse =
-          PostCateringBookingModel.fromJson(response.data);
+              PostCateringBookingModel.fromJson(response.data);
           return postCateringBookingResponse;
         } catch (e) {
           return PostCateringBookingModel()
@@ -1870,7 +1285,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetSingleCateringDetailsModel getSingleCateringResponse =
-          GetSingleCateringDetailsModel.fromJson(response.data);
+              GetSingleCateringDetailsModel.fromJson(response.data);
           return getSingleCateringResponse;
         }
       } else {
@@ -1916,7 +1331,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         try {
           PutCateringBookingModel putCateringBookingResponse =
-          PutCateringBookingModel.fromJson(response.data);
+              PutCateringBookingModel.fromJson(response.data);
           return putCateringBookingResponse;
         } catch (e) {
           return PutCateringBookingModel()
@@ -1958,7 +1373,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           DeleteCateringModel deleteCateringResponse =
-          DeleteCateringModel.fromJson(response.data);
+              DeleteCateringModel.fromJson(response.data);
           return deleteCateringResponse;
         }
       } else {
@@ -1982,6 +1397,474 @@ class ApiProvider {
     }
   }
 
+  /// Accounts - API Integration
+  /** credit */
+  /// Get All Credits API Integration
+  Future<GetAllCreditsModel> getAllCreditsAPI(
+    String? fromDate,
+    String? toDate,
+    String? search,
+    int? limit,
+    int? offset,
+  ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/credit?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetAllCreditsModel getAllCreditsResponse =
+              GetAllCreditsModel.fromJson(response.data);
+          return getAllCreditsResponse;
+        }
+      } else {
+        return GetAllCreditsModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetAllCreditsModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetAllCreditsModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return GetAllCreditsModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// PostCredit API Integration - Create a new credit
+  Future<PostCreditModel> postCreditAPI(
+    String date,
+    String locationId,
+    String customerId,
+    String customerName, // Add this parameter
+    num price,
+    String description,
+  ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      final dataMap = {
+        "date": date,
+        "locationId": locationId,
+        "customerId": customerId,
+        "customerName": customerName,
+        "price": price,
+        "description": description,
+      };
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/credit',
+        options: Options(
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: json.encode(dataMap),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final model = PostCreditModel.fromJson(response.data);
+        return model;
+      } else {
+        return PostCreditModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return PostCreditModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return PostCreditModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Get Credit by ID API Integration
+  Future<GetCustomerByCreditIdModel> getCreditByIdAPI(String creditId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/credit/$creditId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetCustomerByCreditIdModel getCreditByIdResponse =
+              GetCustomerByCreditIdModel.fromJson(response.data);
+          return getCreditByIdResponse;
+        }
+      } else {
+        return GetCustomerByCreditIdModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetCustomerByCreditIdModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetCustomerByCreditIdModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return GetCustomerByCreditIdModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Update Credit by ID API Integration
+  Future<PutCreditModel> updateCreditAPI(
+      String creditId, Map<String, dynamic> payload) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/credit/$creditId',
+        options: Options(
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: payload,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          PutCreditModel updateCreditResponse =
+              PutCreditModel.fromJson(response.data);
+          return updateCreditResponse;
+        } else {
+          return PutCreditModel.error(
+            response.data['message'] ?? 'Update failed',
+          )..errorResponse = ErrorResponse(
+              message: response.data['message'] ?? 'Update failed',
+              statusCode: response.statusCode,
+            );
+        }
+      } else {
+        return PutCreditModel.error(
+          "Error: ${response.data?['message'] ?? 'Unknown error'}",
+        )..errorResponse = ErrorResponse(
+            message: "Error: ${response.data?['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return PutCreditModel.error(
+        errorResponse.message ?? 'Network error',
+      )..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return PutCreditModel.error(
+        errorResponse.message ?? 'Unexpected error',
+      )..errorResponse = errorResponse;
+    }
+  }
+
+/**  Returns **/
+  /// Get Customers for Credits API Integration
+  Future<GetCustomerModel> getCustomersForCreditsAPI(
+    String? locationId,
+    String? search,
+  ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/catering/customer?locationId=$locationId&search=$search&limit=100&offset=0',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetCustomerModel getCustomerResponse =
+              GetCustomerModel.fromJson(response.data);
+          return getCustomerResponse;
+        }
+      } else {
+        return GetCustomerModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetCustomerModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetCustomerModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return GetCustomerModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Get All Returns API Integration
+  Future<GetAllReturnsModel> getAllReturnsAPI(
+    String fromDate,
+    String toDate,
+    String search,
+    int limit,
+    int offset,
+  ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/return?from_date=$fromDate&to_date=$toDate&search=$search&limit=$limit&offset=$offset',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetAllReturnsModel getAllReturnsResponse =
+              GetAllReturnsModel.fromJson(response.data);
+          return getAllReturnsResponse;
+        } else {
+          return GetAllReturnsModel.error(
+            response.data['message'] ?? 'Failed to fetch returns',
+          )..errorResponse = ErrorResponse(
+              message: response.data['message'] ?? 'Failed to fetch returns',
+              statusCode: response.statusCode,
+            );
+        }
+      } else {
+        return GetAllReturnsModel.error(
+          "Error: ${response.data?['message'] ?? 'Unknown error'}",
+        )..errorResponse = ErrorResponse(
+            message: "Error: ${response.data?['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetAllReturnsModel.error(
+        errorResponse.message ?? 'Network error',
+      )..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetAllReturnsModel.error(
+        errorResponse.message ?? 'Unexpected error',
+      )..errorResponse = errorResponse;
+    }
+  }
+
+  /// Create Return (POST) API Integration
+  Future<PostReturnModel> postReturnAPI(
+    String date,
+    String locationId,
+    String customerId,
+    String creditId,
+    num price,
+    String description,
+  ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      final dataMap = {
+        "date": date,
+        "locationId": locationId,
+        "customerId": customerId,
+        "creditId": creditId,
+        "price": price,
+        "description": description,
+      };
+
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/return',
+        options: Options(
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: json.encode(dataMap),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        if (response.data['success'] == true) {
+          final model = PostReturnModel.fromJson(response.data);
+          return model;
+        } else {
+          return PostReturnModel.error(
+            response.data['message'] ?? 'Return creation failed',
+          )..errorResponse = ErrorResponse(
+              message: response.data['message'] ?? 'Return creation failed',
+              statusCode: response.statusCode,
+            );
+        }
+      } else {
+        return PostReturnModel.error(
+          "Error: ${response.data['message'] ?? 'Unknown error'}",
+        )..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return PostReturnModel.error(
+        errorResponse.message ?? 'Network error',
+      )..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return PostReturnModel.error(
+        errorResponse.message ?? 'Unexpected error',
+      )..errorResponse = errorResponse;
+    }
+  }
+
+  /// Get Balance for Customer with filters API Integration
+  Future<GetBalanceModel> getBalanceAPIWithFilters(
+    String customerId,
+  ) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/return/balance/$customerId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetBalanceModel getBalanceResponse =
+              GetBalanceModel.fromJson(response.data);
+          return getBalanceResponse;
+        } else {
+          // Handle API returning success: false
+          return GetBalanceModel.error(
+            response.data['message'] ?? 'Failed to fetch balance',
+          )..errorResponse = ErrorResponse(
+              message: response.data['message'] ?? 'Failed to fetch balance',
+              statusCode: response.statusCode,
+            );
+        }
+      } else {
+        return GetBalanceModel.error(
+          "Error: ${response.data?['message'] ?? 'Unknown error'}",
+        )..errorResponse = ErrorResponse(
+            message: "Error: ${response.data?['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetBalanceModel.error(
+        errorResponse.message ?? 'Network error',
+      )..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetBalanceModel.error(
+        errorResponse.message ?? 'Unexpected error',
+      )..errorResponse = errorResponse;
+    }
+  }
+
+  /// returns API Integration
+  Future<ReturnReportModel> getReturnReportAPI(String fromDate, String toDate,
+      String search, int limit, int offset) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/accounts/return/report?limit=$limit&offset=$offset&from_date=$fromDate&to_date=$toDate&search=$search',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      debugPrint("📥 API Response Status: ${response.statusCode}");
+      debugPrint("📥 API Response Data: ${response.data}");
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          ReturnReportModel getReportResponse =
+              ReturnReportModel.fromJson(response.data);
+          return getReportResponse;
+        }
+      }
+
+      return ReturnReportModel()
+        ..errorResponse = ErrorResponse(
+          message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+          statusCode: response.statusCode,
+        );
+    } on DioException catch (dioError) {
+      debugPrint("❌ DioException: $dioError");
+      final errorResponse = handleError(dioError);
+      return ReturnReportModel()..errorResponse = errorResponse;
+    } catch (error) {
+      debugPrint("❌ General Error: $error");
+      final errorResponse = handleError(error);
+      return ReturnReportModel()..errorResponse = errorResponse;
+    }
+  }
 
   /// handle Error Response
   ErrorResponse handleError(Object error) {

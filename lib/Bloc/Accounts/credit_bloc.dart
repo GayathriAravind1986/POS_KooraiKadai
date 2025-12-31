@@ -79,21 +79,12 @@ class FetchCustomersForCredit extends CreditEvent {
 
 class CreditBloc extends Bloc<CreditEvent, dynamic> {
   CreditBloc() : super(null) {
-
     on<FetchCreditById>((event, emit) async {
       try {
-        print("🔵 Fetching credit by ID: ${event.creditId}");
-
         final value = await ApiProvider().getCreditByIdAPI(event.creditId);
-
-        print("🟢 Get Credit by ID API Response received");
-        print("🟢 Success: ${value.success}");
-        print("🟢 Credit Code: ${value.data?.creditCode}");
-        print("🟢 Customer Name: ${value.data?.customerId?.name}");
 
         emit(value);
       } catch (error) {
-        print("🔴 Error in FetchCreditById bloc: $error");
         emit(error);
       }
     });
@@ -109,8 +100,6 @@ class CreditBloc extends Bloc<CreditEvent, dynamic> {
 
     on<FetchAllCredits>((event, emit) async {
       try {
-        print("🔵 Fetching all credits with: fromDate=${event.fromDate}, toDate=${event.toDate}, search=${event.search}, limit=${event.limit}, offset=${event.offset}");
-
         final value = await ApiProvider().getAllCreditsAPI(
           event.fromDate,
           event.toDate,
@@ -119,22 +108,14 @@ class CreditBloc extends Bloc<CreditEvent, dynamic> {
           event.offset,
         );
 
-        print("🟢 All Credits API Response received");
-        print("🟢 Success: ${value.success}");
-        print("🟢 Data count: ${value.data?.length}");
-        print("🟢 Total: ${value.total}");
-
         emit(value);
       } catch (error) {
-        print("🔴 Error in FetchAllCredits bloc: $error");
         emit(error);
       }
     });
 
     on<CreateCredit>((event, emit) async {
       try {
-        print("🔵 Creating credit with: customerId=${event.customerId}, price=${event.price}, locationId=${event.locationId}");
-
         final value = await ApiProvider().postCreditAPI(
           event.date,
           event.locationId,
@@ -144,14 +125,8 @@ class CreditBloc extends Bloc<CreditEvent, dynamic> {
           event.description,
         );
 
-        print("🟢 Create Credit API Response received");
-        print("🟢 Success: ${value.success}");
-        print("🟢 Credit Code: ${value.data?.creditCode}");
-        print("🟢 Credit ID: ${value.data?.id}");
-
         emit(value);
       } catch (error) {
-        print("🔴 Error in CreateCredit bloc: $error");
         emit(error);
       }
     });
@@ -159,9 +134,6 @@ class CreditBloc extends Bloc<CreditEvent, dynamic> {
     // UPDATE CREDIT EVENT HANDLER
     on<UpdateCredit>((event, emit) async {
       try {
-        print("🔄 Updating credit with ID: ${event.creditId}");
-        print("🔄 Update data - date: ${event.date}, customerId: ${event.customerId}, price: ${event.price}");
-
         // Prepare payload
         final Map<String, dynamic> payload = {
           "date": event.date,
@@ -172,19 +144,12 @@ class CreditBloc extends Bloc<CreditEvent, dynamic> {
           "locationId": event.locationId,
         };
 
-        print("📤 Sending payload: $payload");
-
         final value = await ApiProvider().updateCreditAPI(
           event.creditId,
           payload,
         );
 
         if (value.success == true) {
-          print("✅ Credit updated successfully!");
-          print("✅ Updated Credit Code: ${value.data?.creditCode}");
-          print("✅ Updated Price: ${value.data?.price}");
-          print("✅ Updated At: ${value.data?.updatedAt}");
-
           // Emit success state
           emit({
             'type': 'update_success',
@@ -217,7 +182,8 @@ class CreditBloc extends Bloc<CreditEvent, dynamic> {
 
     on<FetchCustomersForCredit>((event, emit) async {
       try {
-        print("🔵 Fetching customers for credit with: locationId=${event.locationId}, search=${event.search}");
+        print(
+            "🔵 Fetching customers for credit with: locationId=${event.locationId}, search=${event.search}");
 
         final value = await ApiProvider().getCustomersForCreditsAPI(
           event.locationId,

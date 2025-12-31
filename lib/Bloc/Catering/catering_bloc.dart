@@ -13,14 +13,14 @@ class CateringBooking extends CateringEvent {
   int limit;
 
   CateringBooking(
-      this.search,
-      this.locationId,
-      this.cusId,
-      this.fromDate,
-      this.toDate,
-      this.offset,
-      this.limit,
-      );
+    this.search,
+    this.locationId,
+    this.cusId,
+    this.fromDate,
+    this.toDate,
+    this.offset,
+    this.limit,
+  );
 }
 
 class CateringLocation extends CateringEvent {}
@@ -61,12 +61,14 @@ class DeleteCatering extends CateringEvent {
   DeleteCatering(this.cateringId);
 }
 
+class StockDetails extends CateringEvent {}
+
 class CateringBloc extends Bloc<CateringEvent, dynamic> {
   CateringBloc() : super(dynamic) {
     on<CateringBooking>((event, emit) async {
       await ApiProvider()
           .cateringListAPI(event.search, event.locationId, event.cusId,
-          event.fromDate, event.toDate, event.offset, event.limit)
+              event.fromDate, event.toDate, event.offset, event.limit)
           .then((value) {
         emit(value);
       }).catchError((error) {
@@ -128,6 +130,13 @@ class CateringBloc extends Bloc<CateringEvent, dynamic> {
     });
     on<DeleteCatering>((event, emit) async {
       await ApiProvider().deleteCateringAPI(event.cateringId).then((value) {
+        emit(value);
+      }).catchError((error) {
+        emit(error);
+      });
+    });
+    on<StockDetails>((event, emit) async {
+      await ApiProvider().getStockDetailsAPI().then((value) {
         emit(value);
       }).catchError((error) {
         emit(error);

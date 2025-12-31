@@ -21,11 +21,8 @@ class FetchReturnReport extends ReportEvent {
 
 class ReportBloc extends Bloc<ReportEvent, dynamic> {
   ReportBloc() : super(null) {
-
     on<FetchReturnReport>((event, emit) async {
       try {
-        print("🔵 Fetching report with: fromDate=${event.fromDate}, toDate=${event.toDate}, limit=${event.limit}, offset=${event.offset}");
-
         final value = await ApiProvider().getReturnReportAPI(
           event.fromDate,
           event.toDate,
@@ -34,17 +31,10 @@ class ReportBloc extends Bloc<ReportEvent, dynamic> {
           event.offset,
         );
 
-        print("🟢 API Response received: ${value.toJson()}");
-        print("🟢 Success: ${value.success}");
-        print("🟢 Data count: ${value.data?.length}");
-        // print("🟢 Total count: ${value.totalCount}");
-
         emit(value);
       } catch (error) {
-        print("🔴 Error in bloc: $error");
         emit(error);
       }
     });
-
   }
 }
