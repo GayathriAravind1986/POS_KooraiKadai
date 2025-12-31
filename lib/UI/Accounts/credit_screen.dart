@@ -14,7 +14,8 @@ import 'package:simple/ModelClass/StockIn/getLocationModel.dart' hide Data;
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
-import 'package:simple/ModelClass/Accounts/GetCustomerByCreditIdModel.dart' hide Data;
+import 'package:simple/ModelClass/Accounts/GetCustomerByCreditIdModel.dart'
+    hide Data;
 
 class CreditView extends StatelessWidget {
   final GlobalKey<CreditViewViewState>? creditKey;
@@ -51,7 +52,8 @@ class CreditViewViewState extends State<CreditViewView> {
   PostCreditModel postCreditModel = PostCreditModel();
   PutCreditModel putCreditModel = PutCreditModel();
   GetCustomerModel getCustomerModel = GetCustomerModel();
-  GetCustomerByCreditIdModel getCustomerByCreditIdModel = GetCustomerByCreditIdModel();
+  GetCustomerByCreditIdModel getCustomerByCreditIdModel =
+      GetCustomerByCreditIdModel();
 
   final TextEditingController dateController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
@@ -108,7 +110,7 @@ class CreditViewViewState extends State<CreditViewView> {
     }
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Text("Rows per page: "),
         DropdownButton<int>(
@@ -124,26 +126,22 @@ class CreditViewViewState extends State<CreditViewView> {
             _goToPage(currentPage);
           },
         ),
-
         const SizedBox(width: 20),
-
         Text("$start - $end of $totalItems"),
-
         IconButton(
           icon: const Icon(Icons.chevron_left),
           onPressed: currentPage > 1
               ? () {
-            _goToPage(currentPage - 1);
-          }
+                  _goToPage(currentPage - 1);
+                }
               : null,
         ),
-
         IconButton(
           icon: const Icon(Icons.chevron_right),
           onPressed: currentPage < totalPages
               ? () {
-            _goToPage(currentPage + 1);
-          }
+                  _goToPage(currentPage + 1);
+                }
               : null,
         ),
       ],
@@ -164,13 +162,13 @@ class CreditViewViewState extends State<CreditViewView> {
           : '';
 
       context.read<CreditBloc>().add(FetchAllCredits(
-        fromDate: fromDate,
-        toDate: toDate,
-        search: searchController.text,
-        limit: rowsPerPage,
-        offset: (page - 1) * rowsPerPage,
-        locid: locationId ?? '',
-      ));
+            fromDate: fromDate,
+            toDate: toDate,
+            search: searchController.text,
+            limit: rowsPerPage,
+            offset: (page - 1) * rowsPerPage,
+            locid: locationId ?? '',
+          ));
     }
   }
 
@@ -190,7 +188,8 @@ class CreditViewViewState extends State<CreditViewView> {
       selectedCustomerId = null;
       selectedCustomerName = null;
       selectedCreditDate = DateTime.now();
-      dateController.text = DateFormat('dd-MM-yyyy').format(selectedCreditDate!);
+      dateController.text =
+          DateFormat('dd-MM-yyyy').format(selectedCreditDate!);
       isEdit = false;
       creditId = null;
       editLoad = false;
@@ -253,14 +252,14 @@ class CreditViewViewState extends State<CreditViewView> {
     }
 
     context.read<CreditBloc>().add(UpdateCredit(
-      creditId: creditId!,
-      date: creditDate,
-      locationId: locationId ?? "",
-      customerId: selectedCustomerId!,
-      customerName: selectedCustomerName!,
-      price: double.parse(amountController.text),
-      description: descriptionController.text,
-    ));
+          creditId: creditId!,
+          date: creditDate,
+          locationId: locationId ?? "",
+          customerId: selectedCustomerId!,
+          customerName: selectedCustomerName!,
+          price: double.parse(amountController.text),
+          description: descriptionController.text,
+        ));
   }
 
   @override
@@ -270,7 +269,8 @@ class CreditViewViewState extends State<CreditViewView> {
     selectedToDate = DateTime.now();
     selectedCreditDate = DateTime.now();
 
-    fromDateController.text = DateFormat('dd-MM-yyyy').format(selectedFromDate!);
+    fromDateController.text =
+        DateFormat('dd-MM-yyyy').format(selectedFromDate!);
     toDateController.text = DateFormat('dd-MM-yyyy').format(selectedToDate!);
     dateController.text = DateFormat('dd-MM-yyyy').format(selectedCreditDate!);
 
@@ -296,7 +296,8 @@ class CreditViewViewState extends State<CreditViewView> {
       toDateController.clear();
       selectedFromDate = DateTime.now().subtract(const Duration(days: 30));
       selectedToDate = DateTime.now();
-      fromDateController.text = DateFormat('dd-MM-yyyy').format(selectedFromDate!);
+      fromDateController.text =
+          DateFormat('dd-MM-yyyy').format(selectedFromDate!);
       toDateController.text = DateFormat('dd-MM-yyyy').format(selectedToDate!);
       currentPage = 1;
       creditLoad = true;
@@ -311,13 +312,13 @@ class CreditViewViewState extends State<CreditViewView> {
         : '';
 
     context.read<CreditBloc>().add(FetchAllCredits(
-      fromDate: fromDate,
-      toDate: toDate,
-      search: '',
-      limit: rowsPerPage,
-      offset: 0,
-      locid: locationId ?? '',
-    ));
+          fromDate: fromDate,
+          toDate: toDate,
+          search: '',
+          limit: rowsPerPage,
+          offset: 0,
+          locid: locationId ?? '',
+        ));
   }
 
   void _refreshEditData() {
@@ -329,9 +330,9 @@ class CreditViewViewState extends State<CreditViewView> {
   void _fetchCustomers() {
     if (locationId != null && locationId!.isNotEmpty) {
       context.read<CreditBloc>().add(FetchCustomersForCredit(
-        locationId: locationId!,
-        search: '',
-      ));
+            locationId: locationId!,
+            search: '',
+          ));
     }
   }
 
@@ -355,13 +356,13 @@ class CreditViewViewState extends State<CreditViewView> {
                 : '';
 
             context.read<CreditBloc>().add(FetchAllCredits(
-              fromDate: fromDate,
-              toDate: toDate,
-              search: searchController.text,
-              limit: rowsPerPage,
-              offset: 0,
-              locid: locationId ?? '',
-            ));
+                  fromDate: fromDate,
+                  toDate: toDate,
+                  search: searchController.text,
+                  limit: rowsPerPage,
+                  offset: 0,
+                  locid: locationId ?? '',
+                ));
             _fetchCustomers();
             setState(() {
               creditLoad = true;
@@ -394,8 +395,8 @@ class CreditViewViewState extends State<CreditViewView> {
             setState(() {
               creditLoad = false;
             });
-            String errorMsg = getAllCreditsModel.errorResponse?.message ??
-                "No Credits found";
+            String errorMsg =
+                getAllCreditsModel.errorResponse?.message ?? "No Credits found";
             showToast(errorMsg, context, color: false);
           }
           return true;
@@ -420,13 +421,13 @@ class CreditViewViewState extends State<CreditViewView> {
                 : '';
 
             context.read<CreditBloc>().add(FetchAllCredits(
-              fromDate: fromDate,
-              toDate: toDate,
-              search: searchController.text,
-              limit: rowsPerPage,
-              offset: 0,
-              locid: locationId ?? '',
-            ));
+                  fromDate: fromDate,
+                  toDate: toDate,
+                  search: searchController.text,
+                  limit: rowsPerPage,
+                  offset: 0,
+                  locid: locationId ?? '',
+                ));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCreditForm();
             });
@@ -437,7 +438,11 @@ class CreditViewViewState extends State<CreditViewView> {
             setState(() {
               saveLoad = false;
             });
-            showToast(postCreditModel.errorResponse?.message ?? "Failed to add credit", context, color: false);
+            showToast(
+                postCreditModel.errorResponse?.message ??
+                    "Failed to add credit",
+                context,
+                color: false);
           }
           return true;
         }
@@ -463,7 +468,8 @@ class CreditViewViewState extends State<CreditViewView> {
         if (current is GetCustomerByCreditIdModel) {
           getCustomerByCreditIdModel = current;
 
-          if (getCustomerByCreditIdModel.errorResponse?.isUnauthorized == true) {
+          if (getCustomerByCreditIdModel.errorResponse?.isUnauthorized ==
+              true) {
             _handle401Error();
             return true;
           }
@@ -476,7 +482,8 @@ class CreditViewViewState extends State<CreditViewView> {
                 if (creditData.date != null) {
                   try {
                     selectedCreditDate = DateTime.parse(creditData.date!);
-                    dateController.text = DateFormat('dd-MM-yyyy').format(selectedCreditDate!);
+                    dateController.text =
+                        DateFormat('dd-MM-yyyy').format(selectedCreditDate!);
                   } catch (e) {
                     dateController.text = '';
                   }
@@ -489,7 +496,8 @@ class CreditViewViewState extends State<CreditViewView> {
 
                 descriptionController.text = creditData.description ?? '';
 
-                if (creditData.locationId != null && getLocationModel.data == null) {
+                if (creditData.locationId != null &&
+                    getLocationModel.data == null) {
                   locationId = creditData.locationId!.id;
                 }
               });
@@ -502,7 +510,11 @@ class CreditViewViewState extends State<CreditViewView> {
             setState(() {
               editLoad = false;
             });
-            showToast(getCustomerByCreditIdModel.errorResponse?.message ?? "Failed to fetch credit details", context, color: false);
+            showToast(
+                getCustomerByCreditIdModel.errorResponse?.message ??
+                    "Failed to fetch credit details",
+                context,
+                color: false);
           }
           return true;
         }
@@ -511,7 +523,9 @@ class CreditViewViewState extends State<CreditViewView> {
           if (current['type'] == 'update_success') {
             putCreditModel = current['data'];
 
-            showToast(current['message'] ?? "Credit updated successfully!", context, color: true);
+            showToast(
+                current['message'] ?? "Credit updated successfully!", context,
+                color: true);
 
             setState(() {
               currentPage = 1;
@@ -526,13 +540,13 @@ class CreditViewViewState extends State<CreditViewView> {
                 : '';
 
             context.read<CreditBloc>().add(FetchAllCredits(
-              fromDate: fromDate,
-              toDate: toDate,
-              search: searchController.text,
-              limit: rowsPerPage,
-              offset: 0,
-              locid: locationId ?? '',
-            ));
+                  fromDate: fromDate,
+                  toDate: toDate,
+                  search: searchController.text,
+                  limit: rowsPerPage,
+                  offset: 0,
+                  locid: locationId ?? '',
+                ));
 
             Future.delayed(Duration(milliseconds: 100), () {
               clearCreditForm();
@@ -541,12 +555,14 @@ class CreditViewViewState extends State<CreditViewView> {
             return true;
           }
 
-          if (current['type'] == 'update_error' || current['type'] == 'update_exception') {
+          if (current['type'] == 'update_error' ||
+              current['type'] == 'update_exception') {
             setState(() {
               editLoad = false;
             });
 
-            showToast(current['message'] ?? "Failed to update credit", context, color: false);
+            showToast(current['message'] ?? "Failed to update credit", context,
+                color: false);
 
             return true;
           }
@@ -564,7 +580,8 @@ class CreditViewViewState extends State<CreditViewView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text("Credit Management",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
 
                   // Add/Edit Credit Section
@@ -622,33 +639,41 @@ class CreditViewViewState extends State<CreditViewView> {
                                   const SizedBox(height: 8),
                                   InkWell(
                                     onTap: () async {
-                                      final DateTime? picked = await showDatePicker(
+                                      final DateTime? picked =
+                                          await showDatePicker(
                                         context: context,
-                                        initialDate: selectedCreditDate ?? DateTime.now(),
+                                        initialDate: selectedCreditDate ??
+                                            DateTime.now(),
                                         firstDate: DateTime(2000),
                                         lastDate: DateTime(2100),
                                       );
-                                      if (picked != null && picked != selectedCreditDate) {
+                                      if (picked != null &&
+                                          picked != selectedCreditDate) {
                                         setState(() {
                                           selectedCreditDate = picked;
-                                          dateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                          dateController.text =
+                                              DateFormat('dd-MM-yyyy')
+                                                  .format(picked);
                                         });
                                       }
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey.shade300),
+                                        border: Border.all(
+                                            color: Colors.grey.shade300),
                                         borderRadius: BorderRadius.circular(8),
                                         color: Colors.white,
                                       ),
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                          const Icon(Icons.calendar_today,
+                                              size: 20, color: appPrimaryColor),
                                           const SizedBox(width: 10),
                                           Text(
                                             dateController.text,
-                                            style: const TextStyle(fontSize: 16),
+                                            style:
+                                                const TextStyle(fontSize: 16),
                                           ),
                                         ],
                                       ),
@@ -675,37 +700,46 @@ class CreditViewViewState extends State<CreditViewView> {
                                   const SizedBox(height: 8),
                                   getLocationModel.data?.locationName != null
                                       ? Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: Colors.white,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.location_on, size: 20, color: appPrimaryColor),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Text(
-                                            getLocationModel.data!.locationName!,
-                                            style: const TextStyle(fontSize: 16),
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.grey.shade300),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            color: Colors.white,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.location_on,
+                                                  size: 20,
+                                                  color: appPrimaryColor),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  getLocationModel
+                                                      .data!.locationName!,
+                                                  style: const TextStyle(
+                                                      fontSize: 16),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.grey.shade300),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            color: Colors.white,
+                                          ),
+                                          child: const Text(
+                                            "No location selected",
+                                            style:
+                                                TextStyle(color: Colors.grey),
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  )
-                                      : Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: Colors.white,
-                                    ),
-                                    child: const Text(
-                                      "No location selected",
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -729,32 +763,41 @@ class CreditViewViewState extends State<CreditViewView> {
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
                                       borderRadius: BorderRadius.circular(8),
                                       color: Colors.white,
                                     ),
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
                                         value: selectedCustomerId,
-                                        hint: const Text("Select Customer", style: TextStyle(color: Colors.grey)),
+                                        hint: const Text("Select Customer",
+                                            style:
+                                                TextStyle(color: Colors.grey)),
                                         isExpanded: true,
-                                        items: getCustomerModel.data?.map((customer) {
-                                          return DropdownMenuItem<String>(
-                                            value: customer.id,
-                                            child: Text(
-                                              customer.name ?? "",
-                                              style: const TextStyle(color: Colors.black87),
-                                            ),
-                                          );
-                                        }).toList() ?? [],
+                                        items: getCustomerModel.data
+                                                ?.map((customer) {
+                                              return DropdownMenuItem<String>(
+                                                value: customer.id,
+                                                child: Text(
+                                                  customer.name ?? "",
+                                                  style: const TextStyle(
+                                                      color: Colors.black87),
+                                                ),
+                                              );
+                                            }).toList() ??
+                                            [],
                                         onChanged: (value) {
                                           setState(() {
                                             selectedCustomerId = value;
-                                            selectedCustomerName = getCustomerModel.data
-                                                ?.firstWhere((c) => c.id == value)
-                                                ?.name;
+                                            selectedCustomerName =
+                                                getCustomerModel.data
+                                                    ?.firstWhere(
+                                                        (c) => c.id == value)
+                                                    ?.name;
                                           });
                                         },
                                       ),
@@ -786,17 +829,21 @@ class CreditViewViewState extends State<CreditViewView> {
                                       hintText: "Enter amount",
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Colors.grey),
+                                        borderSide: const BorderSide(
+                                            color: Colors.grey),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade300),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: appPrimaryColor),
+                                        borderSide: const BorderSide(
+                                            color: appPrimaryColor),
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 12,
                                       ),
@@ -828,15 +875,18 @@ class CreditViewViewState extends State<CreditViewView> {
                                 hintText: "Enter description",
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: Colors.grey),
+                                  borderSide:
+                                      const BorderSide(color: Colors.grey),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: appPrimaryColor),
+                                  borderSide:
+                                      const BorderSide(color: appPrimaryColor),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -853,74 +903,101 @@ class CreditViewViewState extends State<CreditViewView> {
                         Center(
                           child: isEdit
                               ? editLoad
-                              ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                              : ElevatedButton(
-                            onPressed: _updateCredit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: appPrimaryColor,
-                              minimumSize: const Size(0, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 3,
-                            ),
-                            child: const Text(
-                              "UPDATE CREDIT",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                          )
+                                  ? SpinKitCircle(
+                                      color: appPrimaryColor, size: 30)
+                                  : ElevatedButton(
+                                      onPressed: _updateCredit,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: appPrimaryColor,
+                                        minimumSize: const Size(0, 50),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(30),
+                                        ),
+                                        elevation: 3,
+                                      ),
+                                      child: const Text(
+                                        "UPDATE CREDIT",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    )
                               : saveLoad
-                              ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                              : ElevatedButton(
-                            onPressed: () {
-                              if (selectedCustomerId == null || selectedCustomerId!.isEmpty) {
-                                showToast("Please select a customer", context, color: false);
-                              } else if (amountController.text.isEmpty) {
-                                showToast("Please enter amount", context, color: false);
-                              } else if (getLocationModel.data?.locationName == null) {
-                                showToast("Location not found", context, color: false);
-                              } else if (selectedCustomerName == null || selectedCustomerName!.isEmpty) {
-                                showToast("Customer name not found", context, color: false);
-                              } else {
-                                setState(() {
-                                  saveLoad = true;
-                                });
+                                  ? SpinKitCircle(
+                                      color: appPrimaryColor, size: 30)
+                                  : ElevatedButton(
+                                      onPressed: () {
+                                        if (selectedCustomerId == null ||
+                                            selectedCustomerId!.isEmpty) {
+                                          showToast("Please select a customer",
+                                              context,
+                                              color: false);
+                                        } else if (amountController
+                                            .text.isEmpty) {
+                                          showToast(
+                                              "Please enter amount", context,
+                                              color: false);
+                                        } else if (getLocationModel
+                                                .data?.locationName ==
+                                            null) {
+                                          showToast(
+                                              "Location not found", context,
+                                              color: false);
+                                        } else if (selectedCustomerName ==
+                                                null ||
+                                            selectedCustomerName!.isEmpty) {
+                                          showToast("Customer name not found",
+                                              context,
+                                              color: false);
+                                        } else {
+                                          setState(() {
+                                            saveLoad = true;
+                                          });
 
-                                String creditDate = selectedCreditDate != null
-                                    ? DateFormat('yyyy-MM-dd').format(selectedCreditDate!)
-                                    : DateFormat('yyyy-MM-dd').format(DateTime.now());
+                                          String creditDate =
+                                              selectedCreditDate != null
+                                                  ? DateFormat('yyyy-MM-dd')
+                                                      .format(
+                                                          selectedCreditDate!)
+                                                  : DateFormat('yyyy-MM-dd')
+                                                      .format(DateTime.now());
 
-                                context.read<CreditBloc>().add(CreateCredit(
-                                  date: creditDate,
-                                  locationId: locationId ?? "",
-                                  customerId: selectedCustomerId!,
-                                  customerName: selectedCustomerName!,
-                                  price: double.parse(amountController.text),
-                                  description: descriptionController.text,
-                                ));
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: appPrimaryColor,
-                              minimumSize: const Size(0, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 3,
-                            ),
-                            child: const Text(
-                              "SAVE CREDIT",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
+                                          context
+                                              .read<CreditBloc>()
+                                              .add(CreateCredit(
+                                                date: creditDate,
+                                                locationId: locationId ?? "",
+                                                customerId: selectedCustomerId!,
+                                                customerName:
+                                                    selectedCustomerName!,
+                                                price: double.parse(
+                                                    amountController.text),
+                                                description:
+                                                    descriptionController.text,
+                                              ));
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: appPrimaryColor,
+                                        minimumSize: const Size(0, 50),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(30),
+                                        ),
+                                        elevation: 3,
+                                      ),
+                                      child: const Text(
+                                        "SAVE CREDIT",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
                         ),
                       ],
                     ),
@@ -967,19 +1044,24 @@ class CreditViewViewState extends State<CreditViewView> {
                               controller: searchController,
                               decoration: InputDecoration(
                                 hintText: 'Search by customer name...',
-                                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                prefixIcon: const Icon(Icons.search,
+                                    color: Colors.grey),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: Colors.grey),
+                                  borderSide:
+                                      const BorderSide(color: Colors.grey),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: appPrimaryColor),
+                                  borderSide:
+                                      const BorderSide(color: appPrimaryColor),
                                 ),
                               ),
                               onChanged: (value) {
@@ -988,20 +1070,22 @@ class CreditViewViewState extends State<CreditViewView> {
                                   creditLoad = true;
                                 });
                                 String fromDate = selectedFromDate != null
-                                    ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
+                                    ? DateFormat('yyyy-MM-dd')
+                                        .format(selectedFromDate!)
                                     : '';
                                 String toDate = selectedToDate != null
-                                    ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
+                                    ? DateFormat('yyyy-MM-dd')
+                                        .format(selectedToDate!)
                                     : '';
 
                                 context.read<CreditBloc>().add(FetchAllCredits(
-                                  fromDate: fromDate,
-                                  toDate: toDate,
-                                  search: value,
-                                  limit: rowsPerPage,
-                                  offset: 0,
-                                  locid: locationId ?? '',
-                                ));
+                                      fromDate: fromDate,
+                                      toDate: toDate,
+                                      search: value,
+                                      limit: rowsPerPage,
+                                      offset: 0,
+                                      locid: locationId ?? '',
+                                    ));
                               },
                             ),
 
@@ -1012,7 +1096,8 @@ class CreditViewViewState extends State<CreditViewView> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "From Date",
@@ -1024,16 +1109,22 @@ class CreditViewViewState extends State<CreditViewView> {
                                       const SizedBox(height: 8),
                                       InkWell(
                                         onTap: () async {
-                                          final DateTime? picked = await showDatePicker(
+                                          final DateTime? picked =
+                                              await showDatePicker(
                                             context: context,
-                                            initialDate: selectedFromDate ?? DateTime.now().subtract(const Duration(days: 30)),
+                                            initialDate: selectedFromDate ??
+                                                DateTime.now().subtract(
+                                                    const Duration(days: 30)),
                                             firstDate: DateTime(2000),
                                             lastDate: DateTime(2100),
                                           );
-                                          if (picked != null && picked != selectedFromDate) {
+                                          if (picked != null &&
+                                              picked != selectedFromDate) {
                                             setState(() {
                                               selectedFromDate = picked;
-                                              fromDateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                              fromDateController.text =
+                                                  DateFormat('dd-MM-yyyy')
+                                                      .format(picked);
                                               creditLoad = true;
                                             });
                                             _goToPage(1);
@@ -1042,17 +1133,22 @@ class CreditViewViewState extends State<CreditViewView> {
                                         child: Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey.shade300),
-                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                                color: Colors.grey.shade300),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                             color: Colors.white,
                                           ),
                                           child: Row(
                                             children: [
-                                              const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                              const Icon(Icons.calendar_today,
+                                                  size: 20,
+                                                  color: appPrimaryColor),
                                               const SizedBox(width: 10),
                                               Text(
                                                 fromDateController.text,
-                                                style: const TextStyle(fontSize: 16),
+                                                style: const TextStyle(
+                                                    fontSize: 16),
                                               ),
                                             ],
                                           ),
@@ -1061,12 +1157,11 @@ class CreditViewViewState extends State<CreditViewView> {
                                     ],
                                   ),
                                 ),
-
                                 const SizedBox(width: 16),
-
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "To Date",
@@ -1078,16 +1173,21 @@ class CreditViewViewState extends State<CreditViewView> {
                                       const SizedBox(height: 8),
                                       InkWell(
                                         onTap: () async {
-                                          final DateTime? picked = await showDatePicker(
+                                          final DateTime? picked =
+                                              await showDatePicker(
                                             context: context,
-                                            initialDate: selectedToDate ?? DateTime.now(),
+                                            initialDate: selectedToDate ??
+                                                DateTime.now(),
                                             firstDate: DateTime(2000),
                                             lastDate: DateTime(2100),
                                           );
-                                          if (picked != null && picked != selectedToDate) {
+                                          if (picked != null &&
+                                              picked != selectedToDate) {
                                             setState(() {
                                               selectedToDate = picked;
-                                              toDateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                              toDateController.text =
+                                                  DateFormat('dd-MM-yyyy')
+                                                      .format(picked);
                                               creditLoad = true;
                                             });
                                             _goToPage(1);
@@ -1096,17 +1196,22 @@ class CreditViewViewState extends State<CreditViewView> {
                                         child: Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey.shade300),
-                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                                color: Colors.grey.shade300),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                             color: Colors.white,
                                           ),
                                           child: Row(
                                             children: [
-                                              const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                              const Icon(Icons.calendar_today,
+                                                  size: 20,
+                                                  color: appPrimaryColor),
                                               const SizedBox(width: 10),
                                               Text(
                                                 toDateController.text,
-                                                style: const TextStyle(fontSize: 16),
+                                                style: const TextStyle(
+                                                    fontSize: 16),
                                               ),
                                             ],
                                           ),
@@ -1129,7 +1234,8 @@ class CreditViewViewState extends State<CreditViewView> {
                                   minimumSize: const Size(0, 45),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(25),
-                                    side: BorderSide(color: Colors.grey.shade300),
+                                    side:
+                                        BorderSide(color: Colors.grey.shade300),
                                   ),
                                   elevation: 2,
                                 ),
@@ -1151,189 +1257,257 @@ class CreditViewViewState extends State<CreditViewView> {
                       // Credits Table
                       creditLoad
                           ? Container(
-                        padding: EdgeInsets.only(
-                          top: MediaQuery.of(context).size.height * 0.1,
-                        ),
-                        alignment: Alignment.center,
-                        child: const SpinKitChasingDots(
-                          color: appPrimaryColor,
-                          size: 30,
-                        ),
-                      )
-                          : getAllCreditsModel.data == null || getAllCreditsModel.data!.isEmpty
-                          ? Container(
-                        padding: EdgeInsets.only(
-                          top: MediaQuery.of(context).size.height * 0.05,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "No Credits Found !!!",
-                          style: MyTextStyle.f16(
-                            Colors.grey,
-                            weight: FontWeight.w500,
-                          ),
-                        ),
-                      )
-                          : Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Column(
-                          children: [
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minWidth: MediaQuery.of(context).size.width - 40,
-                                ),
-                                child: DataTable(
-                                  dataRowHeight: 50,
-                                  headingRowHeight: 50,
-                                  horizontalMargin: 20,
-                                  columnSpacing: 32,
-                                  headingRowColor: MaterialStateProperty.all(Colors.grey.shade100),
-                                  columns: const [
-                                    DataColumn(
-                                      label: Text(
-                                        'Date',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
+                              padding: EdgeInsets.only(
+                                top: MediaQuery.of(context).size.height * 0.1,
+                              ),
+                              alignment: Alignment.center,
+                              child: const SpinKitChasingDots(
+                                color: appPrimaryColor,
+                                size: 30,
+                              ),
+                            )
+                          : getAllCreditsModel.data == null ||
+                                  getAllCreditsModel.data!.isEmpty
+                              ? Container(
+                                  padding: EdgeInsets.only(
+                                    top: MediaQuery.of(context).size.height *
+                                        0.05,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    "No Credits Found !!!",
+                                    style: MyTextStyle.f16(
+                                      Colors.grey,
+                                      weight: FontWeight.w500,
                                     ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Location',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Code',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Customer',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Amount',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Action',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                  rows: _getCurrentPageItems().map((credit) {
-                                    return DataRow(
-                                      cells: [
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                            ),
-                                            child: Text(
-                                              credit.date != null
-                                                  ? DateFormat('dd/MM/yyyy').format(
-                                                  DateTime.parse(credit.date!))
-                                                  : 'N/A',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                  ),
+                                )
+                              : Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    border:
+                                        Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minWidth: MediaQuery.of(context)
+                                                    .size
+                                                    .width -
+                                                40,
                                           ),
-                                        ),
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                            ),
-                                            child: Text(
-                                              credit.location?.name ?? 'N/A',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                            ),
-                                            child: Text(
-                                              credit.creditCode ?? 'N/A',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.2,
-                                            ),
-                                            child: Text(
-                                              credit.customer?.name ?? 'N/A',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.1,
-                                            ),
-                                            child: Text(
-                                              '${credit.price?.toStringAsFixed(2) ?? '0.00'}',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Row(
-                                            children: [
-                                              InkWell(
-                                                onTap: () {
-                                                  _onEditCredit(credit.id!);
-                                                },
-                                                child: Container(
-                                                  padding: const EdgeInsets.all(6),
-                                                  decoration: BoxDecoration(
-                                                    color: appPrimaryColor.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(6),
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons.edit,
-                                                    color: appPrimaryColor,
-                                                    size: 20,
-                                                  ),
+                                          child: DataTable(
+                                            dataRowHeight: 50,
+                                            headingRowHeight: 50,
+                                            horizontalMargin: 20,
+                                            columnSpacing: 32,
+                                            headingRowColor:
+                                                MaterialStateProperty.all(
+                                                    Colors.grey.shade100),
+                                            columns: const [
+                                              DataColumn(
+                                                label: Text(
+                                                  'Date',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Location',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Code',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Customer',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Amount',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Action',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                               ),
                                             ],
+                                            rows: _getCurrentPageItems()
+                                                .map((credit) {
+                                              return DataRow(
+                                                cells: [
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.15,
+                                                      ),
+                                                      child: Text(
+                                                        credit.date != null
+                                                            ? DateFormat(
+                                                                    'dd/MM/yyyy')
+                                                                .format(DateTime
+                                                                    .parse(credit
+                                                                        .date!))
+                                                            : 'N/A',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.15,
+                                                      ),
+                                                      child: Text(
+                                                        credit.location?.name ??
+                                                            'N/A',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.15,
+                                                      ),
+                                                      child: Text(
+                                                        credit.creditCode ??
+                                                            'N/A',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.2,
+                                                      ),
+                                                      child: Text(
+                                                        credit.customer?.name ??
+                                                            'N/A',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.1,
+                                                      ),
+                                                      child: Text(
+                                                        '${credit.price?.toStringAsFixed(2) ?? '0.00'}',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Row(
+                                                      children: [
+                                                        InkWell(
+                                                          onTap: () {
+                                                            _onEditCredit(
+                                                                credit.id!);
+                                                          },
+                                                          child: Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(6),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: appPrimaryColor
+                                                                  .withOpacity(
+                                                                      0.1),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          6),
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons.edit,
+                                                              color:
+                                                                  appPrimaryColor,
+                                                              size: 20,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            }).toList(),
                                           ),
                                         ),
-                                      ],
-                                    );
-                                  }).toList(),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            top: BorderSide(
+                                                color: Colors.grey.shade300),
+                                          ),
+                                        ),
+                                        child: buildPaginationBar(),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: Colors.grey.shade300),
-                                ),
-                              ),
-                              child: buildPaginationBar(),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ],
@@ -1353,7 +1527,7 @@ class CreditViewViewState extends State<CreditViewView> {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => LoginScreen()),
-          (Route<dynamic> route) => false,
+      (Route<dynamic> route) => false,
     );
   }
 }

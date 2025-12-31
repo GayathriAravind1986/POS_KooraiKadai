@@ -15,7 +15,8 @@ import 'package:simple/ModelClass/StockIn/getLocationModel.dart' hide Data;
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
-import 'package:simple/ModelClass/Accounts/GetCustomerByCreditIdModel.dart' hide Data;
+import 'package:simple/ModelClass/Accounts/GetCustomerByCreditIdModel.dart'
+    hide Data;
 import 'package:simple/ModelClass/Accounts/GetBalanceModel.dart' hide Data;
 import 'package:simple/ModelClass/Accounts/GetAllReturnsModel.dart' hide Data;
 import 'package:simple/ModelClass/Accounts/PostReturnModel.dart' hide Data;
@@ -57,7 +58,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
   PostReturnModel postReturnModel = PostReturnModel();
   PutCreditModel putCreditModel = PutCreditModel();
   GetCustomerModel getCustomerModel = GetCustomerModel();
-  GetCustomerByCreditIdModel getCustomerByCreditIdModel = GetCustomerByCreditIdModel();
+  GetCustomerByCreditIdModel getCustomerByCreditIdModel =
+      GetCustomerByCreditIdModel();
   GetBalanceModel getBalanceApiWithFilterModel = GetBalanceModel();
 
   final TextEditingController dateController = TextEditingController();
@@ -115,7 +117,7 @@ class ReturnViewViewState extends State<ReturnViewView> {
     }
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Text("Rows per page: "),
         DropdownButton<int>(
@@ -131,26 +133,22 @@ class ReturnViewViewState extends State<ReturnViewView> {
             _goToPage(currentPage);
           },
         ),
-
         const SizedBox(width: 20),
-
         Text("$start - $end of $totalItems"),
-
         IconButton(
           icon: const Icon(Icons.chevron_left),
           onPressed: currentPage > 1
               ? () {
-            _goToPage(currentPage - 1);
-          }
+                  _goToPage(currentPage - 1);
+                }
               : null,
         ),
-
         IconButton(
           icon: const Icon(Icons.chevron_right),
           onPressed: currentPage < totalPages
               ? () {
-            _goToPage(currentPage + 1);
-          }
+                  _goToPage(currentPage + 1);
+                }
               : null,
         ),
       ],
@@ -171,13 +169,13 @@ class ReturnViewViewState extends State<ReturnViewView> {
           : '';
 
       context.read<ReturnBloc>().add(FetchAllReturns(
-        fromDate: fromDate,
-        toDate: toDate,
-        search: searchController.text,
-        limit: rowsPerPage,
-        offset: (page - 1) * rowsPerPage,
-        locid: locationId ?? '', // Added locid parameter
-      ));
+            fromDate: fromDate,
+            toDate: toDate,
+            search: searchController.text,
+            limit: rowsPerPage,
+            offset: (page - 1) * rowsPerPage,
+            locid: locationId ?? '', // Added locid parameter
+          ));
     }
   }
 
@@ -199,7 +197,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
       selectedCreditEntryId = null;
       selectedCreditEntryBalance = null;
       selectedReturnDate = DateTime.now();
-      dateController.text = DateFormat('dd-MM-yyyy').format(selectedReturnDate!);
+      dateController.text =
+          DateFormat('dd-MM-yyyy').format(selectedReturnDate!);
       saveLoad = false;
     });
   }
@@ -210,8 +209,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
         balanceLoad = true;
       });
       context.read<ReturnBloc>().add(FetchCustomerBalance(
-        customerId: selectedCustomerId!,
-      ));
+            customerId: selectedCustomerId!,
+          ));
     } else {
       setState(() {
         getBalanceApiWithFilterModel = GetBalanceModel();
@@ -228,7 +227,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
     selectedToDate = DateTime.now();
     selectedReturnDate = DateTime.now();
 
-    fromDateController.text = DateFormat('dd-MM-yyyy').format(selectedFromDate!);
+    fromDateController.text =
+        DateFormat('dd-MM-yyyy').format(selectedFromDate!);
     toDateController.text = DateFormat('dd-MM-yyyy').format(selectedToDate!);
     dateController.text = DateFormat('dd-MM-yyyy').format(selectedReturnDate!);
 
@@ -254,7 +254,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
       toDateController.clear();
       selectedFromDate = DateTime.now().subtract(const Duration(days: 30));
       selectedToDate = DateTime.now();
-      fromDateController.text = DateFormat('dd-MM-yyyy').format(selectedFromDate!);
+      fromDateController.text =
+          DateFormat('dd-MM-yyyy').format(selectedFromDate!);
       toDateController.text = DateFormat('dd-MM-yyyy').format(selectedToDate!);
       currentPage = 1;
       returnLoad = true;
@@ -269,13 +270,13 @@ class ReturnViewViewState extends State<ReturnViewView> {
         : '';
 
     context.read<ReturnBloc>().add(FetchAllReturns(
-      fromDate: fromDate,
-      toDate: toDate,
-      search: '',
-      limit: rowsPerPage,
-      offset: 0,
-      locid: locationId ?? '', // Added locid parameter
-    ));
+          fromDate: fromDate,
+          toDate: toDate,
+          search: '',
+          limit: rowsPerPage,
+          offset: 0,
+          locid: locationId ?? '', // Added locid parameter
+        ));
   }
 
   void refreshReturn() {
@@ -289,9 +290,9 @@ class ReturnViewViewState extends State<ReturnViewView> {
   void _fetchCustomers() {
     if (locationId != null && locationId!.isNotEmpty) {
       context.read<ReturnBloc>().add(FetchCustomersForReturn(
-        locationId: locationId!,
-        search: '',
-      ));
+            locationId: locationId!,
+            search: '',
+          ));
     }
   }
 
@@ -315,13 +316,13 @@ class ReturnViewViewState extends State<ReturnViewView> {
                 : '';
 
             context.read<ReturnBloc>().add(FetchAllReturns(
-              fromDate: fromDate,
-              toDate: toDate,
-              search: searchController.text,
-              limit: rowsPerPage,
-              offset: 0,
-              locid: locationId ?? '', // Added locid parameter
-            ));
+                  fromDate: fromDate,
+                  toDate: toDate,
+                  search: searchController.text,
+                  limit: rowsPerPage,
+                  offset: 0,
+                  locid: locationId ?? '', // Added locid parameter
+                ));
             _fetchCustomers();
             setState(() {
               returnLoad = true;
@@ -354,8 +355,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
             setState(() {
               returnLoad = false;
             });
-            String errorMsg = getAllReturnsModel.errorResponse?.message ??
-                "No Returns found";
+            String errorMsg =
+                getAllReturnsModel.errorResponse?.message ?? "No Returns found";
             showToast(errorMsg, context, color: false);
           }
           return true;
@@ -382,7 +383,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
         if (current is GetBalanceModel) {
           getBalanceApiWithFilterModel = current;
 
-          if (getBalanceApiWithFilterModel.errorResponse?.isUnauthorized == true) {
+          if (getBalanceApiWithFilterModel.errorResponse?.isUnauthorized ==
+              true) {
             _handle401Error();
             return true;
           }
@@ -392,8 +394,11 @@ class ReturnViewViewState extends State<ReturnViewView> {
           });
 
           if (!getBalanceApiWithFilterModel.success!) {
-            showToast(getBalanceApiWithFilterModel.errorResponse?.message ?? "Failed to fetch credit entries",
-                context, color: false);
+            showToast(
+                getBalanceApiWithFilterModel.errorResponse?.message ??
+                    "Failed to fetch credit entries",
+                context,
+                color: false);
           }
 
           return true;
@@ -403,7 +408,9 @@ class ReturnViewViewState extends State<ReturnViewView> {
           if (current['type'] == 'return_success') {
             postReturnModel = current['data'];
 
-            showToast(current['message'] ?? "Return added successfully!", context, color: true);
+            showToast(
+                current['message'] ?? "Return added successfully!", context,
+                color: true);
 
             setState(() {
               currentPage = 1;
@@ -418,13 +425,13 @@ class ReturnViewViewState extends State<ReturnViewView> {
                 : '';
 
             context.read<ReturnBloc>().add(FetchAllReturns(
-              fromDate: fromDate,
-              toDate: toDate,
-              search: searchController.text,
-              limit: rowsPerPage,
-              offset: 0,
-              locid: locationId ?? '', // Added locid parameter
-            ));
+                  fromDate: fromDate,
+                  toDate: toDate,
+                  search: searchController.text,
+                  limit: rowsPerPage,
+                  offset: 0,
+                  locid: locationId ?? '', // Added locid parameter
+                ));
 
             Future.delayed(Duration(milliseconds: 100), () {
               clearReturnForm();
@@ -433,12 +440,14 @@ class ReturnViewViewState extends State<ReturnViewView> {
             return true;
           }
 
-          if (current['type'] == 'return_error' || current['type'] == 'return_exception') {
+          if (current['type'] == 'return_error' ||
+              current['type'] == 'return_exception') {
             setState(() {
               saveLoad = false;
             });
 
-            showToast(current['message'] ?? "Failed to add return", context, color: false);
+            showToast(current['message'] ?? "Failed to add return", context,
+                color: false);
 
             return true;
           }
@@ -456,7 +465,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text("Return Management",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
 
                   // Add Return Section
@@ -497,33 +507,41 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                   const SizedBox(height: 8),
                                   InkWell(
                                     onTap: () async {
-                                      final DateTime? picked = await showDatePicker(
+                                      final DateTime? picked =
+                                          await showDatePicker(
                                         context: context,
-                                        initialDate: selectedReturnDate ?? DateTime.now(),
+                                        initialDate: selectedReturnDate ??
+                                            DateTime.now(),
                                         firstDate: DateTime(2000),
                                         lastDate: DateTime(2100),
                                       );
-                                      if (picked != null && picked != selectedReturnDate) {
+                                      if (picked != null &&
+                                          picked != selectedReturnDate) {
                                         setState(() {
                                           selectedReturnDate = picked;
-                                          dateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                          dateController.text =
+                                              DateFormat('dd-MM-yyyy')
+                                                  .format(picked);
                                         });
                                       }
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey.shade300),
+                                        border: Border.all(
+                                            color: Colors.grey.shade300),
                                         borderRadius: BorderRadius.circular(8),
                                         color: Colors.white,
                                       ),
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                          const Icon(Icons.calendar_today,
+                                              size: 20, color: appPrimaryColor),
                                           const SizedBox(width: 10),
                                           Text(
                                             dateController.text,
-                                            style: const TextStyle(fontSize: 16),
+                                            style:
+                                                const TextStyle(fontSize: 16),
                                           ),
                                         ],
                                       ),
@@ -550,37 +568,46 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                   const SizedBox(height: 8),
                                   getLocationModel.data?.locationName != null
                                       ? Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: Colors.white,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.location_on, size: 20, color: appPrimaryColor),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Text(
-                                            getLocationModel.data!.locationName!,
-                                            style: const TextStyle(fontSize: 16),
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.grey.shade300),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            color: Colors.white,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.location_on,
+                                                  size: 20,
+                                                  color: appPrimaryColor),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  getLocationModel
+                                                      .data!.locationName!,
+                                                  style: const TextStyle(
+                                                      fontSize: 16),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.grey.shade300),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            color: Colors.white,
+                                          ),
+                                          child: const Text(
+                                            "No location selected",
+                                            style:
+                                                TextStyle(color: Colors.grey),
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  )
-                                      : Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: Colors.white,
-                                    ),
-                                    child: const Text(
-                                      "No location selected",
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -605,32 +632,41 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
                                       borderRadius: BorderRadius.circular(8),
                                       color: Colors.white,
                                     ),
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
                                         value: selectedCustomerId,
-                                        hint: const Text("Select Customer", style: TextStyle(color: Colors.grey)),
+                                        hint: const Text("Select Customer",
+                                            style:
+                                                TextStyle(color: Colors.grey)),
                                         isExpanded: true,
-                                        items: getCustomerModel.data?.map((customer) {
-                                          return DropdownMenuItem<String>(
-                                            value: customer.id,
-                                            child: Text(
-                                              customer.name ?? "",
-                                              style: const TextStyle(color: Colors.black87),
-                                            ),
-                                          );
-                                        }).toList() ?? [],
+                                        items: getCustomerModel.data
+                                                ?.map((customer) {
+                                              return DropdownMenuItem<String>(
+                                                value: customer.id,
+                                                child: Text(
+                                                  customer.name ?? "",
+                                                  style: const TextStyle(
+                                                      color: Colors.black87),
+                                                ),
+                                              );
+                                            }).toList() ??
+                                            [],
                                         onChanged: (value) {
                                           setState(() {
                                             selectedCustomerId = value;
-                                            selectedCustomerName = getCustomerModel.data
-                                                ?.firstWhere((c) => c.id == value)
-                                                ?.name;
+                                            selectedCustomerName =
+                                                getCustomerModel.data
+                                                    ?.firstWhere(
+                                                        (c) => c.id == value)
+                                                    ?.name;
                                             selectedCreditEntryId = null;
                                             selectedCreditEntryBalance = null;
                                           });
@@ -659,46 +695,62 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
                                       borderRadius: BorderRadius.circular(8),
                                       color: Colors.white,
                                     ),
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
                                         value: selectedCreditEntryId,
-                                        hint: const Text("Select a credit entry to see balance",
-                                            style: TextStyle(color: Colors.grey)),
+                                        hint: const Text(
+                                            "Select a credit entry to see balance",
+                                            style:
+                                                TextStyle(color: Colors.grey)),
                                         isExpanded: true,
-                                        items: getBalanceApiWithFilterModel.data?.map((entry) {
-                                          return DropdownMenuItem<String>(
-                                            value: entry.creditId,
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text(
-                                                  "${entry.creditCode ?? 'N/A'}",
-                                                  style: const TextStyle(color: Colors.black87),
+                                        items: getBalanceApiWithFilterModel.data
+                                                ?.map((entry) {
+                                              return DropdownMenuItem<String>(
+                                                value: entry.creditId,
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      "${entry.creditCode ?? 'N/A'}",
+                                                      style: const TextStyle(
+                                                          color:
+                                                              Colors.black87),
+                                                    ),
+                                                    Text(
+                                                      "Balance: ${entry.balanceAmount?.toStringAsFixed(2) ?? '0.00'}",
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors
+                                                            .grey.shade600,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                Text(
-                                                  "Balance: ${entry.balanceAmount?.toStringAsFixed(2) ?? '0.00'}",
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey.shade600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList() ?? [],
+                                              );
+                                            }).toList() ??
+                                            [],
                                         onChanged: (value) {
                                           setState(() {
                                             selectedCreditEntryId = value;
-                                            final selectedEntry = getBalanceApiWithFilterModel.data
-                                                ?.firstWhere((e) => e.creditId == value);
-                                            selectedCreditEntryBalance = selectedEntry?.balanceAmount?.toStringAsFixed(2);
+                                            final selectedEntry =
+                                                getBalanceApiWithFilterModel
+                                                    .data
+                                                    ?.firstWhere((e) =>
+                                                        e.creditId == value);
+                                            selectedCreditEntryBalance =
+                                                selectedEntry?.balanceAmount
+                                                    ?.toStringAsFixed(2);
                                           });
                                         },
                                       ),
@@ -747,17 +799,21 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                       hintText: "Enter amount",
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Colors.grey),
+                                        borderSide: const BorderSide(
+                                            color: Colors.grey),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade300),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: appPrimaryColor),
+                                        borderSide: const BorderSide(
+                                            color: appPrimaryColor),
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 12,
                                       ),
@@ -788,17 +844,21 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                       hintText: "Enter description",
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Colors.grey),
+                                        borderSide: const BorderSide(
+                                            color: Colors.grey),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade300),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: appPrimaryColor),
+                                        borderSide: const BorderSide(
+                                            color: appPrimaryColor),
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 12,
                                       ),
@@ -817,53 +877,73 @@ class ReturnViewViewState extends State<ReturnViewView> {
                           child: saveLoad
                               ? SpinKitCircle(color: appPrimaryColor, size: 30)
                               : ElevatedButton(
-                            onPressed: () {
-                              if (selectedCustomerId == null || selectedCustomerId!.isEmpty) {
-                                showToast("Please select a customer", context, color: false);
-                              } else if (selectedCreditEntryId == null || selectedCreditEntryId!.isEmpty) {
-                                showToast("Please select a credit entry", context, color: false);
-                              } else if (amountController.text.isEmpty) {
-                                showToast("Please enter amount", context, color: false);
-                              } else if (getLocationModel.data?.locationName == null) {
-                                showToast("Location not found", context, color: false);
-                              } else if (selectedCustomerName == null || selectedCustomerName!.isEmpty) {
-                                showToast("Customer name not found", context, color: false);
-                              } else {
-                                setState(() {
-                                  saveLoad = true;
-                                });
+                                  onPressed: () {
+                                    if (selectedCustomerId == null ||
+                                        selectedCustomerId!.isEmpty) {
+                                      showToast(
+                                          "Please select a customer", context,
+                                          color: false);
+                                    } else if (selectedCreditEntryId == null ||
+                                        selectedCreditEntryId!.isEmpty) {
+                                      showToast("Please select a credit entry",
+                                          context,
+                                          color: false);
+                                    } else if (amountController.text.isEmpty) {
+                                      showToast("Please enter amount", context,
+                                          color: false);
+                                    } else if (getLocationModel
+                                            .data?.locationName ==
+                                        null) {
+                                      showToast("Location not found", context,
+                                          color: false);
+                                    } else if (selectedCustomerName == null ||
+                                        selectedCustomerName!.isEmpty) {
+                                      showToast(
+                                          "Customer name not found", context,
+                                          color: false);
+                                    } else {
+                                      setState(() {
+                                        saveLoad = true;
+                                      });
 
-                                String returnDate = selectedReturnDate != null
-                                    ? DateFormat('yyyy-MM-dd').format(selectedReturnDate!)
-                                    : DateFormat('yyyy-MM-dd').format(DateTime.now());
+                                      String returnDate =
+                                          selectedReturnDate != null
+                                              ? DateFormat('yyyy-MM-dd')
+                                                  .format(selectedReturnDate!)
+                                              : DateFormat('yyyy-MM-dd')
+                                                  .format(DateTime.now());
 
-                                context.read<ReturnBloc>().add(CreateReturn(
-                                  date: returnDate,
-                                  locationId: locationId ?? "",
-                                  customerId: selectedCustomerId!,
-                                  creditId: selectedCreditEntryId!,
-                                  price: double.parse(amountController.text),
-                                  description: descriptionController.text,
-                                ));
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: appPrimaryColor,
-                              minimumSize: const Size(0, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 3,
-                            ),
-                            child: const Text(
-                              "SAVE RETURN",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
+                                      context
+                                          .read<ReturnBloc>()
+                                          .add(CreateReturn(
+                                            date: returnDate,
+                                            locationId: locationId ?? "",
+                                            customerId: selectedCustomerId!,
+                                            creditId: selectedCreditEntryId!,
+                                            price: double.parse(
+                                                amountController.text),
+                                            description:
+                                                descriptionController.text,
+                                          ));
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: appPrimaryColor,
+                                    minimumSize: const Size(0, 50),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    elevation: 3,
+                                  ),
+                                  child: const Text(
+                                    "SAVE RETURN",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ],
                     ),
@@ -910,19 +990,24 @@ class ReturnViewViewState extends State<ReturnViewView> {
                               controller: searchController,
                               decoration: InputDecoration(
                                 hintText: 'Search...',
-                                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                prefixIcon: const Icon(Icons.search,
+                                    color: Colors.grey),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: Colors.grey),
+                                  borderSide:
+                                      const BorderSide(color: Colors.grey),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: appPrimaryColor),
+                                  borderSide:
+                                      const BorderSide(color: appPrimaryColor),
                                 ),
                               ),
                               onChanged: (value) {
@@ -931,20 +1016,23 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                   returnLoad = true;
                                 });
                                 String fromDate = selectedFromDate != null
-                                    ? DateFormat('yyyy-MM-dd').format(selectedFromDate!)
+                                    ? DateFormat('yyyy-MM-dd')
+                                        .format(selectedFromDate!)
                                     : '';
                                 String toDate = selectedToDate != null
-                                    ? DateFormat('yyyy-MM-dd').format(selectedToDate!)
+                                    ? DateFormat('yyyy-MM-dd')
+                                        .format(selectedToDate!)
                                     : '';
 
                                 context.read<ReturnBloc>().add(FetchAllReturns(
-                                  fromDate: fromDate,
-                                  toDate: toDate,
-                                  search: value,
-                                  limit: rowsPerPage,
-                                  offset: 0,
-                                  locid: locationId ?? '', // Added locid parameter
-                                ));
+                                      fromDate: fromDate,
+                                      toDate: toDate,
+                                      search: value,
+                                      limit: rowsPerPage,
+                                      offset: 0,
+                                      locid: locationId ??
+                                          '', // Added locid parameter
+                                    ));
                               },
                             ),
 
@@ -955,7 +1043,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "From Date",
@@ -967,16 +1056,22 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                       const SizedBox(height: 8),
                                       InkWell(
                                         onTap: () async {
-                                          final DateTime? picked = await showDatePicker(
+                                          final DateTime? picked =
+                                              await showDatePicker(
                                             context: context,
-                                            initialDate: selectedFromDate ?? DateTime.now().subtract(const Duration(days: 30)),
+                                            initialDate: selectedFromDate ??
+                                                DateTime.now().subtract(
+                                                    const Duration(days: 30)),
                                             firstDate: DateTime(2000),
                                             lastDate: DateTime(2100),
                                           );
-                                          if (picked != null && picked != selectedFromDate) {
+                                          if (picked != null &&
+                                              picked != selectedFromDate) {
                                             setState(() {
                                               selectedFromDate = picked;
-                                              fromDateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                              fromDateController.text =
+                                                  DateFormat('dd-MM-yyyy')
+                                                      .format(picked);
                                               returnLoad = true;
                                             });
                                             _goToPage(1);
@@ -985,17 +1080,22 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                         child: Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey.shade300),
-                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                                color: Colors.grey.shade300),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                             color: Colors.white,
                                           ),
                                           child: Row(
                                             children: [
-                                              const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                              const Icon(Icons.calendar_today,
+                                                  size: 20,
+                                                  color: appPrimaryColor),
                                               const SizedBox(width: 10),
                                               Text(
                                                 fromDateController.text,
-                                                style: const TextStyle(fontSize: 16),
+                                                style: const TextStyle(
+                                                    fontSize: 16),
                                               ),
                                             ],
                                           ),
@@ -1004,12 +1104,11 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                     ],
                                   ),
                                 ),
-
                                 const SizedBox(width: 16),
-
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "To Date",
@@ -1021,16 +1120,21 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                       const SizedBox(height: 8),
                                       InkWell(
                                         onTap: () async {
-                                          final DateTime? picked = await showDatePicker(
+                                          final DateTime? picked =
+                                              await showDatePicker(
                                             context: context,
-                                            initialDate: selectedToDate ?? DateTime.now(),
+                                            initialDate: selectedToDate ??
+                                                DateTime.now(),
                                             firstDate: DateTime(2000),
                                             lastDate: DateTime(2100),
                                           );
-                                          if (picked != null && picked != selectedToDate) {
+                                          if (picked != null &&
+                                              picked != selectedToDate) {
                                             setState(() {
                                               selectedToDate = picked;
-                                              toDateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                                              toDateController.text =
+                                                  DateFormat('dd-MM-yyyy')
+                                                      .format(picked);
                                               returnLoad = true;
                                             });
                                             _goToPage(1);
@@ -1039,17 +1143,22 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                         child: Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey.shade300),
-                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                                color: Colors.grey.shade300),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                             color: Colors.white,
                                           ),
                                           child: Row(
                                             children: [
-                                              const Icon(Icons.calendar_today, size: 20, color: appPrimaryColor),
+                                              const Icon(Icons.calendar_today,
+                                                  size: 20,
+                                                  color: appPrimaryColor),
                                               const SizedBox(width: 10),
                                               Text(
                                                 toDateController.text,
-                                                style: const TextStyle(fontSize: 16),
+                                                style: const TextStyle(
+                                                    fontSize: 16),
                                               ),
                                             ],
                                           ),
@@ -1072,7 +1181,8 @@ class ReturnViewViewState extends State<ReturnViewView> {
                                   minimumSize: const Size(0, 45),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(25),
-                                    side: BorderSide(color: Colors.grey.shade300),
+                                    side:
+                                        BorderSide(color: Colors.grey.shade300),
                                   ),
                                   elevation: 2,
                                 ),
@@ -1094,160 +1204,218 @@ class ReturnViewViewState extends State<ReturnViewView> {
                       // Returns Table
                       returnLoad
                           ? Container(
-                        padding: EdgeInsets.only(
-                          top: MediaQuery.of(context).size.height * 0.1,
-                        ),
-                        alignment: Alignment.center,
-                        child: const SpinKitChasingDots(
-                          color: appPrimaryColor,
-                          size: 30,
-                        ),
-                      )
-                          : getAllReturnsModel.data == null || getAllReturnsModel.data!.isEmpty
-                          ? Container(
-                        padding: EdgeInsets.only(
-                          top: MediaQuery.of(context).size.height * 0.05,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "No Returns Found !!!",
-                          style: MyTextStyle.f16(
-                            Colors.grey,
-                            weight: FontWeight.w500,
-                          ),
-                        ),
-                      )
-                          : Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Column(
-                          children: [
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minWidth: MediaQuery.of(context).size.width - 40,
-                                ),
-                                child: DataTable(
-                                  dataRowHeight: 50,
-                                  headingRowHeight: 50,
-                                  horizontalMargin: 20,
-                                  columnSpacing: 32,
-                                  headingRowColor: MaterialStateProperty.all(Colors.grey.shade100),
-                                  columns: const [
-                                    DataColumn(
-                                      label: Text(
-                                        'Date',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Location',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Code',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Customer',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Amount',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                  rows: _getCurrentPageItems().map((returnItem) {
-                                    return DataRow(
-                                      cells: [
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                            ),
-                                            child: Text(
-                                              returnItem.date != null
-                                                  ? DateFormat('dd/MM/yyyy').format(
-                                                  DateTime.parse(returnItem.date!))
-                                                  : 'N/A',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                            ),
-                                            child: Text(
-                                              returnItem.location?.name ?? 'N/A',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                            ),
-                                            child: Text(
-                                              returnItem.returnCode ?? 'N/A',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.2,
-                                            ),
-                                            child: Text(
-                                              returnItem.customer?.name ?? 'N/A',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Container(
-                                            constraints: BoxConstraints(
-                                              maxWidth: MediaQuery.of(context).size.width * 0.1,
-                                            ),
-                                            child: Text(
-                                              '${returnItem.price?.toStringAsFixed(2) ?? '0.00'}',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  }).toList(),
-                                ),
+                              padding: EdgeInsets.only(
+                                top: MediaQuery.of(context).size.height * 0.1,
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: Colors.grey.shade300),
-                                ),
+                              alignment: Alignment.center,
+                              child: const SpinKitChasingDots(
+                                color: appPrimaryColor,
+                                size: 30,
                               ),
-                              child: buildPaginationBar(),
-                            ),
-                          ],
-                        ),
-                      ),
+                            )
+                          : getAllReturnsModel.data == null ||
+                                  getAllReturnsModel.data!.isEmpty
+                              ? Container(
+                                  padding: EdgeInsets.only(
+                                    top: MediaQuery.of(context).size.height *
+                                        0.05,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    "No Returns Found !!!",
+                                    style: MyTextStyle.f16(
+                                      Colors.grey,
+                                      weight: FontWeight.w500,
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    border:
+                                        Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minWidth: MediaQuery.of(context)
+                                                    .size
+                                                    .width -
+                                                40,
+                                          ),
+                                          child: DataTable(
+                                            dataRowHeight: 50,
+                                            headingRowHeight: 50,
+                                            horizontalMargin: 20,
+                                            columnSpacing: 32,
+                                            headingRowColor:
+                                                MaterialStateProperty.all(
+                                                    Colors.grey.shade100),
+                                            columns: const [
+                                              DataColumn(
+                                                label: Text(
+                                                  'Date',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Location',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Code',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Customer',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              DataColumn(
+                                                label: Text(
+                                                  'Amount',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                            ],
+                                            rows: _getCurrentPageItems()
+                                                .map((returnItem) {
+                                              return DataRow(
+                                                cells: [
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.15,
+                                                      ),
+                                                      child: Text(
+                                                        returnItem.date != null
+                                                            ? DateFormat(
+                                                                    'dd/MM/yyyy')
+                                                                .format(DateTime
+                                                                    .parse(returnItem
+                                                                        .date!))
+                                                            : 'N/A',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.15,
+                                                      ),
+                                                      child: Text(
+                                                        returnItem.location
+                                                                ?.name ??
+                                                            'N/A',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.15,
+                                                      ),
+                                                      child: Text(
+                                                        returnItem.returnCode ??
+                                                            'N/A',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.2,
+                                                      ),
+                                                      child: Text(
+                                                        returnItem.customer
+                                                                ?.name ??
+                                                            'N/A',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                        maxWidth: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.1,
+                                                      ),
+                                                      child: Text(
+                                                        '${returnItem.price?.toStringAsFixed(2) ?? '0.00'}',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            top: BorderSide(
+                                                color: Colors.grey.shade300),
+                                          ),
+                                        ),
+                                        child: buildPaginationBar(),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                     ],
                   ),
                 ],
@@ -1267,7 +1435,7 @@ class ReturnViewViewState extends State<ReturnViewView> {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => LoginScreen()),
-          (Route<dynamic> route) => false,
+      (Route<dynamic> route) => false,
     );
   }
 }

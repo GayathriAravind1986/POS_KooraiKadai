@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:simple/ModelClass/Catering/postCateringBookingModel.dart';
 import 'package:simple/Reusable/color.dart';
+import 'package:simple/Reusable/image.dart';
 import 'package:simple/UI/Order/Helper/time_formatter.dart';
 
 Widget getCateringReceiptWidget({
@@ -22,6 +23,18 @@ Widget getCateringReceiptWidget({
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15.0),
+            child: Image.asset(
+              Images.logoWithName,
+              width: 120, // circle size
+              height: 90,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+
         /// HEADER
         Center(
           child: Column(
@@ -29,7 +42,7 @@ Widget getCateringReceiptWidget({
               Text(
                 businessName,
                 style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               Text(address,
@@ -87,13 +100,34 @@ Widget getCateringReceiptWidget({
         _labelRow("Balance", "₹${booking.data!.balanceamount}"),
 
         _divider(),
-
+        // const SizedBox(height: 8),
+        // const Center(
+        //   child: Text(
+        //     "Powered By",
+        //     style: TextStyle(
+        //       fontWeight: FontWeight.bold,
+        //       fontSize: 14, // Keep smaller for footer
+        //       color: blackColor,
+        //     ),
+        //   ),
+        // ),
+        // const Center(
+        //   child: Text(
+        //     "www.sentinixtechsolutions.com",
+        //     style: TextStyle(
+        //       fontWeight: FontWeight.bold,
+        //       fontSize: 14,
+        //       color: blackColor,
+        //     ),
+        //   ),
+        // ),
         const Center(
           child: Text(
             "Thank You, Visit Again!",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
+        const SizedBox(height: 30),
       ],
     ),
   );
@@ -114,9 +148,11 @@ Widget _labelRow(String label, String value) {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: const TextStyle(
+                fontSize: 20, color: blackColor, fontWeight: FontWeight.bold)),
         Text(value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style:
+                const TextStyle(fontSize: 20, fontWeight: FontWeight.normal)),
       ],
     ),
   );
@@ -128,11 +164,11 @@ Widget _totalRow(String label, num? amount, {bool isBold = false}) {
     children: [
       Text(label,
           style: TextStyle(
-              fontSize: 16, fontWeight: isBold ? FontWeight.bold : null)),
+              fontSize: 20, fontWeight: isBold ? FontWeight.bold : null)),
       Text(
         "₹${amount ?? 0}",
         style: TextStyle(
-            fontSize: 16, fontWeight: isBold ? FontWeight.bold : null),
+            fontSize: 20, fontWeight: isBold ? FontWeight.bold : null),
       ),
     ],
   );

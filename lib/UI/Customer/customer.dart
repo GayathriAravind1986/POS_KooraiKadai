@@ -82,7 +82,9 @@ class CustomerViewViewState extends State<CustomerViewView> {
   Future<void> _selectDate(BuildContext context, bool isFromDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isFromDate ? selectedFromDate ?? DateTime.now() : selectedToDate ?? DateTime.now(),
+      initialDate: isFromDate
+          ? selectedFromDate ?? DateTime.now()
+          : selectedToDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
@@ -104,13 +106,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
           customerLoad = true;
         });
         context.read<CustomerBloc>().add(FetchAllCustomers(
-          searchController.text,
-          locationId ?? "",
-          rowsPerPage,
-          0,
-          _formatDate(selectedFromDate!),
-          _formatDate(selectedToDate!),
-        ));
+              searchController.text,
+              locationId ?? "",
+              rowsPerPage,
+              0,
+              _formatDate(selectedFromDate!),
+              _formatDate(selectedToDate!),
+            ));
       }
     }
   }
@@ -143,7 +145,7 @@ class CustomerViewViewState extends State<CustomerViewView> {
     }
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Text("Rows per page: "),
         DropdownButton<int>(
@@ -165,16 +167,16 @@ class CustomerViewViewState extends State<CustomerViewView> {
           icon: const Icon(Icons.chevron_left),
           onPressed: currentPage > 1
               ? () {
-            _goToPage(currentPage - 1);
-          }
+                  _goToPage(currentPage - 1);
+                }
               : null,
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right),
           onPressed: currentPage < totalPages
               ? () {
-            _goToPage(currentPage + 1);
-          }
+                  _goToPage(currentPage + 1);
+                }
               : null,
         ),
       ],
@@ -188,13 +190,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
         customerLoad = true;
       });
       context.read<CustomerBloc>().add(FetchAllCustomers(
-        searchController.text,
-        locationId ?? "",
-        rowsPerPage,
-        (page - 1) * rowsPerPage,
-        selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
-        selectedToDate != null ? _formatDate(selectedToDate!) : "",
-      ));
+            searchController.text,
+            locationId ?? "",
+            rowsPerPage,
+            (page - 1) * rowsPerPage,
+            selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+            selectedToDate != null ? _formatDate(selectedToDate!) : "",
+          ));
     }
   }
 
@@ -206,13 +208,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
         customerLoad = true;
       });
       context.read<CustomerBloc>().add(FetchAllCustomers(
-        searchController.text,
-        locationId ?? "",
-        newValue,
-        0,
-        selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
-        selectedToDate != null ? _formatDate(selectedToDate!) : "",
-      ));
+            searchController.text,
+            locationId ?? "",
+            newValue,
+            0,
+            selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+            selectedToDate != null ? _formatDate(selectedToDate!) : "",
+          ));
     }
   }
 
@@ -224,13 +226,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
     });
 
     context.read<CustomerBloc>().add(FetchAllCustomers(
-      searchController.text,
-      locationId ?? "",
-      rowsPerPage,
-      (currentPage - 1) * rowsPerPage,
-      selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
-      selectedToDate != null ? _formatDate(selectedToDate!) : "",
-    ));
+          searchController.text,
+          locationId ?? "",
+          rowsPerPage,
+          (currentPage - 1) * rowsPerPage,
+          selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
+          selectedToDate != null ? _formatDate(selectedToDate!) : "",
+        ));
   }
 
   void clearCustomerForm() {
@@ -248,7 +250,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
 
     selectedFromDate = DateTime.now().subtract(const Duration(days: 30));
     selectedToDate = DateTime.now();
-    fromDateController.text = DateFormat('dd/MM/yyyy').format(selectedFromDate!);
+    fromDateController.text =
+        DateFormat('dd/MM/yyyy').format(selectedFromDate!);
     toDateController.text = DateFormat('dd/MM/yyyy').format(selectedToDate!);
 
     if (widget.hasRefreshedCustomer == true) {
@@ -277,13 +280,13 @@ class CustomerViewViewState extends State<CustomerViewView> {
       customerLoad = true;
     });
     context.read<CustomerBloc>().add(FetchAllCustomers(
-      "",
-      locationId ?? "",
-      rowsPerPage,
-      0,
-      "",
-      "",
-    ));
+          "",
+          locationId ?? "",
+          rowsPerPage,
+          0,
+          "",
+          "",
+        ));
   }
 
   void _refreshEditData() {
@@ -323,13 +326,15 @@ class CustomerViewViewState extends State<CustomerViewView> {
           if (getLocationModel.success == true) {
             locationId = getLocationModel.data?.locationId;
             context.read<CustomerBloc>().add(FetchAllCustomers(
-              searchController.text,
-              locationId ?? "",
-              rowsPerPage,
-              0,
-              selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
-              selectedToDate != null ? _formatDate(selectedToDate!) : "",
-            ));
+                  searchController.text,
+                  locationId ?? "",
+                  rowsPerPage,
+                  0,
+                  selectedFromDate != null
+                      ? _formatDate(selectedFromDate!)
+                      : "",
+                  selectedToDate != null ? _formatDate(selectedToDate!) : "",
+                ));
             setState(() {
               customerLoad = true;
             });
@@ -361,8 +366,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
             setState(() {
               customerLoad = false;
             });
-            String errorMsg = getCustomerModel.errorResponse?.message ??
-                "No Customers found";
+            String errorMsg =
+                getCustomerModel.errorResponse?.message ?? "No Customers found";
             showToast(errorMsg, context, color: false);
           }
           return true;
@@ -380,13 +385,15 @@ class CustomerViewViewState extends State<CustomerViewView> {
               currentPage = 1;
             });
             context.read<CustomerBloc>().add(FetchAllCustomers(
-              searchController.text,
-              locationId ?? "",
-              rowsPerPage,
-              0,
-              selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
-              selectedToDate != null ? _formatDate(selectedToDate!) : "",
-            ));
+                  searchController.text,
+                  locationId ?? "",
+                  rowsPerPage,
+                  0,
+                  selectedFromDate != null
+                      ? _formatDate(selectedFromDate!)
+                      : "",
+                  selectedToDate != null ? _formatDate(selectedToDate!) : "",
+                ));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCustomerForm();
             });
@@ -436,13 +443,15 @@ class CustomerViewViewState extends State<CustomerViewView> {
             showToast("Customer Updated Successfully", context, color: true);
             _refreshEditData();
             context.read<CustomerBloc>().add(FetchAllCustomers(
-              searchController.text,
-              locationId ?? "",
-              rowsPerPage,
-              (currentPage - 1) * rowsPerPage,
-              selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
-              selectedToDate != null ? _formatDate(selectedToDate!) : "",
-            ));
+                  searchController.text,
+                  locationId ?? "",
+                  rowsPerPage,
+                  (currentPage - 1) * rowsPerPage,
+                  selectedFromDate != null
+                      ? _formatDate(selectedFromDate!)
+                      : "",
+                  selectedToDate != null ? _formatDate(selectedToDate!) : "",
+                ));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCustomerForm();
             });
@@ -470,7 +479,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
                   children: [
                     Text(
                       isEdit ? "Edit Customer" : "Add Customer",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     if (isEdit)
                       IconButton(
@@ -491,21 +501,22 @@ class CustomerViewViewState extends State<CustomerViewView> {
                   children: [
                     getLocationModel.data?.locationName != null
                         ? Expanded(
-                      child: TextFormField(
-                        enabled: false,
-                        initialValue: getLocationModel.data!.locationName!,
-                        decoration: InputDecoration(
-                          labelText: 'Location',
-                          labelStyle: TextStyle(color: appPrimaryColor),
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(color: greyColor),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: greyColor),
-                          ),
-                        ),
-                      ),
-                    )
+                            child: TextFormField(
+                              enabled: false,
+                              initialValue:
+                                  getLocationModel.data!.locationName!,
+                              decoration: InputDecoration(
+                                labelText: 'Location',
+                                labelStyle: TextStyle(color: appPrimaryColor),
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(color: greyColor),
+                                ),
+                                disabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: greyColor),
+                                ),
+                              ),
+                            ),
+                          )
                         : const SizedBox.shrink()
                   ],
                 ),
@@ -562,98 +573,98 @@ class CustomerViewViewState extends State<CustomerViewView> {
                 const SizedBox(height: 30),
                 isEdit == true
                     ? Center(
-                  child: editLoad
-                      ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                      : ElevatedButton(
-                    onPressed: () {
-                      if (getLocationModel.data?.locationName ==
-                          null) {
-                        showToast("Location not found", context,
-                            color: false);
-                      } else if (nameController.text.isEmpty) {
-                        showToast("Enter customer name", context,
-                            color: false);
-                      } else if (phoneController.text.isEmpty) {
-                        showToast("Enter phone number", context,
-                            color: false);
-                      } else {
-                        setState(() {
-                          editLoad = true;
-                          context.read<CustomerBloc>().add(
-                            UpdateCustomer(
-                              customerId.toString(),
-                              nameController.text,
-                              phoneController.text,
-                              emailController.text,
-                              addressController.text,
-                              locationId.toString(),
-                            ),
-                          );
-                        });
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: appPrimaryColor,
-                      minimumSize: const Size(0, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: const Text(
-                      "Update Customer",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                )
+                        child: editLoad
+                            ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                            : ElevatedButton(
+                                onPressed: () {
+                                  if (getLocationModel.data?.locationName ==
+                                      null) {
+                                    showToast("Location not found", context,
+                                        color: false);
+                                  } else if (nameController.text.isEmpty) {
+                                    showToast("Enter customer name", context,
+                                        color: false);
+                                  } else if (phoneController.text.isEmpty) {
+                                    showToast("Enter phone number", context,
+                                        color: false);
+                                  } else {
+                                    setState(() {
+                                      editLoad = true;
+                                      context.read<CustomerBloc>().add(
+                                            UpdateCustomer(
+                                              customerId.toString(),
+                                              nameController.text,
+                                              phoneController.text,
+                                              emailController.text,
+                                              addressController.text,
+                                              locationId.toString(),
+                                            ),
+                                          );
+                                    });
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: appPrimaryColor,
+                                  minimumSize: const Size(0, 50),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Update Customer",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                      )
                     : Center(
-                  child: saveLoad
-                      ? SpinKitCircle(color: appPrimaryColor, size: 30)
-                      : ElevatedButton(
-                    onPressed: () {
-                      if (getLocationModel.data?.locationName ==
-                          null) {
-                        showToast("Location not found", context,
-                            color: false);
-                      } else if (nameController.text.isEmpty) {
-                        showToast("Enter customer name", context,
-                            color: false);
-                      } else if (phoneController.text.isEmpty) {
-                        showToast("Enter phone number", context,
-                            color: false);
-                      } else {
-                        setState(() {
-                          saveLoad = true;
-                          context.read<CustomerBloc>().add(
-                            SaveCustomer(
-                              nameController.text,
-                              phoneController.text,
-                              emailController.text,
-                              addressController.text,
-                              locationId.toString(),
-                            ),
-                          );
-                        });
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: appPrimaryColor,
-                      minimumSize: const Size(0, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        child: saveLoad
+                            ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                            : ElevatedButton(
+                                onPressed: () {
+                                  if (getLocationModel.data?.locationName ==
+                                      null) {
+                                    showToast("Location not found", context,
+                                        color: false);
+                                  } else if (nameController.text.isEmpty) {
+                                    showToast("Enter customer name", context,
+                                        color: false);
+                                  } else if (phoneController.text.isEmpty) {
+                                    showToast("Enter phone number", context,
+                                        color: false);
+                                  } else {
+                                    setState(() {
+                                      saveLoad = true;
+                                      context.read<CustomerBloc>().add(
+                                            SaveCustomer(
+                                              nameController.text,
+                                              phoneController.text,
+                                              emailController.text,
+                                              addressController.text,
+                                              locationId.toString(),
+                                            ),
+                                          );
+                                    });
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: appPrimaryColor,
+                                  minimumSize: const Size(0, 50),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "SAVE CUSTOMER",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                       ),
-                    ),
-                    child: const Text(
-                      "SAVE CUSTOMER",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 30),
                 const Align(
                   alignment: Alignment.centerLeft,
@@ -689,13 +700,17 @@ class CustomerViewViewState extends State<CustomerViewView> {
                             customerLoad = true;
                           });
                           context.read<CustomerBloc>().add(FetchAllCustomers(
-                            value,
-                            locationId ?? "",
-                            rowsPerPage,
-                            0,
-                            selectedFromDate != null ? _formatDate(selectedFromDate!) : "",
-                            selectedToDate != null ? _formatDate(selectedToDate!) : "",
-                          ));
+                                value,
+                                locationId ?? "",
+                                rowsPerPage,
+                                0,
+                                selectedFromDate != null
+                                    ? _formatDate(selectedFromDate!)
+                                    : "",
+                                selectedToDate != null
+                                    ? _formatDate(selectedToDate!)
+                                    : "",
+                              ));
                         },
                       ),
                     ),
@@ -706,7 +721,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
                         readOnly: true,
                         decoration: InputDecoration(
                           hintText: 'From Date',
-                          prefixIcon: Icon(Icons.calendar_today, color: appPrimaryColor),
+                          prefixIcon: Icon(Icons.calendar_today,
+                              color: appPrimaryColor),
                           border: const OutlineInputBorder(),
                         ),
                         onTap: () => _selectDate(context, true),
@@ -719,7 +735,8 @@ class CustomerViewViewState extends State<CustomerViewView> {
                         readOnly: true,
                         decoration: InputDecoration(
                           hintText: 'To Date',
-                          prefixIcon: Icon(Icons.calendar_today, color: appPrimaryColor),
+                          prefixIcon: Icon(Icons.calendar_today,
+                              color: appPrimaryColor),
                           border: const OutlineInputBorder(),
                         ),
                         onTap: () => _selectDate(context, false),
@@ -747,185 +764,215 @@ class CustomerViewViewState extends State<CustomerViewView> {
                 const SizedBox(height: 20),
                 customerLoad
                     ? Container(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * 0.1,
-                  ),
-                  alignment: Alignment.center,
-                  child: const SpinKitChasingDots(
-                    color: appPrimaryColor,
-                    size: 30,
-                  ),
-                )
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.of(context).size.height * 0.1,
+                        ),
+                        alignment: Alignment.center,
+                        child: const SpinKitChasingDots(
+                          color: appPrimaryColor,
+                          size: 30,
+                        ),
+                      )
                     : getCustomerModel.data == null ||
-                    getCustomerModel.data!.isEmpty
-                    ? Container(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * 0.1,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    "No Customers Found !!!",
-                    style: MyTextStyle.f16(
-                      greyColor,
-                      weight: FontWeight.w500,
-                    ),
-                  ),
-                )
-                    : Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Column(
-                    children: [
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minWidth: MediaQuery.of(context).size.width - 40,
-                          ),
-                          child: DataTable(
-                            dataRowHeight: 50,
-                            headingRowHeight: 50,
-                            horizontalMargin: 20,
-                            columnSpacing: 32,
-                            headingRowColor:
-                            MaterialStateProperty.all(greyColor200),
-                            columns: const [
-                              DataColumn(
-                                label: Text(
-                                  'Name',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
+                            getCustomerModel.data!.isEmpty
+                        ? Container(
+                            padding: EdgeInsets.only(
+                              top: MediaQuery.of(context).size.height * 0.1,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              "No Customers Found !!!",
+                              style: MyTextStyle.f16(
+                                greyColor,
+                                weight: FontWeight.w500,
                               ),
-                              DataColumn(
-                                label: Text(
-                                  'Phone',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              DataColumn(
-                                label: Text(
-                                  'Email',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              DataColumn(
-                                label: Text(
-                                  'Address',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              DataColumn(
-                                label: Text(
-                                  'Location',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              DataColumn(
-                                label: Text(
-                                  'Actions',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                            rows: _getCurrentPageItems().map((item) {
-                              return DataRow(
-                                cells: [
-                                  DataCell(
-                                    Container(
-                                      constraints: BoxConstraints(
-                                        maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                      ),
-                                      child: Text(
-                                        item.name ?? "",
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                            ),
+                          )
+                        : Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Column(
+                              children: [
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth:
+                                          MediaQuery.of(context).size.width -
+                                              40,
                                     ),
-                                  ),
-                                  DataCell(Text(item.phone ?? "")),
-                                  DataCell(
-                                    Container(
-                                      constraints: BoxConstraints(
-                                        maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                      ),
-                                      child: Text(
-                                        item.email ?? "N/A",
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Container(
-                                      constraints: BoxConstraints(
-                                        maxWidth: MediaQuery.of(context).size.width * 0.2,
-                                      ),
-                                      child: Text(
-                                        item.address ?? "N/A",
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Container(
-                                      constraints: BoxConstraints(
-                                        maxWidth: MediaQuery.of(context).size.width * 0.15,
-                                      ),
-                                      child: Text(
-                                        item.location?.name ?? "",
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Row(
-                                      children: [
-                                        InkWell(
-                                          onTap: () {
-                                            setState(() {
-                                              isEdit = true;
-                                              customerId =
-                                                  item.id?.toString();
-                                            });
-                                            if (item.id != null) {
-                                              context
-                                                  .read<
-                                                  CustomerBloc>()
-                                                  .add(
-                                                FetchCustomerById(
-                                                  item.id!
-                                                      .toString(),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          child: const Icon(
-                                            Icons.edit,
-                                            color: appPrimaryColor,
+                                    child: DataTable(
+                                      dataRowHeight: 50,
+                                      headingRowHeight: 50,
+                                      horizontalMargin: 20,
+                                      columnSpacing: 32,
+                                      headingRowColor:
+                                          MaterialStateProperty.all(
+                                              greyColor200),
+                                      columns: const [
+                                        DataColumn(
+                                          label: Text(
+                                            'Name',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        DataColumn(
+                                          label: Text(
+                                            'Phone',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        DataColumn(
+                                          label: Text(
+                                            'Email',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        DataColumn(
+                                          label: Text(
+                                            'Address',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        DataColumn(
+                                          label: Text(
+                                            'Location',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        DataColumn(
+                                          label: Text(
+                                            'Actions',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       ],
+                                      rows: _getCurrentPageItems().map((item) {
+                                        return DataRow(
+                                          cells: [
+                                            DataCell(
+                                              Container(
+                                                constraints: BoxConstraints(
+                                                  maxWidth:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .width *
+                                                          0.15,
+                                                ),
+                                                child: Text(
+                                                  item.name ?? "",
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(Text(item.phone ?? "")),
+                                            DataCell(
+                                              Container(
+                                                constraints: BoxConstraints(
+                                                  maxWidth:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .width *
+                                                          0.15,
+                                                ),
+                                                child: Text(
+                                                  item.email ?? "N/A",
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Container(
+                                                constraints: BoxConstraints(
+                                                  maxWidth:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .width *
+                                                          0.2,
+                                                ),
+                                                child: Text(
+                                                  item.address ?? "N/A",
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Container(
+                                                constraints: BoxConstraints(
+                                                  maxWidth:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .width *
+                                                          0.15,
+                                                ),
+                                                child: Text(
+                                                  item.location?.name ?? "",
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Row(
+                                                children: [
+                                                  InkWell(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        isEdit = true;
+                                                        customerId =
+                                                            item.id?.toString();
+                                                      });
+                                                      if (item.id != null) {
+                                                        context
+                                                            .read<
+                                                                CustomerBloc>()
+                                                            .add(
+                                                              FetchCustomerById(
+                                                                item.id!
+                                                                    .toString(),
+                                                              ),
+                                                            );
+                                                      }
+                                                    },
+                                                    child: const Icon(
+                                                      Icons.edit,
+                                                      color: appPrimaryColor,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
                                     ),
                                   ),
-                                ],
-                              );
-                            }).toList(),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(
+                                          color: Colors.grey.shade300),
+                                    ),
+                                  ),
+                                  child: buildPaginationBar(),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: Colors.grey.shade300),
-                          ),
-                        ),
-                        child: buildPaginationBar(),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -942,7 +989,7 @@ class CustomerViewViewState extends State<CustomerViewView> {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => LoginScreen()),
-          (Route<dynamic> route) => false,
+      (Route<dynamic> route) => false,
     );
   }
 }
