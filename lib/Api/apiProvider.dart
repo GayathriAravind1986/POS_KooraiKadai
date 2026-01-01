@@ -32,6 +32,7 @@ import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
 import 'package:simple/ModelClass/Order/Post_generate_order_model.dart';
 import 'package:simple/ModelClass/Order/Update_generate_order_model.dart';
 import 'package:simple/ModelClass/Order/get_order_list_today_model.dart';
+import 'package:simple/ModelClass/Products/get_products_cat_model.dart';
 import 'package:simple/ModelClass/Report/Get_report_model.dart';
 import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
@@ -41,7 +42,10 @@ import 'package:simple/ModelClass/StockIn/saveStockInModel.dart';
 import 'package:simple/ModelClass/Table/Get_table_model.dart';
 import 'package:simple/ModelClass/User/getUserModel.dart';
 import 'package:simple/ModelClass/Waiter/getWaiterModel.dart';
+import 'package:simple/Offline/Hive_helper/localStorageHelper/hive_user_service.dart';
 import 'package:simple/Reusable/constant.dart';
+
+import '../Offline/Hive_helper/localStorageHelper/hive_waiter_service.dart';
 
 /// All API Integration in ApiProvider
 class ApiProvider {
@@ -107,11 +111,10 @@ class ApiProvider {
   }
 
   /// Category - Fetch API Integration
-  Future<GetCategoryModel> getCategoryAPI() async {
+  static Future<GetCategoryModel> getCategoryAPI() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    var userId = sharedPreferences.getString("userId");
-    debugPrint("userId:$userId");
+    debugPrint("token:$token");
 
     try {
       var dio = Dio();
@@ -128,7 +131,8 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetCategoryModel getCategoryResponse =
-              GetCategoryModel.fromJson(response.data);
+          GetCategoryModel.fromJson(response.data);
+          debugPrint("categoryRespnse:$getCategoryResponse");
           return getCategoryResponse;
         }
       } else {
@@ -153,20 +157,14 @@ class ApiProvider {
   }
 
   /// product - Fetch API Integration
-  Future<GetProductByCatIdModel> getProductItemAPI(
-      String? catId,
-      String? searchKey,
-      String? searchCode,
-      String? limit,
-      String? offset) async {
+  static Future<GetProductByCatIdModel> getProductItemAPI(
+      String? catId, String? searchKey, String? searchCode) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint(
-        "baseUrlProdOrder:${Constants.baseUrl}api/products/pos/category-products?categoryId=$catId&search=$searchKey&searchcode=$searchCode&limit=$limit&offset=$offset");
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/products/pos/category-products?categoryId=$catId&search=$searchKey&searchcode=$searchCode&limit=$limit&offset=$offset',
+        '${Constants.baseUrl}api/products/pos/category-products?filter=false&categoryId=$catId&search=$searchKey&searchcode=$searchCode',
         options: Options(
           method: 'GET',
           headers: {
@@ -177,7 +175,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetProductByCatIdModel getProductByCatIdResponse =
-              GetProductByCatIdModel.fromJson(response.data);
+          GetProductByCatIdModel.fromJson(response.data);
           return getProductByCatIdResponse;
         }
       } else {
@@ -199,6 +197,91 @@ class ApiProvider {
       return GetProductByCatIdModel()..errorResponse = handleError(error);
     }
   }
+
+  /// products-Category - Fetch API Integration
+  static Future<GetProductsCatModel> getProductsCatAPI(String? catId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/products/pos/category-products-with-category?filter=false&categoryId=$catId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetProductsCatModel getProductsCatResponse =
+          GetProductsCatModel.fromJson(response.data);
+          return getProductsCatResponse;
+        }
+      } else {
+        return GetProductsCatModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetProductsCatModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetProductsCatModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return GetProductsCatModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// ShopDetails - API Integration
+  Future<GetStockMaintanencesModel> getShopDetailsAPI() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/location/byuser',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetStockMaintanencesModel getShopDetailsResponse =
+          GetStockMaintanencesModel.fromJson(response.data);
+          return getShopDetailsResponse;
+        }
+      } else {
+        return GetStockMaintanencesModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetStockMaintanencesModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetStockMaintanencesModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return GetStockMaintanencesModel()..errorResponse = handleError(error);
+    }
+  }
+
+
 
   /// Table - Fetch API Integration
   Future<GetTableModel> getTableAPI() async {
@@ -242,10 +325,14 @@ class ApiProvider {
   }
 
   /// Waiter Details -Fetch API Integration
+
+  /// Waiter Details -Fetch API Integration
   Future<GetWaiterModel> getWaiterAPI() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
+
     try {
+      debugPrint("Attempting to fetch waiters from network...");
       var dio = Dio();
       var response = await dio.request(
         '${Constants.baseUrl}api/waiter?isAvailable=true&isSupplier=false',
@@ -256,39 +343,65 @@ class ApiProvider {
           },
         ),
       );
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
-          GetWaiterModel getWaiterResponse =
-              GetWaiterModel.fromJson(response.data);
-          return getWaiterResponse;
+
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          response.data['success'] == true) {
+        debugPrint("API call successful! Saving data to Hive.");
+        GetWaiterModel getWaiterResponse =
+        GetWaiterModel.fromJson(response.data);
+        if (getWaiterResponse.data != null) {
+          // Save the new data to Hive on successful network response
+          await HiveWaiterService.saveWaiters(getWaiterResponse.data!);
         }
+        return getWaiterResponse;
       } else {
+        // If the API returns a non-200 but not a network error, return the error
         return GetWaiterModel()
           ..errorResponse = ErrorResponse(
             message: "Error: ${response.data['message'] ?? 'Unknown error'}",
             statusCode: response.statusCode,
           );
       }
-      return GetWaiterModel()
-        ..errorResponse = ErrorResponse(
-          message: "Unexpected error occurred.",
-          statusCode: 500,
-        );
     } on DioException catch (dioError) {
+      debugPrint(
+          "DioException occurred! Attempting to load waiters from Hive as a fallback.");
+      final offlineData = await HiveWaiterService.getWaitersAsApiFormat();
+      if (offlineData.isNotEmpty) {
+        debugPrint(
+            "Successfully loaded ${offlineData.length} waiters from Hive.");
+        return GetWaiterModel(
+            data: offlineData, totalCount: offlineData.length);
+      }
+
+      debugPrint("No offline data found. Returning network error.");
       final errorResponse = handleError(dioError);
       return GetWaiterModel()..errorResponse = errorResponse;
     } catch (error) {
+      debugPrint(
+          "An unexpected error occurred. Attempting to load waiters from Hive.");
+      final offlineData = await HiveWaiterService.getWaitersAsApiFormat();
+      if (offlineData.isNotEmpty) {
+        debugPrint(
+            "Successfully loaded ${offlineData.length} waiters from Hive.");
+        return GetWaiterModel(
+            data: offlineData, totalCount: offlineData.length);
+      }
+      debugPrint("No offline data found. Returning generic error.");
       return GetWaiterModel()..errorResponse = handleError(error);
     }
   }
+
 
   /// userDetails - Fetch API Integration
   Future<GetUserModel> getUserDetailsAPI() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
+
     try {
-      var dio = Dio();
-      var response = await dio.request(
+      debugPrint("Attempting to fetch users from network...");
+      final dio = Dio();
+      final response = await dio.request(
         '${Constants.baseUrl}auth/users',
         options: Options(
           method: 'GET',
@@ -297,28 +410,82 @@ class ApiProvider {
           },
         ),
       );
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['success'] == true) {
+
+      // Check for a successful status code first
+      if (response.statusCode == 200) {
+        if (response.data != null && response.data['success'] == true) {
+          debugPrint("API call successful! Saving data to Hive.");
           GetUserModel getUserResponse = GetUserModel.fromJson(response.data);
+          if (getUserResponse.data != null) {
+            // Save the new data to Hive on successful network response
+            await HiveUserService.saveUsers(getUserResponse.data!);
+          }
           return getUserResponse;
+        } else {
+          // Handle cases where the status code is 200 but the API returns success: false
+          debugPrint("API returned success: false");
+          // Try to load from Hive as fallback
+          final offlineData = await HiveUserService.getUsersAsApiFormat();
+          if (offlineData.isNotEmpty) {
+            debugPrint("Using offline data as fallback");
+            return GetUserModel(
+                data: offlineData, totalCount: offlineData.length);
+          }
+
+          return GetUserModel()
+            ..errorResponse = ErrorResponse(
+              message:
+              response.data['message'] ?? 'API response indicates failure.',
+              statusCode: 200,
+            );
         }
       } else {
+        // Handle non-200 status codes
+        debugPrint("API returned status: ${response.statusCode}");
+        // Try to load from Hive as fallback
+        final offlineData = await HiveUserService.getUsersAsApiFormat();
+        if (offlineData.isNotEmpty) {
+          debugPrint(
+              "Using offline data as fallback for status code ${response.statusCode}");
+          return GetUserModel(
+              data: offlineData, totalCount: offlineData.length);
+        }
+
         return GetUserModel()
           ..errorResponse = ErrorResponse(
-            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            message: response.statusMessage ??
+                "Request failed with status code ${response.statusCode}",
             statusCode: response.statusCode,
           );
       }
-      return GetUserModel()
-        ..errorResponse = ErrorResponse(
-          message: "Unexpected error occurred.",
-          statusCode: 500,
-        );
     } on DioException catch (dioError) {
+      debugPrint(
+          "DioException occurred! Attempting to load users from Hive as a fallback.");
+      final offlineData = await HiveUserService.getUsersAsApiFormat();
+      if (offlineData.isNotEmpty) {
+        debugPrint(
+            "Successfully loaded ${offlineData.length} users from Hive.");
+        return GetUserModel(data: offlineData, totalCount: offlineData.length);
+      }
+
+      debugPrint("No offline data found. Returning network error.");
       final errorResponse = handleError(dioError);
       return GetUserModel()..errorResponse = errorResponse;
     } catch (error) {
-      return GetUserModel()..errorResponse = handleError(error);
+      debugPrint(
+          "An unexpected error occurred. Attempting to load users from Hive.");
+      final offlineData = await HiveUserService.getUsersAsApiFormat();
+      if (offlineData.isNotEmpty) {
+        debugPrint(
+            "Successfully loaded ${offlineData.length} users from Hive.");
+        return GetUserModel(data: offlineData, totalCount: offlineData.length);
+      }
+      debugPrint("No offline data found. Returning generic error.");
+      return GetUserModel()
+        ..errorResponse = ErrorResponse(
+          message: error.toString(),
+          statusCode: 500,
+        );
     }
   }
 
@@ -1876,7 +2043,7 @@ class ApiProvider {
   }
 
   /// handle Error Response
-  ErrorResponse handleError(Object error) {
+  static ErrorResponse handleError(Object error) {
     ErrorResponse errorResponse = ErrorResponse();
     Errors errorDescription = Errors();
 

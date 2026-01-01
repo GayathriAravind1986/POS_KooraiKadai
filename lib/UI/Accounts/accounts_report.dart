@@ -269,7 +269,6 @@ class ReturnReportViewState extends State<ReturnReportView> {
                           ),
                         ),
 
-                        // Pagination centered below table
                         const SizedBox(height: 16),
                         _buildPaginationBar(),
                       ],

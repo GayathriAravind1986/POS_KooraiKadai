@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
 import 'package:simple/Bloc/observer/observer.dart';
 import 'package:simple/Bloc/theme_cubit.dart';
+import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_billing_session_model.dart';
+import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_cart_model.dart';
+import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_order_model.dart';
+import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_stock_model.dart';
+import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_table_model.dart';
+import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_waiter_model.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:simple/UI/SplashScreen/splash_screen.dart';
+
+import 'Offline/HiveIntializer/hive_init.dart';
+import 'Offline/Hive_helper/LocalClass/Home/category_model.dart';
+import 'Offline/Hive_helper/LocalClass/Home/product_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,8 +25,50 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
   Bloc.observer = AppBlocObserver();
+  await initHive();
+
   runApp(const App());
+
+  try {
+    Hive.registerAdapter(HiveCategoryAdapter());
+    Hive.registerAdapter(HiveProductAdapter());
+    Hive.registerAdapter(HiveAddonAdapter());
+    Hive.registerAdapter(HiveCartItemAdapter());
+    // Hive.registerAdapter(HiveSelectedAddonAdapter());
+    Hive.registerAdapter(HiveOrderAdapter());
+    Hive.registerAdapter(HiveBillingSessionAdapter());
+    Hive.registerAdapter(HiveStockMaintenanceAdapter());
+    Hive.registerAdapter(HiveTableAdapter());
+    // Hive.registerAdapter(PendingDeleteAdapter());
+    // Hive.registerAdapter(HiveLocationAdapter());
+    // Hive.registerAdapter(HiveSupplierAdapter());
+    Hive.registerAdapter(HiveWaiterAdapter());
+    // Hive.registerAdapter(HiveUserAdapter());
+    // Hive.registerAdapter(HiveReportModelAdapter());
+    // Hive.registerAdapter(HivePendingStockAdapter());
+  } catch (e) {
+    debugPrint("Hive adapter registration error: $e");
+  }
+  try {
+    await Hive.openBox('appConfigBox');
+    await Hive.openBox<HiveCategory>('categories');
+    await Hive.openBox<HiveCartItem>('cart_items');
+    await Hive.openBox<HiveOrder>('orders');
+    await Hive.openBox<HiveBillingSession>('billing_session');
+    await Hive.openBox<HiveStockMaintenance>('stock_maintenance');
+    await Hive.openBox<HiveTable>('tables');
+    // await Hive.openBox<HiveLocation>('location');
+    // await Hive.openBox<HiveSupplier>('suppliers');
+    await Hive.openBox<HiveProduct>('products_box');
+    await Hive.openBox('app_state');
+    await Hive.openBox<HiveWaiter>('waiters_box');
+    // await Hive.openBox<HiveUser>('users_box');
+    // await Hive.openBox<HivePendingStock>('pending_stock');
+  } catch (e) {
+    debugPrint("Hive openBox error: $e");
+  }
 }
+
 
 class App extends StatelessWidget {
   const App({super.key});

@@ -1,7 +1,47 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:simple/Api/apiProvider.dart';
+import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
+import 'package:simple/Offline/Hive_helper/localStorageHelper/hive-pending_delete_service.dart';
+import 'package:simple/Offline/Hive_helper/localStorageHelper/hive_service_orderstoday.dart';
+
+import '../../ModelClass/Order/get_order_list_today_model.dart' as order;
+import '../../ModelClass/Table/Get_table_model.dart';
+import '../../ModelClass/User/getUserModel.dart';
+import '../../Offline/Hive_helper/localStorageHelper/hive_service_table_stock.dart';
+import '../../Offline/Hive_helper/localStorageHelper/hive_user_service.dart';
+import '../Response/errorResponse.dart';
+import '../Response/errorResponse.dart' as order;
 
 abstract class OrderTodayEvent {}
+
+
+// Delete Order State Classes
+class DeleteOrderInitial {
+  const DeleteOrderInitial();
+}
+
+class DeleteOrderLoadingState {
+  const DeleteOrderLoadingState();
+}
+
+class DeleteOrderSuccessState {
+  final String orderId; // The deleted order's ID
+  final String message; // Success message
+  DeleteOrderSuccessState({required this.orderId, required this.message});
+}
+
+class DeleteOrderOfflineSavedState {
+  final String orderId;
+  final String message;
+  DeleteOrderOfflineSavedState(this.orderId, this.message);
+}
+
+class DeleteOrderFailureState {
+  final String message;
+  DeleteOrderFailureState(this.message);
+}
 
 class OrderTodayList extends OrderTodayEvent {
   String fromDate;
@@ -32,35 +72,312 @@ class UserDetails extends OrderTodayEvent {}
 class OrderTodayBloc extends Bloc<OrderTodayEvent, dynamic> {
   OrderTodayBloc() : super(dynamic) {
     on<OrderTodayList>((event, emit) async {
-      await ApiProvider()
-          .getOrderTodayAPI(event.fromDate, event.toDate, event.tableId,
-              event.waiterId, event.userId)
-          .then((value) {
-        emit(value);
-      }).catchError((error) {
-        emit(error);
-      });
+      final hiveService = HiveOrderTodayService();
+      try {
+        final connectivityResult = await Connectivity().checkConnectivity();
+
+        ConnectivityResult result;
+        if (connectivityResult.isNotEmpty) {
+          result = connectivityResult.first;
+        } else {
+          result = ConnectivityResult.none;
+        }
+
+        final hasConnection = result != ConnectivityResult.none;
+
+        if (hasConnection) {
+          try {
+            final value = await ApiProvider().getOrderTodayAPI(
+              event.fromDate,
+              event.toDate,
+              event.tableId,
+              event.waiterId,
+              event.userId,
+            );
+
+            if (value.success == true && value.data != null) {
+              await hiveService.saveOrders(value);
+            }
+
+            emit(value);
+          } catch (error) {
+            final cached = await hiveService.getOrders();
+            if (cached != null) {
+              final filtered = _applyFilters(cached, event);
+              emit(filtered);
+            } else {
+              emit(order.GetOrderListTodayModel(
+                success: false,
+                data: [],
+                errorResponse: order.ErrorResponse(
+                  message: error.toString(),
+                  statusCode: 500,
+                ),
+              ));
+            }
+          }
+        } else {
+          final cached = await hiveService.getOrders();
+          if (cached != null) {
+            final filtered = _applyFilters(cached, event);
+            emit(filtered);
+          } else {
+            emit(order.GetOrderListTodayModel(
+              success: false,
+              data: [],
+              errorResponse: order.ErrorResponse(
+                message: 'No offline order data available',
+                statusCode: 503,
+              ),
+            ));
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ Bloc Error: $e');
+        final cached = await hiveService.getOrders();
+        if (cached != null) {
+          final filtered = _applyFilters(cached, event);
+          emit(filtered);
+        } else {
+          emit(order.GetOrderListTodayModel(
+            success: false,
+            data: [],
+            errorResponse: order.ErrorResponse(
+              message: e.toString(),
+              statusCode: 500,
+            ),
+          ));
+        }
+      }
     });
     on<DeleteOrder>((event, emit) async {
-      await ApiProvider().deleteOrderAPI(event.orderId).then((value) {
-        emit(value);
-      }).catchError((error) {
-        emit(error);
+      if (event.orderId == null || event.orderId!.isEmpty) {
+        emit(DeleteOrderFailureState("Invalid Order ID"));
+        return;
+      }
+
+      emit(DeleteOrderLoadingState());
+
+      await ApiProvider().deleteOrderAPI(event.orderId).then((result) async {
+        if (result.errorResponse != null) {
+          final statusCode = result.errorResponse!.statusCode;
+          final message = result.errorResponse!.message ?? "Unknown error";
+
+          if (statusCode == 503) {
+            // Offline save
+            await HiveServicedelete.addPendingDelete(event.orderId!);
+            emit(DeleteOrderOfflineSavedState(
+                event.orderId!, "Delete request saved offline"));
+          } else if (statusCode == 401) {
+            emit(DeleteOrderFailureState("Unable to delete order"));
+          } else if (statusCode == 404) {
+            emit(DeleteOrderFailureState("Unable to delete order"));
+          } else {
+            emit(DeleteOrderFailureState("Unable to delete order"));
+          }
+        } else {
+          // Online success
+          emit(DeleteOrderSuccessState(
+              orderId: event.orderId!, message: "Order deleted successfully"));
+        }
+      }).catchError((error) async {
+        // If API fails, save offline
+        try {
+          await HiveServicedelete.addPendingDelete(event.orderId!);
+          emit(DeleteOrderOfflineSavedState(
+            event.orderId!,
+            "Error occurred. Delete request saved offline for later sync.",
+          ));
+        } catch (hiveError) {
+          emit(DeleteOrderFailureState("Failed to process delete request."));
+        }
       });
     });
     on<ViewOrder>((event, emit) async {
-      await ApiProvider().viewOrderAPI(event.orderId).then((value) {
-        emit(value);
-      }).catchError((error) {
-        emit(error);
-      });
+      final hiveService = HiveOrderTodayService();
+      try {
+        final connectivityResult = await Connectivity().checkConnectivity();
+
+        ConnectivityResult result;
+        if (connectivityResult.isNotEmpty) {
+          result = connectivityResult.first;
+        } else {
+          result = ConnectivityResult.none;
+        }
+
+        final hasConnection = result != ConnectivityResult.none;
+
+        if (hasConnection) {
+          // ✅ Online mode
+          try {
+            final value = await ApiProvider().viewOrderAPI(event.orderId);
+            print("get order details : $value");
+            if (value.success == true && value.data != null) {
+              // Save to Hive
+              await hiveService.saveOrderDetails(event.orderId!, value);
+            }
+
+            emit(value);
+          } catch (error) {
+            debugPrint("❌ ViewOrder API failed, fallback to Hive: $error");
+            final cached = await hiveService.getOrderDetails(event.orderId!);
+            if (cached?.data?.id != null) {
+              emit(cached!);
+            } else {
+              debugPrint("⚠️ Cached order missing ID, treating as new order");
+            }
+
+            print("get order details $cached");
+            if (cached != null) {
+              emit(cached);
+            } else {
+              emit(GetViewOrderModel(
+                success: false,
+                data: null,
+                errorResponse: ErrorResponse(
+                  message: error.toString(),
+                  statusCode: 500,
+                ),
+              ));
+            }
+          }
+        } else {
+          // 📴 Offline mode
+          final cached = await hiveService.getOrderDetails(event.orderId!);
+          if (cached?.data?.id != null) {
+            emit(cached!);
+          } else {
+            debugPrint("⚠️ Cached order missing ID, treating as new order");
+          }
+
+          if (cached != null) {
+            debugPrint(
+                '📴 Loaded offline order details for ID: ${event.orderId}');
+            emit(cached);
+          } else {
+            emit(GetViewOrderModel(
+              success: false,
+              data: null,
+              errorResponse: ErrorResponse(
+                message: 'No offline order details available for this order',
+                statusCode: 503,
+              ),
+            ));
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ ViewOrder Bloc Error: $e');
+        final cached = await hiveService.getOrderDetails(event.orderId!);
+        if (cached?.data?.id != null) {
+          emit(cached!);
+        } else {
+          debugPrint("⚠️ Cached order missing ID, treating as new order");
+        }
+        if (cached != null) {
+          emit(cached);
+        } else {
+          emit(GetViewOrderModel(
+            success: false,
+            data: null,
+            errorResponse: ErrorResponse(
+              message: e.toString(),
+              statusCode: 500,
+            ),
+          ));
+        }
+      }
     });
+
     on<TableDine>((event, emit) async {
-      await ApiProvider().getTableAPI().then((value) {
-        emit(value);
-      }).catchError((error) {
-        emit(error);
-      });
+      try {
+        final connectivityResult = await Connectivity().checkConnectivity();
+        bool hasConnection = false;
+
+        hasConnection = connectivityResult
+            .any((result) => result != ConnectivityResult.none);
+
+        if (hasConnection) {
+          // Online: Try to fetch from API first
+          try {
+            final value = await ApiProvider().getTableAPI();
+
+            if (value.success == true && value.data != null) {
+              // Save tables to Hive for offline use
+              await HiveStockTableService.saveTables(value.data!);
+            }
+
+            emit(value);
+          } catch (error) {
+            // API failed, try to load from Hive as fallback
+            final offlineTables =
+            await HiveStockTableService.getTablesAsApiFormat();
+            if (offlineTables.isNotEmpty) {
+              // Create offline response matching your API model structure
+              final offlineResponse = GetTableModel(
+                // Replace with your actual table model
+                success: true,
+                data: offlineTables,
+                errorResponse: null,
+              );
+              emit(offlineResponse);
+            } else {
+              emit(GetTableModel(
+                success: false,
+                errorResponse: ErrorResponse(
+                  message: error.toString(),
+                  statusCode: 500,
+                ),
+              ));
+            }
+          }
+        } else {
+          // Offline: Load from Hive directly
+          final offlineTables =
+          await HiveStockTableService.getTablesAsApiFormat();
+          if (offlineTables.isNotEmpty) {
+            debugPrint(
+                'Loading ${offlineTables.length} tables from offline storage');
+            final offlineResponse = GetTableModel(
+              success: true,
+              data: offlineTables,
+              errorResponse: null,
+            );
+            emit(offlineResponse);
+          } else {
+            // No offline data available
+            emit(GetTableModel(
+              success: false,
+              data: [],
+              errorResponse: ErrorResponse(
+                message: 'No offline table data available',
+                statusCode: 503,
+              ),
+            ));
+          }
+        }
+      } catch (e) {
+        debugPrint('Error in TableDine event: $e');
+        // Fallback to offline data
+        final offlineTables =
+        await HiveStockTableService.getTablesAsApiFormat();
+        if (offlineTables.isNotEmpty) {
+          final offlineResponse = GetTableModel(
+            success: true,
+            data: offlineTables,
+            errorResponse: null,
+          );
+          emit(offlineResponse);
+        } else {
+          emit(GetTableModel(
+            success: false,
+            data: [],
+            errorResponse: ErrorResponse(
+              message: e.toString(),
+              statusCode: 500,
+            ),
+          ));
+        }
+      }
     });
     on<WaiterDine>((event, emit) async {
       await ApiProvider().getWaiterAPI().then((value) {
@@ -70,11 +387,162 @@ class OrderTodayBloc extends Bloc<OrderTodayEvent, dynamic> {
       });
     });
     on<UserDetails>((event, emit) async {
-      await ApiProvider().getUserDetailsAPI().then((value) {
-        emit(value);
-      }).catchError((error) {
-        emit(error);
-      });
+      try {
+        final connectivityResult = await Connectivity().checkConnectivity();
+        bool hasConnection = connectivityResult != ConnectivityResult.none;
+
+        debugPrint('🌐 User Connectivity: $hasConnection');
+
+        if (hasConnection) {
+          // Online: Try API first
+          try {
+            debugPrint('📡 Fetching users from API...');
+            final value = await ApiProvider()
+                .getUserDetailsAPI(); // This now has offline support
+            debugPrint(
+                '✅ API response - success: ${value.success}, data count: ${value
+                    .data?.length ?? 0}');
+
+            if (value.success == true && value.data != null) {
+              debugPrint('💾 Saving ${value.data!.length} users to Hive...');
+              await HiveUserService.saveUsers(value.data!);
+              debugPrint('✅ Users saved to Hive successfully');
+            }
+            emit(value);
+          } catch (error) {
+            debugPrint('❌ API failed: $error');
+            // API failed, load from Hive
+            final offlineUsers = await HiveUserService.getUsersAsApiFormat();
+            debugPrint('📂 Offline users found: ${offlineUsers.length}');
+
+            if (offlineUsers.isNotEmpty) {
+              debugPrint('🔄 Loading from offline storage');
+              final offlineResponse = GetUserModel(
+                success: true,
+                data: offlineUsers,
+                totalCount: offlineUsers.length,
+                errorResponse: null,
+              );
+              emit(offlineResponse);
+            } else {
+              debugPrint('❌ No offline data available');
+              emit(GetUserModel(
+                success: false,
+                data: [],
+                totalCount: 0,
+                errorResponse: ErrorResponse(
+                  message: error.toString(),
+                  statusCode: 500,
+                ),
+              ));
+            }
+          }
+        } else {
+          debugPrint('📶 Offline mode - loading users from Hive');
+          final offlineUsers = await HiveUserService.getUsersAsApiFormat();
+          debugPrint('📂 Offline users found: ${offlineUsers.length}');
+
+          if (offlineUsers.isNotEmpty) {
+            debugPrint(
+                '✅ Loading ${offlineUsers.length} users from offline storage');
+            final offlineResponse = GetUserModel(
+              success: true,
+              data: offlineUsers,
+              totalCount: offlineUsers.length,
+              errorResponse: null,
+            );
+            emit(offlineResponse);
+          } else {
+            debugPrint('❌ No offline user data available');
+            emit(GetUserModel(
+              success: false,
+              data: [],
+              totalCount: 0,
+              errorResponse: ErrorResponse(
+                message: 'No offline user data available',
+                statusCode: 503,
+              ),
+            ));
+          }
+        }
+      } catch (e) {
+        debugPrint('💥 Error in UserDetails event: $e');
+        final offlineUsers = await HiveUserService.getUsersAsApiFormat();
+        debugPrint('📂 Fallback offline users: ${offlineUsers.length}');
+
+        if (offlineUsers.isNotEmpty) {
+          final offlineResponse = GetUserModel(
+            success: true,
+            data: offlineUsers,
+            totalCount: offlineUsers.length,
+            errorResponse: null,
+          );
+          emit(offlineResponse);
+        } else {
+          emit(GetUserModel(
+            success: false,
+            data: [],
+            totalCount: 0,
+            errorResponse: ErrorResponse(
+              message: e.toString(),
+              statusCode: 500,
+            ),
+          ));
+        }
+      }
     });
+  }
+
+  order.GetOrderListTodayModel _applyFilters(
+      order.GetOrderListTodayModel cached,
+      OrderTodayList event,) {
+    if (cached.data == null || cached.data!.isEmpty) {
+      return cached;
+    }
+    final hasTableFilter = event.tableId.isNotEmpty &&
+        event.tableId != "0" &&
+        event.tableId.toLowerCase() != "all";
+    final hasWaiterFilter = event.waiterId.isNotEmpty &&
+        event.waiterId != "0" &&
+        event.waiterId.toLowerCase() != "all";
+    final hasUserFilter = event.userId.isNotEmpty &&
+        event.userId != "0" &&
+        event.userId.toLowerCase() != "all";
+    final hasDateFilter = event.fromDate.isNotEmpty || event.toDate.isNotEmpty;
+    if (!hasTableFilter &&
+        !hasWaiterFilter &&
+        !hasUserFilter &&
+        !hasDateFilter) {
+      return cached;
+    }
+
+    final filteredData = cached.data!.where((orderItem) {
+      if (hasTableFilter) {
+        final orderTableId = orderItem.tableNo?.toString() ?? '';
+        if (orderTableId != event.tableId) {
+          return false;
+        }
+      }
+
+      if (hasWaiterFilter) {
+        final orderWaiterId = orderItem.waiter?.toString() ?? '';
+        if (orderWaiterId != event.waiterId) {
+          return false;
+        }
+      }
+      if (hasUserFilter) {
+        final orderUserId = orderItem.operator?.id.toString() ?? '';
+        if (orderUserId != event.userId) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+    return order.GetOrderListTodayModel(
+      success: cached.success,
+      data: filteredData,
+      errorResponse: cached.errorResponse,
+    );
   }
 }

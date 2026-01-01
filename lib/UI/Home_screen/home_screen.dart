@@ -490,36 +490,68 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
         builder: (_) => const Center(child: CircularProgressIndicator()),
       );
 
+      // Null-safe item processing
       List<Map<String, dynamic>> items =
-          postGenerateOrderModel.invoice!.invoiceItems!
-              .map((e) => {
-                    'name': e.tamilname ?? e.name,
-                    'qty': e.qty,
-                    'price': (e.basePrice ?? 0).toDouble(),
-                    'total': ((e.qty ?? 0) * (e.basePrice ?? 0)).toDouble(),
-                  })
-              .toList();
+      (postGenerateOrderModel.order?.items ?? [])
+          .map((e) => {
+        'name': e.name ?? 'Unknown Item',
+        'qty': e.quantity ?? 1,
+        'price': _safeToDouble(e.unitPrice ?? 0),
+        'total':
+        _safeToDouble((e.quantity ?? 1) * (e.unitPrice ?? 0)),
+      })
+          .toList();
 
-      String businessName = postGenerateOrderModel.invoice!.businessName ?? '';
-      String address = postGenerateOrderModel.invoice!.address ?? '';
-      String gst = postGenerateOrderModel.invoice!.gstNumber ?? '';
-      double taxPercent = (postGenerateOrderModel.order!.tax ?? 0.0).toDouble();
-      String orderNumber = postGenerateOrderModel.order!.orderNumber ?? 'N/A';
-      String paymentMethod = postGenerateOrderModel.invoice!.paidBy ?? '';
-      String phone = postGenerateOrderModel.invoice!.phone ?? '';
+      // Null-safe KOT items processing
+      List<Map<String, dynamic>> kotItems =
+      (postGenerateOrderModel.invoice?.kot ?? [])
+          .map((e) => {
+        'name': e.name ?? 'Unknown Item',
+        'qty': e.quantity ?? 1,
+      })
+          .toList();
+
+      // // Null-safe tax processing
+      // List<Map<String, dynamic>> finalTax =
+      // (postGenerateOrderModel.order?.finalTaxes ?? [])
+      //     .map((e) => {
+      //   'name': e.name ?? 'Tax',
+      //   'amt': e.amount ?? 0.0,
+      // })
+      //     .toList();
+
+      String businessName =
+          postGenerateOrderModel.invoice?.businessName ?? 'Business Name';
+      String address = postGenerateOrderModel.invoice?.address ?? 'Address';
+      String gst = postGenerateOrderModel.invoice?.gstNumber ?? 'GST Number';
+      double taxPercent =
+      _safeToDouble(postGenerateOrderModel.order?.tax ?? 0.0);
+      String orderNumber = postGenerateOrderModel.order?.orderNumber ?? 'N/A';
+      String paymentMethod = postGenerateOrderModel.invoice?.paidBy ?? 'CASH';
+      String phone = postGenerateOrderModel.invoice?.phone ?? 'Phone';
       double subTotal =
-          (postGenerateOrderModel.invoice!.subtotal ?? 0.0).toDouble();
-      double total = (postGenerateOrderModel.invoice!.total ?? 0.0).toDouble();
-      String orderType = postGenerateOrderModel.order!.orderType ?? '';
-      String orderStatus = postGenerateOrderModel.invoice!.orderStatus ?? '';
-      String tableName = orderType == 'LINE' || orderType == 'AC'
-          ? postGenerateOrderModel.invoice!.tableName.toString()
-          : 'N/A';
-      String waiterName = orderType == 'LINE' || orderType == 'AC'
-          ? postGenerateOrderModel.invoice!.waiterName.toString()
-          : 'N/A';
-      String date = formatInvoiceDate(postGenerateOrderModel.invoice?.date);
+      _safeToDouble(postGenerateOrderModel.invoice?.subtotal ?? 0.0);
+      double total =
+      _safeToDouble(postGenerateOrderModel.invoice?.total ?? 0.0);
+      String orderType = postGenerateOrderModel.order?.orderType ?? 'DINE-IN';
+      String orderStatus =
+          postGenerateOrderModel.invoice?.orderStatus ?? 'PENDING';
 
+      String tableName = (orderType == 'LINE' || orderType == 'AC')
+          ? (postGenerateOrderModel.invoice?.tableName?.toString() ?? 'N/A')
+          : 'N/A';
+
+      String waiterName = (orderType == 'LINE' || orderType == 'AC')
+          ? (postGenerateOrderModel.invoice?.waiterName?.toString() ?? 'N/A')
+          : 'N/A';
+
+      String date = formatInvoiceDate(postGenerateOrderModel.invoice?.date) ??
+          DateFormat('dd/MM/yyyy, HH:mm:ss').format(DateTime.now());
+
+      // ipController.text =
+      //     postGenerateOrderModel.invoice?.thermalIp?.toString() ?? "";
+
+      // debugPrint("ip:${ipController.text}");
       Navigator.of(context).pop();
 
       await showDialog(
@@ -527,7 +559,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
         builder: (_) => Dialog(
           backgroundColor: Colors.transparent,
           insetPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
           child: Stack(
             children: [
               Padding(
@@ -542,7 +574,6 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                     ),
                     child: Column(
                       children: [
-                        // Normal Bill Receipt
                         RepaintBoundary(
                           key: normalReceiptKey,
                           child: getThermalReceiptWidget(
@@ -550,6 +581,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                             address: address,
                             gst: gst,
                             items: items,
+                            // finalTax: finalTax,
                             tax: taxPercent,
                             paidBy: paymentMethod,
                             tamilTagline: '',
@@ -567,15 +599,15 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
 
                         const SizedBox(height: 20),
 
-                        // KOT Receipt (for kitchen)
-                        if (postGenerateOrderModel.order!.orderType == "PARCEL")
+                        // KOT Receipt (for kitchen) - only if we have KOT items
+                        if (kotItems.isNotEmpty)
                           RepaintBoundary(
                             key: kotReceiptKey,
                             child: getThermalReceiptKOTWidget(
                               businessName: businessName,
                               address: address,
                               gst: gst,
-                              items: items,
+                              items: kotItems,
                               paidBy: paymentMethod,
                               tamilTagline: '',
                               phone: phone,
@@ -598,53 +630,78 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                 ),
               ),
               Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (postGenerateOrderModel.order!.orderType == "PARCEL")
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          _selectBluetoothPrinter(context);
-                        },
-                        icon: const Icon(Icons.bluetooth),
-                        label: const Text("KOT(BT)"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: greenColor,
-                          foregroundColor: whiteColor,
-                        ),
+                  bottom: kotItems.isNotEmpty ? 2 : 16,
+                  left: 16,
+                  right: 16,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (kotItems.isNotEmpty)
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                // _startKOTPrintingThermalOnly(
+                                //   context,
+                                //   ipController.text.trim(),
+                                // );
+                              },
+                              icon: const Icon(Icons.print),
+                              label: const Text("KOT(LAN)"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: greenColor,
+                                foregroundColor: whiteColor,
+                              ),
+                            ),
+                          horizontalSpace(width: 10),
+                          if (kotItems.isNotEmpty)
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                _selectBluetoothPrinter(context);
+                              },
+                              icon: const Icon(Icons.bluetooth),
+                              label: const Text("KOT(BT)"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: greenColor,
+                                foregroundColor: whiteColor,
+                              ),
+                            ),
+                        ],
                       ),
-                    horizontalSpace(width: 10),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        WidgetsBinding.instance.addPostFrameCallback((_) async {
-                          await _ensureIminServiceReady();
-                          await _printBillToIminOnly(context);
-                        });
-                      },
-                      icon: const Icon(Icons.print),
-                      label: const Text("Print Bill"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: greenColor,
-                        foregroundColor: whiteColor,
-                      ),
-                    ),
-                    horizontalSpace(width: 10),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      label: const Text("CLOSE"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: appPrimaryColor,
-                        foregroundColor: whiteColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                      verticalSpace(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              WidgetsBinding.instance
+                                  .addPostFrameCallback((_) async {
+                                await _ensureIminServiceReady();
+                                await _printBillToIminOnly(context);
+                              });
+                            },
+                            icon: const Icon(Icons.print),
+                            label: const Text("Imin"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: greenColor,
+                              foregroundColor: whiteColor,
+                            ),
+                          ),
+                          horizontalSpace(width: 10),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            label: const Text("CLOSE"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: appPrimaryColor,
+                              foregroundColor: whiteColor,
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ))
             ],
           ),
         ),
@@ -657,6 +714,15 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
     }
   }
 
+// Add this helper method to your class
+  double _safeToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   Future<void> printUpdateOrderReceipt() async {
     try {
       showDialog(
@@ -666,45 +732,80 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
           child: CircularProgressIndicator(),
         ),
       );
-      List<Map<String, dynamic>> items =
-          updateGenerateOrderModel.invoice!.invoiceItems!
-              .map((e) => {
-                    'name': e.tamilname ?? e.name,
-                    'qty': e.qty,
-                    'price': (e.basePrice ?? 0).toDouble(),
-                    'total': ((e.qty ?? 0) * (e.basePrice ?? 0)).toDouble(),
-                  })
-              .toList();
 
+      // Null-safe item processing - same as printGenerateOrderReceipt
+      List<Map<String, dynamic>> items =
+      (updateGenerateOrderModel.order?.items ?? [])
+          .map((e) => {
+        'name': e.name ?? 'Unknown Item',
+        'qty': e.quantity ?? 1,
+        'price': _safeToDouble(e.unitPrice ?? 0),
+        'total':
+        _safeToDouble((e.quantity ?? 1) * (e.unitPrice ?? 0)),
+      })
+          .toList();
+
+      // Null-safe KOT items processing
+      List<Map<String, dynamic>> kotItems =
+      (updateGenerateOrderModel.invoice?.kot ?? [])
+          .map((e) => {
+        'name': e.name ?? 'Unknown Item',
+        'qty': e.quantity ?? 1,
+      })
+          .toList();
+
+      // Null-safe tax processing - use _safeToDouble instead of double.parse
+      // List<Map<String, dynamic>> finalTax =
+      // (updateGenerateOrderModel.invoice?.finalTaxes ?? [])
+      //     .map((e) => {
+      //   'name': e.name ?? 'Tax',
+      //   'amt': _safeToDouble(e.amount ?? 0.0),
+      // })
+      //     .toList();
+
+      // Null-safe field extraction with defaults - same as printGenerateOrderReceipt
       String businessName =
-          updateGenerateOrderModel.invoice!.businessName ?? '';
-      String address = updateGenerateOrderModel.invoice!.address ?? '';
-      String gst = updateGenerateOrderModel.invoice!.gstNumber ?? '';
+          updateGenerateOrderModel.invoice?.businessName ?? 'Business Name';
+      String address = updateGenerateOrderModel.invoice?.address ?? 'Address';
+      String gst = updateGenerateOrderModel.invoice?.gstNumber ?? 'GST Number';
       double taxPercent =
-          (updateGenerateOrderModel.order!.tax ?? 0.0).toDouble();
-      String orderNumber = updateGenerateOrderModel.order!.orderNumber ?? 'N/A';
-      String paymentMethod = updateGenerateOrderModel.invoice!.paidBy ?? '';
-      String phone = updateGenerateOrderModel.invoice!.phone ?? '';
+      _safeToDouble(updateGenerateOrderModel.order?.tax ?? 0.0);
+      String orderNumber = updateGenerateOrderModel.order?.orderNumber ?? 'N/A';
+      String paymentMethod = updateGenerateOrderModel.invoice?.paidBy ?? 'CASH';
+      String phone = updateGenerateOrderModel.invoice?.phone ?? 'Phone';
       double subTotal =
-          (updateGenerateOrderModel.invoice!.subtotal ?? 0.0).toDouble();
+      _safeToDouble(updateGenerateOrderModel.invoice?.subtotal ?? 0.0);
       double total =
-          (updateGenerateOrderModel.invoice!.total ?? 0.0).toDouble();
-      String orderType = updateGenerateOrderModel.order!.orderType ?? '';
-      String orderStatus = updateGenerateOrderModel.invoice!.orderStatus ?? '';
-      String tableName = orderType == 'LINE' || orderType == 'AC'
-          ? updateGenerateOrderModel.invoice!.tableName.toString()
+      _safeToDouble(updateGenerateOrderModel.invoice?.total ?? 0.0);
+      String orderType = updateGenerateOrderModel.order?.orderType ?? 'DINE-IN';
+      String orderStatus =
+          updateGenerateOrderModel.invoice?.orderStatus ?? 'PENDING';
+
+      // Extract table name properly with null safety
+      String tableName = (orderType == 'LINE' || orderType == 'AC')
+          ? (updateGenerateOrderModel.invoice?.tableName?.toString() ?? 'N/A')
           : 'N/A';
-      String waiterName = orderType == 'LINE' || orderType == 'AC'
-          ? updateGenerateOrderModel.invoice!.waiterName.toString()
+
+      // Extract waiter name properly with null safety
+      String waiterName = (orderType == 'LINE' || orderType == 'AC')
+          ? (updateGenerateOrderModel.invoice?.waiterName?.toString() ?? 'N/A')
           : 'N/A';
-      String date = formatInvoiceDate(updateGenerateOrderModel.invoice?.date);
+
+      String date = formatInvoiceDate(updateGenerateOrderModel.invoice?.date) ??
+          DateFormat('dd/MM/yyyy, HH:mm:ss').format(DateTime.now());
+
+      // // ipController.text =
+      // //     updateGenerateOrderModel.invoice?.thermalIp?.toString() ?? "";
+      //
+      // debugPrint("ip:${ipController.text}");
       Navigator.of(context).pop();
+
       await showDialog(
         context: context,
         builder: (_) => Dialog(
           backgroundColor: Colors.transparent,
           insetPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
           child: Stack(
             children: [
               Padding(
@@ -717,9 +818,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                       color: whiteColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child:
-                        // Receipt widgets
-                        Column(
+                    child: Column(
                       children: [
                         RepaintBoundary(
                           key: normalReceiptKey,
@@ -728,6 +827,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                             address: address,
                             gst: gst,
                             items: items,
+                            // finalTax: finalTax,
                             tax: taxPercent,
                             paidBy: paymentMethod,
                             tamilTagline: '',
@@ -743,15 +843,16 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        if (updateGenerateOrderModel.order!.orderType ==
-                            "PARCEL")
+
+                        // KOT Receipt (for kitchen) - only if we have KOT items
+                        if (kotItems.isNotEmpty)
                           RepaintBoundary(
                             key: kotReceiptKey,
                             child: getThermalReceiptKOTWidget(
                               businessName: businessName,
                               address: address,
                               gst: gst,
-                              items: items,
+                              items: kotItems,
                               paidBy: paymentMethod,
                               tamilTagline: '',
                               phone: phone,
@@ -766,60 +867,86 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                               status: orderStatus,
                             ),
                           ),
-                        const SizedBox(height: 80), // space for buttons
+
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
                 ),
               ),
               Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (updateGenerateOrderModel.order!.orderType == "PARCEL")
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          _selectBluetoothPrinter(context);
-                        },
-                        icon: const Icon(Icons.bluetooth),
-                        label: const Text("KOT(BT)"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: greenColor,
-                          foregroundColor: whiteColor,
-                        ),
+                  bottom: kotItems.isNotEmpty ? 2 : 16,
+                  left: 16,
+                  right: 16,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (kotItems.isNotEmpty)
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                // _startKOTPrintingThermalOnly(
+                                //   context,
+                                //   ipController.text.trim(),
+                                // );
+                              },
+                              icon: const Icon(Icons.print),
+                              label: const Text("KOT(LAN)"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: greenColor,
+                                foregroundColor: whiteColor,
+                              ),
+                            ),
+                          horizontalSpace(width: 10),
+                          if (kotItems.isNotEmpty)
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                _selectBluetoothPrinter(context);
+                              },
+                              icon: const Icon(Icons.bluetooth),
+                              label: const Text("KOT(BT)"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: greenColor,
+                                foregroundColor: whiteColor,
+                              ),
+                            ),
+                        ],
                       ),
-                    const SizedBox(width: 10),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        WidgetsBinding.instance.addPostFrameCallback((_) async {
-                          await _ensureIminServiceReady();
-                          await _printBillToIminOnly(context);
-                        });
-                      },
-                      icon: const Icon(Icons.print),
-                      label: const Text("Print Bills"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: greenColor,
-                        foregroundColor: whiteColor,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      label: const Text("CLOSE"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: appPrimaryColor,
-                        foregroundColor: whiteColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                      verticalSpace(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              WidgetsBinding.instance
+                                  .addPostFrameCallback((_) async {
+                                await _ensureIminServiceReady();
+                                await _printBillToIminOnly(context);
+                              });
+                            },
+                            icon: const Icon(Icons.print),
+                            label: const Text("Imin"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: greenColor,
+                              foregroundColor: whiteColor,
+                            ),
+                          ),
+                          horizontalSpace(width: 10),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            label: const Text("CLOSE"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: appPrimaryColor,
+                              foregroundColor: whiteColor,
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ))
             ],
           ),
         ),
@@ -1038,8 +1165,9 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
             selectedCatId.toString(),
             searchController.text,
             searchProdIdController.text,
-            limit.toString(),
-            "0", // Reset offset to 0
+
+
+
           ),
         );
   }
@@ -1054,8 +1182,6 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
             selectedCatId.toString(),
             searchController.text,
             searchProdIdController.text,
-            limit.toString(),
-            currentOffset.toString(),
           ),
         );
   }
@@ -6730,7 +6856,8 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
             }
           });
           context.read<FoodCategoryBloc>().add(AddToBilling(
-              List.from(billingItems), isDiscountApplied, selectedOrderType));
+              List.from(billingItems), isDiscountApplied, selectedOrderType
+          ));
           _loadInitialProducts();
           if (updateGenerateOrderModel.message != null) {
             // if (shouldPrintReceipt == true &&
