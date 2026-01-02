@@ -1,6 +1,6 @@
 import 'package:hive/hive.dart';
+import 'package:simple/ModelClass/ShopDetails/getShopDetailsModel.dart';
 import 'dart:developer' as developer;
-import '../../../ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 
 class HiveShopDetailsService {
   static const String _boxName = 'shopDetailsBox';
@@ -11,7 +11,7 @@ class HiveShopDetailsService {
   }
 
   // Save shop details to Hive
-  static Future<void> saveShopDetails(GetStockMaintanencesModel shopDetails) async {
+  static Future<void> saveShopDetails(GetShopDetailsModel shopDetails) async {
     try {
       final box = await _openBox();
       final jsonData = shopDetails.toJson();
@@ -27,7 +27,7 @@ class HiveShopDetailsService {
   }
 
   // Get shop details from Hive as GetShopDetailsModel
-  static Future<GetStockMaintanencesModel?> getShopDetailsAsApiModel() async {
+  static Future<GetShopDetailsModel?> getShopDetailsAsApiModel() async {
     try {
       final box = await _openBox();
       final shopDetailsJson = box.get(_shopDetailsKey);
@@ -36,7 +36,7 @@ class HiveShopDetailsService {
       developer.log('   - Data exists: ${shopDetailsJson != null}');
 
       if (shopDetailsJson != null) {
-        final model = GetStockMaintanencesModel.fromJson(shopDetailsJson);
+        final model = GetShopDetailsModel.fromJson(shopDetailsJson);
         developer.log('✅ Successfully loaded shop details from Hive');
         developer.log('   - Shop Name: ${model.data?.name}');
         developer.log('   - Contact: ${model.data?.contactNumber}');

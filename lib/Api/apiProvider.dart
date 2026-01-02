@@ -34,6 +34,7 @@ import 'package:simple/ModelClass/Order/Update_generate_order_model.dart';
 import 'package:simple/ModelClass/Order/get_order_list_today_model.dart';
 import 'package:simple/ModelClass/Products/get_products_cat_model.dart';
 import 'package:simple/ModelClass/Report/Get_report_model.dart';
+import 'package:simple/ModelClass/ShopDetails/getShopDetailsModel.dart';
 import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
 import 'package:simple/ModelClass/StockIn/getSupplierLocationModel.dart';
@@ -131,7 +132,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetCategoryModel getCategoryResponse =
-          GetCategoryModel.fromJson(response.data);
+              GetCategoryModel.fromJson(response.data);
           debugPrint("categoryRespnse:$getCategoryResponse");
           return getCategoryResponse;
         }
@@ -175,7 +176,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetProductByCatIdModel getProductByCatIdResponse =
-          GetProductByCatIdModel.fromJson(response.data);
+              GetProductByCatIdModel.fromJson(response.data);
           return getProductByCatIdResponse;
         }
       } else {
@@ -216,7 +217,7 @@ class ApiProvider {
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
           GetProductsCatModel getProductsCatResponse =
-          GetProductsCatModel.fromJson(response.data);
+              GetProductsCatModel.fromJson(response.data);
           return getProductsCatResponse;
         }
       } else {
@@ -240,7 +241,7 @@ class ApiProvider {
   }
 
   /// ShopDetails - API Integration
-  Future<GetStockMaintanencesModel> getShopDetailsAPI() async {
+  Future<GetShopDetailsModel> getShopDetailsAPI() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
 
@@ -257,31 +258,29 @@ class ApiProvider {
       );
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['success'] == true) {
-          GetStockMaintanencesModel getShopDetailsResponse =
-          GetStockMaintanencesModel.fromJson(response.data);
+          GetShopDetailsModel getShopDetailsResponse =
+              GetShopDetailsModel.fromJson(response.data);
           return getShopDetailsResponse;
         }
       } else {
-        return GetStockMaintanencesModel()
+        return GetShopDetailsModel()
           ..errorResponse = ErrorResponse(
             message: "Error: ${response.data['message'] ?? 'Unknown error'}",
             statusCode: response.statusCode,
           );
       }
-      return GetStockMaintanencesModel()
+      return GetShopDetailsModel()
         ..errorResponse = ErrorResponse(
           message: "Unexpected error occurred.",
           statusCode: 500,
         );
     } on DioException catch (dioError) {
       final errorResponse = handleError(dioError);
-      return GetStockMaintanencesModel()..errorResponse = errorResponse;
+      return GetShopDetailsModel()..errorResponse = errorResponse;
     } catch (error) {
-      return GetStockMaintanencesModel()..errorResponse = handleError(error);
+      return GetShopDetailsModel()..errorResponse = handleError(error);
     }
   }
-
-
 
   /// Table - Fetch API Integration
   Future<GetTableModel> getTableAPI() async {
@@ -349,7 +348,7 @@ class ApiProvider {
           response.data['success'] == true) {
         debugPrint("API call successful! Saving data to Hive.");
         GetWaiterModel getWaiterResponse =
-        GetWaiterModel.fromJson(response.data);
+            GetWaiterModel.fromJson(response.data);
         if (getWaiterResponse.data != null) {
           // Save the new data to Hive on successful network response
           await HiveWaiterService.saveWaiters(getWaiterResponse.data!);
@@ -391,7 +390,6 @@ class ApiProvider {
       return GetWaiterModel()..errorResponse = handleError(error);
     }
   }
-
 
   /// userDetails - Fetch API Integration
   Future<GetUserModel> getUserDetailsAPI() async {
@@ -435,7 +433,7 @@ class ApiProvider {
           return GetUserModel()
             ..errorResponse = ErrorResponse(
               message:
-              response.data['message'] ?? 'API response indicates failure.',
+                  response.data['message'] ?? 'API response indicates failure.',
               statusCode: 200,
             );
         }
@@ -1033,13 +1031,13 @@ class ApiProvider {
   /// catering and Customer
   /// Get All Customers API Integration
   Future<GetCustomerModel> getAllCustomerAPI(
-      String search,
-      String locId,
-      int limit,
-      int offset,
-      String fromDate,
-      String toDate,
-      ) async {
+    String search,
+    String locId,
+    int limit,
+    int offset,
+    String fromDate,
+    String toDate,
+  ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
 
@@ -1574,14 +1572,8 @@ class ApiProvider {
   /// Accounts - API Integration
   /** credit */
   /// Get All Credits API Integration
-  Future<GetAllCreditsModel> getAllCreditsAPI(
-    String? fromDate,
-    String? toDate,
-    String? search,
-    int? limit,
-    int? offset,
-      String? locid
-  ) async {
+  Future<GetAllCreditsModel> getAllCreditsAPI(String? fromDate, String? toDate,
+      String? search, int? limit, int? offset, String? locid) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
 
@@ -1824,7 +1816,7 @@ class ApiProvider {
     String search,
     int limit,
     int offset,
-      String locid,
+    String locid,
   ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
@@ -1998,7 +1990,7 @@ class ApiProvider {
 
   /// returns API Integration
   Future<ReturnReportModel> getReturnReportAPI(String fromDate, String toDate,
-      String search, int limit, int offset,String locid) async {
+      String search, int limit, int offset, String locid) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
     debugPrint("token:$token");

@@ -492,24 +492,24 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
 
       // Null-safe item processing
       List<Map<String, dynamic>> items =
-      (postGenerateOrderModel.order?.items ?? [])
-          .map((e) => {
-        'name': e.name ?? 'Unknown Item',
-        'qty': e.quantity ?? 1,
-        'price': _safeToDouble(e.unitPrice ?? 0),
-        'total':
-        _safeToDouble((e.quantity ?? 1) * (e.unitPrice ?? 0)),
-      })
-          .toList();
+          (postGenerateOrderModel.order?.items ?? [])
+              .map((e) => {
+                    'name': e.name ?? 'Unknown Item',
+                    'qty': e.quantity ?? 1,
+                    'price': _safeToDouble(e.unitPrice ?? 0),
+                    'total':
+                        _safeToDouble((e.quantity ?? 1) * (e.unitPrice ?? 0)),
+                  })
+              .toList();
 
       // Null-safe KOT items processing
       List<Map<String, dynamic>> kotItems =
-      (postGenerateOrderModel.invoice?.kot ?? [])
-          .map((e) => {
-        'name': e.name ?? 'Unknown Item',
-        'qty': e.quantity ?? 1,
-      })
-          .toList();
+          (postGenerateOrderModel.invoice?.kot ?? [])
+              .map((e) => {
+                    'name': e.name ?? 'Unknown Item',
+                    'qty': e.quantity ?? 1,
+                  })
+              .toList();
 
       // // Null-safe tax processing
       // List<Map<String, dynamic>> finalTax =
@@ -525,14 +525,14 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
       String address = postGenerateOrderModel.invoice?.address ?? 'Address';
       String gst = postGenerateOrderModel.invoice?.gstNumber ?? 'GST Number';
       double taxPercent =
-      _safeToDouble(postGenerateOrderModel.order?.tax ?? 0.0);
+          _safeToDouble(postGenerateOrderModel.order?.tax ?? 0.0);
       String orderNumber = postGenerateOrderModel.order?.orderNumber ?? 'N/A';
       String paymentMethod = postGenerateOrderModel.invoice?.paidBy ?? 'CASH';
       String phone = postGenerateOrderModel.invoice?.phone ?? 'Phone';
       double subTotal =
-      _safeToDouble(postGenerateOrderModel.invoice?.subtotal ?? 0.0);
+          _safeToDouble(postGenerateOrderModel.invoice?.subtotal ?? 0.0);
       double total =
-      _safeToDouble(postGenerateOrderModel.invoice?.total ?? 0.0);
+          _safeToDouble(postGenerateOrderModel.invoice?.total ?? 0.0);
       String orderType = postGenerateOrderModel.order?.orderType ?? 'DINE-IN';
       String orderStatus =
           postGenerateOrderModel.invoice?.orderStatus ?? 'PENDING';
@@ -559,7 +559,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
         builder: (_) => Dialog(
           backgroundColor: Colors.transparent,
           insetPadding:
-          const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
           child: Stack(
             children: [
               Padding(
@@ -735,24 +735,24 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
 
       // Null-safe item processing - same as printGenerateOrderReceipt
       List<Map<String, dynamic>> items =
-      (updateGenerateOrderModel.order?.items ?? [])
-          .map((e) => {
-        'name': e.name ?? 'Unknown Item',
-        'qty': e.quantity ?? 1,
-        'price': _safeToDouble(e.unitPrice ?? 0),
-        'total':
-        _safeToDouble((e.quantity ?? 1) * (e.unitPrice ?? 0)),
-      })
-          .toList();
+          (updateGenerateOrderModel.order?.items ?? [])
+              .map((e) => {
+                    'name': e.name ?? 'Unknown Item',
+                    'qty': e.quantity ?? 1,
+                    'price': _safeToDouble(e.unitPrice ?? 0),
+                    'total':
+                        _safeToDouble((e.quantity ?? 1) * (e.unitPrice ?? 0)),
+                  })
+              .toList();
 
       // Null-safe KOT items processing
       List<Map<String, dynamic>> kotItems =
-      (updateGenerateOrderModel.invoice?.kot ?? [])
-          .map((e) => {
-        'name': e.name ?? 'Unknown Item',
-        'qty': e.quantity ?? 1,
-      })
-          .toList();
+          (updateGenerateOrderModel.invoice?.kot ?? [])
+              .map((e) => {
+                    'name': e.name ?? 'Unknown Item',
+                    'qty': e.quantity ?? 1,
+                  })
+              .toList();
 
       // Null-safe tax processing - use _safeToDouble instead of double.parse
       // List<Map<String, dynamic>> finalTax =
@@ -769,14 +769,14 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
       String address = updateGenerateOrderModel.invoice?.address ?? 'Address';
       String gst = updateGenerateOrderModel.invoice?.gstNumber ?? 'GST Number';
       double taxPercent =
-      _safeToDouble(updateGenerateOrderModel.order?.tax ?? 0.0);
+          _safeToDouble(updateGenerateOrderModel.order?.tax ?? 0.0);
       String orderNumber = updateGenerateOrderModel.order?.orderNumber ?? 'N/A';
       String paymentMethod = updateGenerateOrderModel.invoice?.paidBy ?? 'CASH';
       String phone = updateGenerateOrderModel.invoice?.phone ?? 'Phone';
       double subTotal =
-      _safeToDouble(updateGenerateOrderModel.invoice?.subtotal ?? 0.0);
+          _safeToDouble(updateGenerateOrderModel.invoice?.subtotal ?? 0.0);
       double total =
-      _safeToDouble(updateGenerateOrderModel.invoice?.total ?? 0.0);
+          _safeToDouble(updateGenerateOrderModel.invoice?.total ?? 0.0);
       String orderType = updateGenerateOrderModel.order?.orderType ?? 'DINE-IN';
       String orderStatus =
           updateGenerateOrderModel.invoice?.orderStatus ?? 'PENDING';
@@ -805,7 +805,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
         builder: (_) => Dialog(
           backgroundColor: Colors.transparent,
           insetPadding:
-          const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
           child: Stack(
             children: [
               Padding(
@@ -1048,7 +1048,8 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
       context.read<FoodCategoryBloc>().add(AddToBilling(
           List.from(billingItems),
           widget.existingOrder?.data!.isDiscountApplied,
-          OrderTypeX.fromApi(widget.existingOrder?.data!.orderType ?? "LINE")));
+          OrderTypeX.fromApi(widget.existingOrder?.data!.orderType ?? "LINE"),
+          selectedCatId.toString()));
     });
   }
 
@@ -1057,11 +1058,8 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
   void onCartUpdated() {
     updateProductsWithAddons();
     context.read<FoodCategoryBloc>().add(
-          AddToBilling(
-            List.from(billingItems),
-            isDiscountApplied,
-            selectedOrderType,
-          ),
+          AddToBilling(List.from(billingItems), isDiscountApplied,
+              selectedOrderType, selectedCatId.toString()),
         );
   }
 
@@ -1082,9 +1080,8 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
       if (billingItems.isEmpty || billingItems == []) {
         isDiscountApplied = false;
       }
-      context
-          .read<FoodCategoryBloc>()
-          .add(AddToBilling([], isDiscountApplied, selectedOrderType));
+      context.read<FoodCategoryBloc>().add(AddToBilling(
+          [], isDiscountApplied, selectedOrderType, selectedCatId.toString()));
     });
   }
 
@@ -1165,9 +1162,6 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
             selectedCatId.toString(),
             searchController.text,
             searchProdIdController.text,
-
-
-
           ),
         );
   }
@@ -1793,11 +1787,12 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                     FoodCategoryBloc>()
                                                                 .add(
                                                                   AddToBilling(
-                                                                    List.from(
-                                                                        billingItems),
-                                                                    isDiscountApplied,
-                                                                    selectedOrderType,
-                                                                  ),
+                                                                      List.from(
+                                                                          billingItems),
+                                                                      isDiscountApplied,
+                                                                      selectedOrderType,
+                                                                      selectedCatId
+                                                                          .toString()),
                                                                 );
                                                           });
                                                         } else {
@@ -2176,12 +2171,12 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                             }
                                                                                             context.read<FoodCategoryBloc>().add(
                                                                                                   AddToBilling(
-                                                                                                    List.from(
-                                                                                                      billingItems,
-                                                                                                    ),
-                                                                                                    isDiscountApplied,
-                                                                                                    selectedOrderType,
-                                                                                                  ),
+                                                                                                      List.from(
+                                                                                                        billingItems,
+                                                                                                      ),
+                                                                                                      isDiscountApplied,
+                                                                                                      selectedOrderType,
+                                                                                                      selectedCatId.toString()),
                                                                                                 );
 
                                                                                             Navigator.of(
@@ -2368,12 +2363,13 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                   FoodCategoryBloc>()
                                                               .add(
                                                                 AddToBilling(
-                                                                  List.from(
-                                                                    billingItems,
-                                                                  ),
-                                                                  isDiscountApplied,
-                                                                  selectedOrderType,
-                                                                ),
+                                                                    List.from(
+                                                                      billingItems,
+                                                                    ),
+                                                                    isDiscountApplied,
+                                                                    selectedOrderType,
+                                                                    selectedCatId
+                                                                        .toString()),
                                                               );
                                                         });
                                                       }
@@ -2691,7 +2687,8 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                             context.read<FoodCategoryBloc>().add(AddToBilling(
                                                                                 List.from(billingItems),
                                                                                 isDiscountApplied,
-                                                                                selectedOrderType));
+                                                                                selectedOrderType,
+                                                                                selectedCatId.toString()));
                                                                           });
                                                                         },
                                                                       ),
@@ -2784,7 +2781,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                         .toList()
                                                                                   });
                                                                                 }
-                                                                                context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                               });
                                                                             } else {
                                                                               currentController.text = getCurrentQuantity(p.id.toString()).toString();
@@ -2805,7 +2802,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                 selectedValue = null;
                                                                                 selectedValueWaiter = null;
                                                                               }
-                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                             });
                                                                           }
                                                                         },
@@ -2902,7 +2899,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                       });
                                                                                       updateControllerText(p.id.toString(), 1);
                                                                                     }
-                                                                                    context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                    context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                                   });
                                                                                 }
                                                                               : () {
@@ -2991,7 +2988,8 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                             context.read<FoodCategoryBloc>().add(AddToBilling(
                                                                                 List.from(billingItems),
                                                                                 isDiscountApplied,
-                                                                                selectedOrderType));
+                                                                                selectedOrderType,
+                                                                                selectedCatId.toString()));
                                                                           });
                                                                         },
                                                                       ),
@@ -3084,7 +3082,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                         .toList()
                                                                                   });
                                                                                 }
-                                                                                context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                               });
                                                                             } else {
                                                                               currentController.text = getCurrentQuantity(p.id.toString()).toString();
@@ -3105,7 +3103,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                 selectedValue = null;
                                                                                 selectedValueWaiter = null;
                                                                               }
-                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                             });
                                                                           }
                                                                         },
@@ -3202,7 +3200,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                       });
                                                                                       updateControllerText(p.id.toString(), 1);
                                                                                     }
-                                                                                    context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                    context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                                   });
                                                                                 }
                                                                               : () {
@@ -3586,12 +3584,12 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                                     )}");
                                                                                                     context.read<FoodCategoryBloc>().add(
                                                                                                           AddToBilling(
-                                                                                                            List.from(
-                                                                                                              billingItems,
-                                                                                                            ),
-                                                                                                            isDiscountApplied,
-                                                                                                            selectedOrderType,
-                                                                                                          ),
+                                                                                                              List.from(
+                                                                                                                billingItems,
+                                                                                                              ),
+                                                                                                              isDiscountApplied,
+                                                                                                              selectedOrderType,
+                                                                                                              selectedCatId.toString()),
                                                                                                         );
                                                                                                     debugPrint("billingItem in addons:${List.from(
                                                                                                       billingItems,
@@ -3942,7 +3940,9 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                           List.from(
                                                                               billingItems),
                                                                           isDiscountApplied,
-                                                                          selectedOrderType),
+                                                                          selectedOrderType,
+                                                                          selectedCatId
+                                                                              .toString()),
                                                                     );
                                                               },
                                                               icon: const Icon(
@@ -4275,7 +4275,9 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                       List.from(
                                                                           billingItems),
                                                                       isDiscountApplied,
-                                                                      selectedOrderType));
+                                                                      selectedOrderType,
+                                                                      selectedCatId
+                                                                          .toString()));
                                                                 });
                                                               },
                                                               child: Container(
@@ -4343,7 +4345,9 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                       List.from(
                                                                           billingItems),
                                                                       isDiscountApplied,
-                                                                      selectedOrderType));
+                                                                      selectedOrderType,
+                                                                      selectedCatId
+                                                                          .toString()));
                                                                 });
                                                               },
                                                               child: Container(
@@ -4414,7 +4418,9 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                       List.from(
                                                                           billingItems),
                                                                       isDiscountApplied,
-                                                                      selectedOrderType));
+                                                                      selectedOrderType,
+                                                                      selectedCatId
+                                                                          .toString()));
                                                                 });
                                                               },
                                                               child: Container(
@@ -4634,7 +4640,9 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                         List.from(
                                                                             billingItems),
                                                                         isDiscountApplied,
-                                                                        selectedOrderType),
+                                                                        selectedOrderType,
+                                                                        selectedCatId
+                                                                            .toString()),
                                                                   );
                                                             },
                                                             icon: const Icon(
@@ -5061,7 +5069,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                           selectedValueWaiter = null;
                                                                                         }
                                                                                       }
-                                                                                      context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                      context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                                     });
                                                                                   },
                                                                                 ),
@@ -5136,7 +5144,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                                   : []
                                                                                             });
                                                                                           }
-                                                                                          context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                          context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                                         });
                                                                                       } else {
                                                                                         getOrCreateController(e.id.toString(), e.qty?.toInt() ?? 0).text = getCurrentQuantity(e.id.toString()).toString();
@@ -5156,7 +5164,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                           selectedValue = null;
                                                                                           selectedValueWaiter = null;
                                                                                         }
-                                                                                        context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                        context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                                       });
                                                                                     }
                                                                                   },
@@ -5191,7 +5199,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                                 billingItems[index]['qty'] = billingItems[index]['qty'] + 1;
                                                                                                 updateControllerText(e.id.toString(), billingItems[index]['qty']);
                                                                                               }
-                                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                                             });
                                                                                           }
                                                                                         : () {
@@ -5222,7 +5230,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                       selectedValue = null;
                                                                                       selectedValueWaiter = null;
                                                                                     }
-                                                                                    context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                    context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                                   });
                                                                                 },
                                                                               ),
@@ -5311,6 +5319,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                                               List.from(billingItems),
                                                                                                               isDiscountApplied,
                                                                                                               selectedOrderType,
+                                                                                                              selectedCatId.toString(),
                                                                                                             ),
                                                                                                           );
                                                                                                       debugPrint("billingItem in addons remove: ${List.from(billingItems)}");
@@ -5332,6 +5341,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
                                                                                                               List.from(billingItems),
                                                                                                               isDiscountApplied,
                                                                                                               selectedOrderType,
+                                                                                                              selectedCatId.toString(),
                                                                                                             ),
                                                                                                           );
                                                                                                       debugPrint("billingItem in addons remove: ${List.from(billingItems)}");
@@ -5349,7 +5359,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
 
                                                                                             setState(() {
                                                                                               addonsList[addonIndex]['quantity'] = addonsList[addonIndex]['quantity'] + 1;
-                                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType));
+                                                                                              context.read<FoodCategoryBloc>().add(AddToBilling(List.from(billingItems), isDiscountApplied, selectedOrderType, selectedCatId.toString()));
                                                                                             });
                                                                                           },
                                                                                         ),
@@ -6816,7 +6826,10 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
           });
 
           context.read<FoodCategoryBloc>().add(AddToBilling(
-              List.from(billingItems), isDiscountApplied, selectedOrderType));
+              List.from(billingItems),
+              isDiscountApplied,
+              selectedOrderType,
+              selectedCatId.toString()));
           _loadInitialProducts();
           if (postGenerateOrderModel.message != null) {
             // if (shouldPrintReceipt == true &&
@@ -6856,8 +6869,10 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
             }
           });
           context.read<FoodCategoryBloc>().add(AddToBilling(
-              List.from(billingItems), isDiscountApplied, selectedOrderType
-          ));
+              List.from(billingItems),
+              isDiscountApplied,
+              selectedOrderType,
+              selectedCatId.toString()));
           _loadInitialProducts();
           if (updateGenerateOrderModel.message != null) {
             // if (shouldPrintReceipt == true &&
