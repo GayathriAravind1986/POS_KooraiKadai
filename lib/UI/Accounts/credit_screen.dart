@@ -371,7 +371,7 @@ class CreditViewViewState extends State<CreditViewView> {
             setState(() {
               creditLoad = false;
             });
-            showToast("No Location found", context, color: false);
+            // showToast("No Location found", context, color: false);
           }
           return true;
         }

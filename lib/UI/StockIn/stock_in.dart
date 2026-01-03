@@ -924,7 +924,7 @@ class StockViewViewState extends State<StockViewView> {
             setState(() {
               stockLoad = false;
             });
-            showToast("No Location found", context, color: false);
+            // showToast("No Location found", context, color: false);
           }
           return true;
         }

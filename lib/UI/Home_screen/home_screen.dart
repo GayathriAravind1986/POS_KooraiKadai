@@ -6897,7 +6897,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
             setState(() {
               categoryLoad = false;
             });
-            showToast("No Tables found", context, color: false);
+            // showToast("No Tables found", context, color: false);
           }
           return true;
         }
@@ -6915,7 +6915,7 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
             setState(() {
               categoryLoad = false;
             });
-            showToast("No Waiter found", context, color: false);
+            // showToast("No Waiter found", context, color: false);
           }
           return true;
         }

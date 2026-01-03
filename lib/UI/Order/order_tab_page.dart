@@ -553,7 +553,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
             setState(() {
               tableLoad = false;
             });
-            showToast("No Tables found", context, color: false);
+            // showToast("No Tables found", context, color: false);
           }
           return true;
         }
@@ -571,7 +571,8 @@ class OrderTabViewViewState extends State<OrderTabViewView>
             setState(() {
               tableLoad = false;
             });
-            showToast("No Waiter found", context, color: false);
+            // showToast(""
+            //     "No Waiter found", context, color: false);
           }
           return true;
         }

@@ -739,7 +739,7 @@ class ReportViewViewState extends State<ReportViewView> {
             setState(() {
               tableLoad = false;
             });
-            showToast("No Tables found", context, color: false);
+            // showToast("No Tables found", context, color: false);
           }
           return true;
         }
@@ -757,7 +757,7 @@ class ReportViewViewState extends State<ReportViewView> {
             setState(() {
               tableLoad = false;
             });
-            showToast("No Waiter found", context, color: false);
+            // showToast("No Waiter found", context, color: false);
           }
           return true;
         }

@@ -9,7 +9,7 @@ import 'package:simple/Offline/Hive_helper/LocalClass/Home/product_model.dart';
 import 'package:uuid/uuid.dart';
 import '../LocalClass/Home/category_model.dart';
 
-class HiveService {
+class HiveService  {
   static const String CART_BOX = 'cart_items';
   static const String ORDERS_BOX = 'orders';
   static const String BILLING_SESSION_BOX = 'billing_session';
@@ -473,7 +473,7 @@ class HiveService {
         }
       }
 
-      // Create HiveOrder object with all fields
+
       final order = HiveOrder(
         id: orderId,
         orderPayloadJson: orderPayloadJson,
@@ -563,15 +563,12 @@ class HiveService {
     }
   }
 
-  // Add this method to force offline mode for testing
   static Future<void> setOfflineMode(bool isOffline) async {
     final box = await Hive.openBox('app_state');
     if (isOffline) {
-      // Set last online to 1 hour ago to force offline mode
       final oneHourAgo = DateTime.now().subtract(const Duration(hours: 1));
       await box.put('last_online', oneHourAgo.millisecondsSinceEpoch);
     } else {
-      // Set to current time to force online mode
       await box.put('last_online', DateTime.now().millisecondsSinceEpoch);
     }
   }
@@ -585,7 +582,6 @@ class HiveService {
       try {
         debugPrint("Syncing order ${order.id} (${order.syncAction})...");
 
-        // Decode JSON and sanitize it before sending
         Map<String, dynamic> payload = {};
         try {
           payload = Map<String, dynamic>.from(
@@ -617,7 +613,7 @@ class HiveService {
           debugPrint("📤 CREATE payload: $cleanedPayload");
           debugPrint("📥 CREATE response: ${response.toJson()}");
 
-          if (response.order != null) {
+          if (response.order != null) { 
             await markOrderAsSynced(order.id!);
             debugPrint("✅ Order created & synced");
           } else {

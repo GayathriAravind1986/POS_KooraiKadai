@@ -2849,7 +2849,7 @@ class CateringViewViewState extends State<CateringViewView> {
             setState(() {
               locLoad = false;
             });
-            showToast("No Location found", context, color: false);
+            // showToast("No Location found", context, color: false);
           }
           return true;
         }
@@ -2867,7 +2867,7 @@ class CateringViewViewState extends State<CateringViewView> {
             setState(() {
               locLoad = false;
             });
-            showToast("No Customer for this location", context, color: false);
+            // showToast("No Customer for this location", context, color: false);
           }
           return true;
         }
@@ -2896,6 +2896,7 @@ class CateringViewViewState extends State<CateringViewView> {
             _handle401Error();
             return true;
           }
+
           if (getItemAddonsForPackageModel.success == true) {
             setState(() {
               itAddLoad = false;
@@ -2938,7 +2939,8 @@ class CateringViewViewState extends State<CateringViewView> {
             setState(() {
               stockLoad = false;
             });
-            showToast("No Stock found", context, color: false);
+            // showToast(""
+            //     "No Stock found", context, color: false);
           }
           return true;
         }

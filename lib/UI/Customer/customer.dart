@@ -342,7 +342,7 @@ class CustomerViewViewState extends State<CustomerViewView> {
             setState(() {
               customerLoad = false;
             });
-            showToast("No Location found", context, color: false);
+            // showToast("No Location found", context, color: false);
           }
           return true;
         }

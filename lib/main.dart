@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,15 +11,21 @@ import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_order_model.dart
 import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_stock_model.dart';
 import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_table_model.dart';
 import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_waiter_model.dart';
+import 'package:simple/Offline/Hive_helper/LocalClass/Order/hive_pending_delete.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:simple/UI/SplashScreen/splash_screen.dart';
 
+import 'Api/apiProvider.dart';
 import 'Offline/HiveIntializer/hive_init.dart';
 import 'Offline/Hive_helper/LocalClass/Home/category_model.dart';
 import 'Offline/Hive_helper/LocalClass/Home/product_model.dart';
+import 'Offline/Hive_helper/localStorageHelper/connection.dart';
+import 'Offline/Hive_helper/localStorageHelper/hive-pending_delete_service.dart';
+import 'Offline/Hive_helper/localStorageHelper/hive_service.dart';
 
-Future<void> main() async {
+Future<void> main() async
+{
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -39,7 +46,7 @@ Future<void> main() async {
     Hive.registerAdapter(HiveBillingSessionAdapter());
     Hive.registerAdapter(HiveStockMaintenanceAdapter());
     Hive.registerAdapter(HiveTableAdapter());
-    // Hive.registerAdapter(PendingDeleteAdapter());
+    Hive.registerAdapter(PendingDeleteAdapter());
     // Hive.registerAdapter(HiveLocationAdapter());
     // Hive.registerAdapter(HiveSupplierAdapter());
     Hive.registerAdapter(HiveWaiterAdapter());
@@ -67,6 +74,19 @@ Future<void> main() async {
   } catch (e) {
     debugPrint("Hive openBox error: $e");
   }
+
+
+  final apiProvider = ApiProvider();
+  initConnectivityListener(apiProvider);
+  await HiveServicedelete.initDeleteBox();
+  Connectivity().onConnectivityChanged.listen((result) async {
+    if (result != ConnectivityResult.none) {
+      await HiveService.syncPendingOrders(ApiProvider());
+      // await HiveStockService.syncPendingStock(ApiProvider());
+      await HiveServicedelete.syncPendingDeletes(ApiProvider());
+    }
+  });
+
 }
 
 
