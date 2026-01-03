@@ -649,8 +649,7 @@ class HiveService  {
 
   static Future<void> markOrderAsSynced(String orderId) async {
     final ordersBox = await Hive.openBox<HiveOrder>(ORDERS_BOX);
-    debugPrint(
-        "Unsynced orders left: ${ordersBox.values.where((o) => o.isSynced == false).length}");
+    debugPrint("Unsynced orders left: ${ordersBox.values.where((o) => o.isSynced == false).length}");
     final order = ordersBox.get(orderId);
     if (order != null) {
       order.isSynced = true;

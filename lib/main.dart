@@ -1,95 +1,106 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:overlay_support/overlay_support.dart';
+
 import 'package:simple/Bloc/observer/observer.dart';
 import 'package:simple/Bloc/theme_cubit.dart';
-import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_billing_session_model.dart';
-import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_cart_model.dart';
-import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_order_model.dart';
-import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_stock_model.dart';
-import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_table_model.dart';
-import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_waiter_model.dart';
-import 'package:simple/Offline/Hive_helper/LocalClass/Order/hive_pending_delete.dart';
 import 'package:simple/Reusable/color.dart';
-import 'package:overlay_support/overlay_support.dart';
 import 'package:simple/UI/SplashScreen/splash_screen.dart';
 
 import 'Api/apiProvider.dart';
-import 'Offline/HiveIntializer/hive_init.dart';
+import 'Offline/sync/background_sync_service.dart';
+
+// Hive models
 import 'Offline/Hive_helper/LocalClass/Home/category_model.dart';
 import 'Offline/Hive_helper/LocalClass/Home/product_model.dart';
-import 'Offline/Hive_helper/localStorageHelper/connection.dart';
-import 'Offline/Hive_helper/localStorageHelper/hive-pending_delete_service.dart';
-import 'Offline/Hive_helper/localStorageHelper/hive_service.dart';
+import 'Offline/Hive_helper/LocalClass/Home/hive_cart_model.dart';
+import 'Offline/Hive_helper/LocalClass/Home/hive_order_model.dart';
+import 'Offline/Hive_helper/LocalClass/Home/hive_billing_session_model.dart';
+import 'Offline/Hive_helper/LocalClass/Home/hive_stock_model.dart';
+import 'Offline/Hive_helper/LocalClass/Home/hive_table_model.dart';
+import 'Offline/Hive_helper/LocalClass/Home/hive_waiter_model.dart';
+import 'Offline/Hive_helper/LocalClass/Home/hive_user_model.dart';
+import 'Offline/Hive_helper/LocalClass/Order/hive_pending_delete.dart';
 
-Future<void> main() async
-{
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ===============================
+  // 1️⃣ SYSTEM CONFIG
+  // ===============================
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
   Bloc.observer = AppBlocObserver();
-  await initHive();
 
-  runApp(const App());
-
-  try {
-    Hive.registerAdapter(HiveCategoryAdapter());
-    Hive.registerAdapter(HiveProductAdapter());
-    Hive.registerAdapter(HiveAddonAdapter());
-    Hive.registerAdapter(HiveCartItemAdapter());
-    // Hive.registerAdapter(HiveSelectedAddonAdapter());
-    Hive.registerAdapter(HiveOrderAdapter());
-    Hive.registerAdapter(HiveBillingSessionAdapter());
-    Hive.registerAdapter(HiveStockMaintenanceAdapter());
-    Hive.registerAdapter(HiveTableAdapter());
-    Hive.registerAdapter(PendingDeleteAdapter());
-    // Hive.registerAdapter(HiveLocationAdapter());
-    // Hive.registerAdapter(HiveSupplierAdapter());
-    Hive.registerAdapter(HiveWaiterAdapter());
-    // Hive.registerAdapter(HiveUserAdapter());
-    // Hive.registerAdapter(HiveReportModelAdapter());
-    // Hive.registerAdapter(HivePendingStockAdapter());
-  } catch (e) {
-    debugPrint("Hive adapter registration error: $e");
+  // ===============================
+  // 2️⃣ INIT HIVE PATH
+  // ===============================
+  if (kIsWeb) {
+    await Hive.initFlutter();
+  } else {
+    final dir = await getApplicationDocumentsDirectory();
+    Hive.init(dir.path);
   }
+
+  // ===============================
+  // 3️⃣ REGISTER HIVE ADAPTERS
+  // ⚠️ BEFORE openBox()
+  // ===============================
+  Hive.registerAdapter(HiveCategoryAdapter());
+  Hive.registerAdapter(HiveProductAdapter());
+  Hive.registerAdapter(HiveAddonAdapter());
+  Hive.registerAdapter(HiveCartItemAdapter());
+  Hive.registerAdapter(HiveOrderAdapter());
+  Hive.registerAdapter(HiveBillingSessionAdapter());
+  Hive.registerAdapter(HiveStockMaintenanceAdapter());
+  Hive.registerAdapter(HiveTableAdapter());
+  Hive.registerAdapter(PendingDeleteAdapter());
+  Hive.registerAdapter(HiveWaiterAdapter());
+  Hive.registerAdapter(HiveUserAdapter());
+
+  // ===============================
+  // 4️⃣ OPEN HIVE BOXES (ONCE)
+  // ===============================
+  await Hive.openBox('app_state');
+  await Hive.openBox('appConfigBox');
+
+  await Hive.openBox<HiveCategory>('categories');
+  await Hive.openBox<HiveCartItem>('cart_items');
+  await Hive.openBox<HiveOrder>('orders');
+  await Hive.openBox<HiveBillingSession>('billing_session');
+  await Hive.openBox<HiveStockMaintenance>('stock_maintenance');
+  await Hive.openBox<HiveTable>('tables');
+  await Hive.openBox<HiveProduct>('products_box');
+  await Hive.openBox<HiveWaiter>('waiters_box');
+  await Hive.openBox<HiveUser>('users_box');
+
+  // ===============================
+  // 5️⃣ INIT API PROVIDER
+  // ===============================
   final apiProvider = ApiProvider();
-  initConnectivityListener(apiProvider);
-  await HiveServicedelete.initDeleteBox();
-  Connectivity().onConnectivityChanged.listen((result) async {
-    if (result != ConnectivityResult.none) {
-      await HiveService.syncPendingOrders(ApiProvider());
-      // await HiveStockService.syncPendingStock(ApiProvider());
-      await HiveServicedelete.syncPendingDeletes(ApiProvider());
-    }
-  });
-  try {
-    await Hive.openBox('appConfigBox');
-    await Hive.openBox<HiveCategory>('categories');
-    await Hive.openBox<HiveCartItem>('cart_items');
-    await Hive.openBox<HiveOrder>('orders');
-    await Hive.openBox<HiveBillingSession>('billing_session');
-    await Hive.openBox<HiveStockMaintenance>('stock_maintenance');
-    await Hive.openBox<HiveTable>('tables');
-    // await Hive.openBox<HiveLocation>('location');
-    // await Hive.openBox<HiveSupplier>('suppliers');
-    await Hive.openBox<HiveProduct>('products_box');
-    await Hive.openBox('app_state');
-    await Hive.openBox<HiveWaiter>('waiters_box');
-    // await Hive.openBox<HiveUser>('users_box');
-    // await Hive.openBox<HivePendingStock>('pending_stock');
-  } catch (e) {
-    debugPrint("Hive openBox error: $e");
-  }
 
+  // ===============================
+  // 6️⃣ START BACKGROUND SYNC (ONCE)
+  // ===============================
+  await BackgroundSyncService().init(apiProvider);
 
-
-
+  // ===============================
+  // 7️⃣ RUN APP (LAST STEP)
+  // ===============================
+  runApp(const App());
 }
 
+// =======================================================
+// APP WIDGETS (UNCHANGED)
+// =======================================================
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -112,15 +123,11 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   @override
-  initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeData>(builder: (_, theme) {
-      return OverlaySupport.global(
-        child: MaterialApp(
+    return BlocBuilder<ThemeCubit, ThemeData>(
+      builder: (_, theme) {
+        return OverlaySupport.global(
+          child: MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Koorai Kadai',
             theme: ThemeData(
@@ -128,8 +135,6 @@ class _MyAppState extends State<MyApp> {
               unselectedWidgetColor: appPrimaryColor,
               fontFamily: "Poppins",
             ),
-            // darkTheme: ThemeData.light(),
-            // themeMode: ThemeMode.light,
             builder: (context, child) {
               return MediaQuery(
                 data: MediaQuery.of(context)
@@ -140,16 +145,21 @@ class _MyAppState extends State<MyApp> {
                 ),
               );
             },
-            home: const SplashScreen()),
-      );
-    });
+            home: const SplashScreen(),
+          ),
+        );
+      },
+    );
   }
 }
 
 class MyBehavior extends ScrollBehavior {
   @override
   Widget buildOverscrollIndicator(
-      BuildContext context, Widget child, ScrollableDetails details) {
+      BuildContext context,
+      Widget child,
+      ScrollableDetails details,
+      ) {
     return child;
   }
 }
