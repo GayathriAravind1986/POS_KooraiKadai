@@ -28,7 +28,7 @@ if (keystorePropertiesFile.exists()) {
 }
 android {
     namespace = "com.example.kooraiKadai"
-    compileSdkVersion 35
+    compileSdkVersion 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

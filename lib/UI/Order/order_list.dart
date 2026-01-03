@@ -96,14 +96,14 @@ class OrderViewViewState extends State<OrderViewView> {
   void refreshOrders() {
     if (!mounted || !context.mounted) return;
     context.read<OrderTodayBloc>().add(
-      OrderTodayList(
-        todayDate,
-        todayDate,
-        widget.selectedTableName ?? "",
-        widget.selectedWaiterName ?? "",
-        widget.selectOperator ?? "",
-      ),
-    );
+          OrderTodayList(
+            todayDate,
+            todayDate,
+            widget.selectedTableName ?? "",
+            widget.selectedWaiterName ?? "",
+            widget.selectOperator ?? "",
+          ),
+        );
     _loadPendingSyncOrders();
   }
 
@@ -178,9 +178,10 @@ class OrderViewViewState extends State<OrderViewView> {
 
     // Filter online orders
     final filteredOnlineOrders = getOrderListTodayModel.data?.where((order) {
-      if (widget.type == "All") return true;
-      return order.orderType?.toUpperCase() == type;
-    }).toList() ?? [];
+          if (widget.type == "All") return true;
+          return order.orderType?.toUpperCase() == type;
+        }).toList() ??
+        [];
 
     // Filter offline orders
     final filteredOfflineOrders = _pendingSyncOrders.where((order) {
@@ -190,8 +191,10 @@ class OrderViewViewState extends State<OrderViewView> {
 
     // Combine both lists
     return [
-      ...filteredOnlineOrders.map((order) => _OrderItem(order: order, isPendingSync: false)),
-      ...filteredOfflineOrders.map((order) => _OrderItem(order: order, isPendingSync: true)),
+      ...filteredOnlineOrders
+          .map((order) => _OrderItem(order: order, isPendingSync: false)),
+      ...filteredOfflineOrders
+          .map((order) => _OrderItem(order: order, isPendingSync: true)),
     ];
   }
 
@@ -236,7 +239,8 @@ class OrderViewViewState extends State<OrderViewView> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Time: ${DateFormat('HH:mm').format(hiveOrder.createdAt!)}"),
+                  Text(
+                      "Time: ${DateFormat('HH:mm').format(hiveOrder.createdAt!)}"),
                   Text(
                     "Payment: ${hiveOrder.paymentMethod ?? 'Pending'}",
                     style: MyTextStyle.f12(greyColor),
@@ -296,13 +300,13 @@ class OrderViewViewState extends State<OrderViewView> {
                       // ),
                       // const SizedBox(width: 4),
 
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.delete,
-                            color: appPrimaryColor, size: 20),
-                        onPressed: () => _deletePendingOrder(hiveOrder),
-                      ),
+                      // IconButton(
+                      //   padding: EdgeInsets.zero,
+                      //   constraints: const BoxConstraints(),
+                      //   icon: const Icon(Icons.delete,
+                      //       color: appPrimaryColor, size: 20),
+                      //   onPressed: () => _deletePendingOrder(hiveOrder),
+                      // ),
                     ],
                   ),
                 ],
@@ -315,9 +319,8 @@ class OrderViewViewState extends State<OrderViewView> {
 
     // 🔹 ONLINE ORDER CARD (your existing code)
     final order = orderItem.order as Data;
-    final payment = order.payments?.isNotEmpty == true
-        ? order.payments!.first
-        : null;
+    final payment =
+        order.payments?.isNotEmpty == true ? order.payments!.first : null;
 
     return Card(
       elevation: 2,
@@ -341,13 +344,12 @@ class OrderViewViewState extends State<OrderViewView> {
                 ),
                 Text(
                   "₹${order.total?.toStringAsFixed(2) ?? '0.00'}",
-                  style: MyTextStyle.f14(appPrimaryColor,
-                      weight: FontWeight.bold),
+                  style:
+                      MyTextStyle.f14(appPrimaryColor, weight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 6),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -356,16 +358,14 @@ class OrderViewViewState extends State<OrderViewView> {
                 ),
                 Text(
                   payment?.paymentMethod != null &&
-                      payment!.paymentMethod!.isNotEmpty
+                          payment!.paymentMethod!.isNotEmpty
                       ? "Payment: ${payment.paymentMethod}: ₹${payment.amount?.toStringAsFixed(2) ?? '0.00'}"
                       : "Payment: N/A",
                   style: MyTextStyle.f12(greyColor),
                 ),
               ],
             ),
-
             const SizedBox(height: 6),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -380,12 +380,9 @@ class OrderViewViewState extends State<OrderViewView> {
                 ),
               ],
             ),
-
             const SizedBox(height: 6),
-
             Text("Table: ${order.tableName ?? 'N/A'}"),
             const Spacer(),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.max,
@@ -402,21 +399,18 @@ class OrderViewViewState extends State<OrderViewView> {
                         setState(() {
                           view = true;
                         });
-                        context
-                            .read<OrderTodayBloc>()
-                            .add(ViewOrder(order.id));
+                        context.read<OrderTodayBloc>().add(ViewOrder(order.id));
                       },
                     ),
                     SizedBox(width: 4),
-
                     if (widget.operatorShared == widget.selectOperator ||
                         widget.selectOperator == null ||
                         widget.selectOperator == "")
                       IconButton(
                         padding: EdgeInsets.zero,
                         constraints: BoxConstraints(),
-                        icon: Icon(Icons.edit,
-                            color: appPrimaryColor, size: 20),
+                        icon:
+                            Icon(Icons.edit, color: appPrimaryColor, size: 20),
                         onPressed: () {
                           setState(() {
                             view = false;
@@ -427,8 +421,6 @@ class OrderViewViewState extends State<OrderViewView> {
                         },
                       ),
                     SizedBox(width: 4),
-
-
                     IconButton(
                       padding: EdgeInsets.zero,
                       constraints: BoxConstraints(),
@@ -438,14 +430,10 @@ class OrderViewViewState extends State<OrderViewView> {
                         setState(() {
                           view = true;
                         });
-                        context
-                            .read<OrderTodayBloc>()
-                            .add(ViewOrder(order.id));
+                        context.read<OrderTodayBloc>().add(ViewOrder(order.id));
                       },
                     ),
-
                     SizedBox(width: 4),
-
                     if (order.orderStatus != 'COMPLETED')
                       IconButton(
                         padding: EdgeInsets.zero,
@@ -511,8 +499,7 @@ class OrderViewViewState extends State<OrderViewView> {
     // Show loading if both online and offline orders are loading
     if (widget.isLoading && _isLoadingOfflineOrders) {
       return Container(
-        padding: EdgeInsets.only(
-            top: MediaQuery.of(context).size.height * 0.1),
+        padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
         alignment: Alignment.center,
         child: const SpinKitChasingDots(color: appPrimaryColor, size: 30),
       );
@@ -521,8 +508,7 @@ class OrderViewViewState extends State<OrderViewView> {
     // Show empty state if no orders
     if (filteredOrders.isEmpty) {
       return Container(
-        padding: EdgeInsets.only(
-            top: MediaQuery.of(context).size.height * 0.1),
+        padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
         alignment: Alignment.center,
         child: Text(
           "No Orders Today !!!",
@@ -560,22 +546,42 @@ class OrderViewViewState extends State<OrderViewView> {
           getOrderListTodayModel = current;
           return true;
         }
-        if (current is DeleteOrderModel) {
-          deleteOrderModel = current;
-          if (deleteOrderModel.errorResponse?.isUnauthorized == true) {
-            _handle401Error();
-            return true;
-          }
-          if (deleteOrderModel.success == true) {
-            showToast("${deleteOrderModel.message}", context, color: true);
-            context
-                .read<OrderTodayBloc>()
-                .add(OrderTodayList(todayDate, todayDate, "", "", ""));
-          } else {
-            showToast("${deleteOrderModel.message}", context, color: false);
-          }
+        if (current is DeleteOrderSuccessState) {
+          showToast(current.message, context, color: true);
+          setState(() {
+            getOrderListTodayModel.data
+                ?.removeWhere((order) => order.id == current.orderId);
+          });
           return true;
         }
+        if (current is DeleteOrderOfflineSavedState) {
+          showToast(current.message, context, color: true);
+          setState(() {
+            getOrderListTodayModel.data
+                ?.removeWhere((order) => order.id == current.orderId);
+          });
+          return true;
+        }
+        if (current is DeleteOrderFailureState) {
+          showToast(current.message, context, color: false);
+          return true;
+        }
+        // if (current is DeleteOrderModel) {
+        //   deleteOrderModel = current;
+        //   if (deleteOrderModel.errorResponse?.isUnauthorized == true) {
+        //     _handle401Error();
+        //     return true;
+        //   }
+        //   if (deleteOrderModel.success == true) {
+        //     showToast("${deleteOrderModel.message}", context, color: true);
+        //     context
+        //         .read<OrderTodayBloc>()
+        //         .add(OrderTodayList(todayDate, todayDate, "", "", ""));
+        //   } else {
+        //     showToast("${deleteOrderModel.message}", context, color: false);
+        //   }
+        //   return true;
+        // }
         if (current is GetViewOrderModel) {
           try {
             getViewOrderModel = current;
@@ -604,12 +610,12 @@ class OrderViewViewState extends State<OrderViewView> {
               } else {
                 Navigator.of(context)
                     .pushAndRemoveUntil(
-                    MaterialPageRoute(
-                        builder: (context) => DashBoardScreen(
-                          selectTab: 0,
-                          existingOrder: getViewOrderModel,
-                          isEditingOrder: true,
-                        )),
+                        MaterialPageRoute(
+                            builder: (context) => DashBoardScreen(
+                                  selectTab: 0,
+                                  existingOrder: getViewOrderModel,
+                                  isEditingOrder: true,
+                                )),
                         (Route<dynamic> route) => false)
                     .then((value) {
                   if (value == true) {
@@ -656,7 +662,7 @@ class OrderViewViewState extends State<OrderViewView> {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => LoginScreen()),
-          (Route<dynamic> route) => false,
+      (Route<dynamic> route) => false,
     );
   }
 }
