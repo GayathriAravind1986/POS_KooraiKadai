@@ -56,6 +56,16 @@ Future<void> main() async
   } catch (e) {
     debugPrint("Hive adapter registration error: $e");
   }
+  final apiProvider = ApiProvider();
+  initConnectivityListener(apiProvider);
+  await HiveServicedelete.initDeleteBox();
+  Connectivity().onConnectivityChanged.listen((result) async {
+    if (result != ConnectivityResult.none) {
+      await HiveService.syncPendingOrders(ApiProvider());
+      // await HiveStockService.syncPendingStock(ApiProvider());
+      await HiveServicedelete.syncPendingDeletes(ApiProvider());
+    }
+  });
   try {
     await Hive.openBox('appConfigBox');
     await Hive.openBox<HiveCategory>('categories');
@@ -76,16 +86,7 @@ Future<void> main() async
   }
 
 
-  final apiProvider = ApiProvider();
-  initConnectivityListener(apiProvider);
-  await HiveServicedelete.initDeleteBox();
-  Connectivity().onConnectivityChanged.listen((result) async {
-    if (result != ConnectivityResult.none) {
-      await HiveService.syncPendingOrders(ApiProvider());
-      // await HiveStockService.syncPendingStock(ApiProvider());
-      await HiveServicedelete.syncPendingDeletes(ApiProvider());
-    }
-  });
+
 
 }
 

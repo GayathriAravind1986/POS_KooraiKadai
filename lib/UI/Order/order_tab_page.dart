@@ -68,7 +68,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   String? fromDate;
 
   final List<GlobalKey<OrderViewViewState>> _tabKeys = List.generate(
-    6,
+    4,
     (index) => GlobalKey<OrderViewViewState>(),
   );
 
@@ -83,7 +83,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadInitialData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_tabController.index == 0 && widget.orderAllKey != null) {
@@ -199,7 +199,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   Widget build(BuildContext context) {
     Widget mainContainer() {
       return DefaultTabController(
-        length: 6,
+        length: 4,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -449,8 +449,9 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                 Tab(text: "Line"),
                 Tab(text: "Parcel"),
                 Tab(text: "AC"),
-                Tab(text: "HD"),
-                Tab(text: "SWIGGY"),
+                // Tab(text: "HD"),
+                // Tab(text: "SWIGGY"),
+
               ],
             ),
             Expanded(
@@ -490,26 +491,6 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                   OrderViewView(
                     key: _tabKeys[3],
                     type: 'AC',
-                    selectedTableName: tableId,
-                    selectedWaiterName: waiterId,
-                    selectOperator: userId,
-                    operatorShared: operatorId,
-                    sharedOrderData: getOrderListTodayModel,
-                    isLoading: isLoadingOrders,
-                  ),
-                  OrderViewView(
-                    key: _tabKeys[4],
-                    type: 'HD',
-                    selectedTableName: tableId,
-                    selectedWaiterName: waiterId,
-                    selectOperator: userId,
-                    operatorShared: operatorId,
-                    sharedOrderData: getOrderListTodayModel,
-                    isLoading: isLoadingOrders,
-                  ),
-                  OrderViewView(
-                    key: _tabKeys[5],
-                    type: 'SWIGGY',
                     selectedTableName: tableId,
                     selectedWaiterName: waiterId,
                     selectOperator: userId,

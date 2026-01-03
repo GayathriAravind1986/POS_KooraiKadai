@@ -166,12 +166,12 @@ class OrderViewViewState extends State<OrderViewView> {
       case "AC":
         type = "AC";
         break;
-      case "HD":
-        type = "HD";
-        break;
-      case "SWIGGY":
-        type = "SWIGGY";
-        break;
+      // case "HD":
+      //   type = "HD";
+      //   break;
+      // case "SWIGGY":
+      //   type = "SWIGGY";
+      //   break;
       default:
         type = null;
     }
@@ -262,11 +262,9 @@ class OrderViewViewState extends State<OrderViewView> {
               ),
               const SizedBox(height: 6),
 
-              // 🔹 Table
               Text("Table: ${hiveOrder.tableName ?? 'N/A'}"),
               const Spacer(),
 
-              // 🔹 Action Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.max,
@@ -298,7 +296,6 @@ class OrderViewViewState extends State<OrderViewView> {
                       // ),
                       // const SizedBox(width: 4),
 
-                      // Delete button for offline orders
                       IconButton(
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -351,7 +348,6 @@ class OrderViewViewState extends State<OrderViewView> {
             ),
             const SizedBox(height: 6),
 
-            // 🔹 Time & Payment
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -370,7 +366,6 @@ class OrderViewViewState extends State<OrderViewView> {
 
             const SizedBox(height: 6),
 
-            // 🔹 Type & Status
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -388,11 +383,9 @@ class OrderViewViewState extends State<OrderViewView> {
 
             const SizedBox(height: 6),
 
-            // 🔹 Table
             Text("Table: ${order.tableName ?? 'N/A'}"),
             const Spacer(),
 
-            // 🔹 Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.max,
@@ -400,7 +393,6 @@ class OrderViewViewState extends State<OrderViewView> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // View button
                     IconButton(
                       padding: EdgeInsets.zero,
                       constraints: BoxConstraints(),
@@ -417,7 +409,6 @@ class OrderViewViewState extends State<OrderViewView> {
                     ),
                     SizedBox(width: 4),
 
-                    // Edit button (only for operator)
                     if (widget.operatorShared == widget.selectOperator ||
                         widget.selectOperator == null ||
                         widget.selectOperator == "")
@@ -437,7 +428,7 @@ class OrderViewViewState extends State<OrderViewView> {
                       ),
                     SizedBox(width: 4),
 
-                    // Print button
+
                     IconButton(
                       padding: EdgeInsets.zero,
                       constraints: BoxConstraints(),
@@ -452,9 +443,9 @@ class OrderViewViewState extends State<OrderViewView> {
                             .add(ViewOrder(order.id));
                       },
                     ),
+
                     SizedBox(width: 4),
 
-                    // Delete button (only for non-completed orders)
                     if (order.orderStatus != 'COMPLETED')
                       IconButton(
                         padding: EdgeInsets.zero,

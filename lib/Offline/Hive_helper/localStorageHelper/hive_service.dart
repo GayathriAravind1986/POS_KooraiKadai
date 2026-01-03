@@ -613,7 +613,7 @@ class HiveService  {
           debugPrint("📤 CREATE payload: $cleanedPayload");
           debugPrint("📥 CREATE response: ${response.toJson()}");
 
-          if (response.order != null) { 
+          if (response.order != null) {
             await markOrderAsSynced(order.id!);
             debugPrint("✅ Order created & synced");
           } else {
