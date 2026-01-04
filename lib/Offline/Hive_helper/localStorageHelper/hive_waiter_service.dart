@@ -26,6 +26,20 @@ class HiveWaiterService {
     return box.values.toList();
   }
 
+  // ===================== ✅ ADD THIS METHOD =====================
+  static Future<HiveWaiter?> getWaiterById(String waiterId) async {
+    final box = Hive.box<HiveWaiter>(_waiterBox);
+
+    try {
+      return box.values.firstWhere(
+            (waiter) => waiter.id == waiterId,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+  // ============================================================
+
   static Future<List<waiter.Data>> getWaitersAsApiFormat() async {
     final hiveWaiters = await getWaiters();
     return hiveWaiters.map((hiveWaiter) => hiveWaiter.toApiModel()).toList();

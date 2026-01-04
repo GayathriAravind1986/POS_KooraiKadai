@@ -189,7 +189,7 @@ class OrderViewViewState extends State<OrderViewView> {
       return order.orderType?.toUpperCase() == type;
     }).toList();
 
-    // Combine both lists
+
     return [
       ...filteredOnlineOrders
           .map((order) => _OrderItem(order: order, isPendingSync: false)),
@@ -198,11 +198,9 @@ class OrderViewViewState extends State<OrderViewView> {
     ];
   }
 
-  // Widget for individual order card
   Widget _buildOrderCard(_OrderItem orderItem) {
     final isPendingSync = orderItem.isPendingSync;
 
-    // 🔹 OFFLINE ORDER CARD
     if (isPendingSync) {
       final hiveOrder = orderItem.order as HiveOrder;
       return Card(
@@ -215,7 +213,7 @@ class OrderViewViewState extends State<OrderViewView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔹 Order Number & Total
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

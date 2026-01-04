@@ -8,6 +8,8 @@ import 'package:simple/Bloc/Response/errorResponse.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart'
     as category;
+import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_table_model.dart';
+import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_waiter_model.dart';
 import 'package:simple/UI/Home_screen/Helper/appconfig.dart';
 import 'package:simple/UI/Home_screen/home_screen.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_product_by_catId_model.dart'
@@ -862,13 +864,11 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
     }
   }
 
-  // ========== FIXED OFFLINE ORDER CREATION ==========
   Future<void> _handleOfflineOrderCreation(
       GenerateOrder event, Emitter emit) async {
     try {
       print("🛒 ========== OFFLINE ORDER CREATION STARTED ==========");
 
-      // Parse order payload to extract details
       final orderData = jsonDecode(event.orderPayloadJson);
       final billingSession = await HiveService.getBillingSession();
 
@@ -876,58 +876,85 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         throw Exception('No billing session found');
       }
 
-      // Get shop details from Hive
+      // ---------------- SHOP DETAILS ----------------
       final shopDetails =
-          await HiveShopDetailsService.getShopDetailsAsApiModel();
+      await HiveShopDetailsService.getShopDetailsAsApiModel();
       final shopData = shopDetails?.data;
 
-      // Use Hive values directly (even if they're placeholders like "s")
       final businessName = _getShopDetail(shopData?.name, 'Alagu Drive In');
-      final address = _getShopDetail(shopData?.address,
+      final address = _getShopDetail(
+          shopData?.address,
           'Tenkasi main road, Alangualam, Tamil Nadu 627851');
-      final phone = _getShopDetail(shopData?.contactNumber, '+91 04676967245');
-      final gstNumber = _getShopDetail(shopData?.gstNumber, '00000000000');
-      // final thermalIp = shopData?. ?? '';
+      final phone =
+      _getShopDetail(shopData?.contactNumber, '+91 04676967245');
+      final gstNumber =
+      _getShopDetail(shopData?.gstNumber, '00000000000');
 
-      debugPrint("\n📦 USING SHOP DETAILS:");
-      debugPrint("   - businessName: '$businessName'");
-      debugPrint("   - address: '$address'");
-      debugPrint("   - phone: '$phone'");
-      debugPrint("   - gstNumber: '$gstNumber'");
-      // debugPrint("   - thermalIp: '$thermalIp'");
+      // ---------------- TABLE & WAITER SAFE LOGIC ----------------
 
-      // Normalize items for offline payload with better null safety
+      final String tableId =
+          orderData['tableId']?.toString() ??
+              orderData['tableNo']?.toString() ??
+              '';
+      final String waiterId = orderData['waiter']?.toString() ?? '';
+
+      final HiveTable? hiveTable =
+      tableId.isNotEmpty
+          ? await HiveStockTableService.getTableById(tableId)
+          : null;
+
+      final HiveWaiter? hiveWaiter =
+      waiterId.isNotEmpty
+          ? await HiveWaiterService.getWaiterById(waiterId)
+          : null;
+
+      final String tableName =
+      hiveTable?.name?.isNotEmpty == true
+          ? hiveTable!.name!
+          : 'N/A';
+
+
+      final String? waiterName =
+      hiveWaiter?.name?.toString().isNotEmpty == true
+          ? hiveWaiter!.name
+          : 'N/A';
+
+      debugPrint("🪑 TABLE NAME: $tableName");
+      debugPrint("🧑‍🍳 WAITER NAME: $waiterName");
+
+      // ---------------- ITEMS ----------------
+
       final normalizedItems = billingSession.items?.map((item) {
-            final map = item.toMap();
-            return {
-              "product": map["_id"] ?? map["product"] ?? 'unknown_product',
-              "name": map["name"]?.toString() ?? 'Unknown Item',
-              "image": map["image"]?.toString() ?? '',
-              "quantity": map["qty"] ?? map["quantity"] ?? 1,
-              "unitPrice":
-                  _safeToDouble(map["unitPrice"] ?? map["basePrice"] ?? 0),
-              "subtotal": _safeToDouble(((map["qty"] ?? map["quantity"] ?? 1) *
-                  (map["unitPrice"] ?? map["basePrice"] ?? 0))),
-            };
-          }).toList() ??
+        final map = item.toMap();
+        return {
+          "product": map["_id"] ?? map["product"] ?? 'unknown_product',
+          "name": map["name"]?.toString() ?? 'Unknown Item',
+          "image": map["image"]?.toString() ?? '',
+          "quantity": map["qty"] ?? map["quantity"] ?? 1,
+          "unitPrice":
+          _safeToDouble(map["unitPrice"] ?? map["basePrice"] ?? 0),
+          "subtotal": _safeToDouble(
+            ((map["qty"] ?? map["quantity"] ?? 1) *
+                (map["unitPrice"] ?? map["basePrice"] ?? 0)),
+          ),
+        };
+      }).toList() ??
           [];
 
-      // Generate order number for offline use
       final orderNumber = 'OFF-${DateTime.now().millisecondsSinceEpoch}';
 
-      // Create KOT items from billing session with null safety
       final kotItems = billingSession.items?.map((item) {
-            return {
-              "name": item.name?.toString() ?? 'Unknown Item',
-              "quantity": item.quantity ?? 1,
-            };
-          }).toList() ??
+        return {
+          "name": item.name?.toString() ?? 'Unknown Item',
+          "quantity": item.quantity ?? 1,
+        };
+      }).toList() ??
           [];
 
-      // Create final taxes array with proper calculation
       final taxAmount = billingSession.totalTax ?? 0.0;
       final subtotal = billingSession.subtotal ?? 0.0;
-      final taxPercentage = subtotal > 0 ? (taxAmount / subtotal) * 100 : 0.0;
+      final taxPercentage =
+      subtotal > 0 ? (taxAmount / subtotal) * 100 : 0.0;
 
       final finalTax = [
         {
@@ -937,36 +964,37 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         }
       ];
 
-      // Get current timestamp
       final currentTime = DateTime.now();
       final createdAt = currentTime.toIso8601String();
       final formattedDate =
-          "${currentTime.day}/${currentTime.month}/${currentTime.year}, ${currentTime.hour}:${currentTime.minute}:${currentTime.second}";
+          "${currentTime.day}/${currentTime.month}/${currentTime.year}, "
+          "${currentTime.hour}:${currentTime.minute}:${currentTime.second}";
 
-      // Prepare order data for Hive
       final Map<String, dynamic> hiveOrderData = {
         ...orderData,
         "items": normalizedItems,
         "orderStatus": orderData['orderStatus'] ?? 'PENDING_SYNC',
         "orderType": orderData['orderType'] ?? 'DINE-IN',
-        "tableId": orderData['tableId'],
-        "tableNo": orderData['tableNo']?.toString() ?? "",
-        "waiter": orderData['waiter']?.toString() ?? "",
+        "tableId": tableId,
+        "tableNo": tableName,
+        "waiter": waiterName,
         "payments": orderData['payments'] ??
             [
               {
-                "method": orderData['payments']?[0]?['method'] ?? 'CASH',
+                "method":
+                orderData['payments']?[0]?['method'] ?? 'CASH',
                 "amount": billingSession.total ?? 0.0
               }
             ],
       };
 
-      // Save order for later sync with all required fields - USING VALIDATED DATA
+      // ---------------- SAVE OFFLINE ORDER ----------------
+
       final orderId = await HiveService.saveOfflineOrder(
         orderPayloadJson: jsonEncode(hiveOrderData),
-        orderStatus: orderData['orderStatus'] ?? 'PENDING_SYNC',
+        orderStatus: 'PENDING_SYNC',
         orderType: orderData['orderType'] ?? 'DINE-IN',
-        tableId: orderData['tableId'],
+        tableId: tableId,
         total: billingSession.total ?? 0.0,
         items: normalizedItems,
         syncAction: 'CREATE',
@@ -974,47 +1002,42 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         address: address,
         gst: gstNumber,
         taxPercent: taxPercentage,
-        paymentMethod: orderData['payments']?[0]?['method'] ?? 'CASH',
+        paymentMethod:
+        orderData['payments']?[0]?['method'] ?? 'CASH',
         phone: phone,
-        waiterName: orderData['waiter']?.toString() ?? "",
+        waiterName: waiterName,
         orderNumber: orderNumber,
         subtotal: subtotal,
         taxAmount: taxAmount,
         discountAmount: billingSession.totalDiscount ?? 0.0,
         kotItems: kotItems,
         finalTaxes: finalTax,
-        tableName: orderData['tableNo']?.toString() ?? "",
+        tableName: tableName,
       );
 
-      // Clear cart/session
       await HiveService.clearCart();
       await HiveService.clearBillingSession();
 
-      // Create complete offline response - USING VALIDATED DATA
-      final offlineResponse = PostGenerateOrderModel(
-        message: 'Order saved offline. Will sync when connection is restored.',
+      // ---------------- RESPONSE ----------------
+
+      emit(PostGenerateOrderModel(
+        message:
+        'Order saved offline. Will sync when connection is restored.',
         order: Order(
           id: orderId,
           orderNumber: orderNumber,
-          items: normalizedItems
-              .map((item) => Items(
-                    product: item['product']?.toString() ?? 'unknown',
-                    name: item['name']?.toString() ?? 'Unknown Item',
-                    quantity: item['quantity'] ?? 1,
-                    unitPrice: _safeToDouble(item['unitPrice']),
-                    subtotal: _safeToDouble(item['subtotal']),
-                    addons: [],
-                    tax: 0,
-                    id: 'offline_${DateTime.now().millisecondsSinceEpoch}',
-                  ))
-              .toList(),
-          // finalTaxes: finalTax
-          //     .map((tax) => FinalTaxes(
-          //   name: tax['name']?.toString() ?? 'Tax',
-          //   percentage: _safeToDouble(tax['percentage']),
-          //   amount: _safeToDouble(tax['amt']),
-          // ))
-          //     .toList(),
+          items: normalizedItems.map((item) {
+            return Items(
+              product: item['product'].toString(),
+              name: item['name'].toString(),
+              quantity: item['quantity'],
+              unitPrice: _safeToDouble(item['unitPrice']),
+              subtotal: _safeToDouble(item['subtotal']),
+              addons: [],
+              tax: 0,
+              id: 'offline_${DateTime.now().millisecondsSinceEpoch}',
+            );
+          }).toList(),
           subtotal: subtotal,
           orderType: orderData['orderType'] ?? 'DINE-IN',
           tax: taxAmount,
@@ -1028,50 +1051,29 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
           gstNumber: gstNumber,
           currencySymbol: '₹',
           printType: 'imin',
-          // thermalIp: thermalIp,
           subtotal: subtotal,
-          // finalTaxes: finalTax
-          //     .map((tax) => FinalTaxes(
-          //   name: tax['name']?.toString() ?? 'Tax',
-          //   percentage: _safeToDouble(tax['percentage']),
-          //   amount: _safeToDouble(tax['amt']),
-          // ))
-          //     .toList(),
           salesTax: taxAmount,
           total: billingSession.total ?? 0.0,
           orderNumber: orderNumber,
           orderStatus: 'PENDING_SYNC',
           date: formattedDate,
-          paidBy: orderData['payments']?[0]?['method'] ?? 'CASH',
-          transactionId: 'TXN-OFF-${DateTime.now().millisecondsSinceEpoch}',
-          tableNum: orderData['tableNo']?.toString() ?? "",
-          tableName: orderData['tableNo']?.toString() ?? "",
-          waiterName: orderData['waiter']?.toString() ?? "",
+          paidBy:
+          orderData['payments']?[0]?['method'] ?? 'CASH',
+          transactionId:
+          'TXN-OFF-${DateTime.now().millisecondsSinceEpoch}',
+          tableNum: tableName,
+          tableName: tableName,
+          waiterName: waiterName,
           orderType: orderData['orderType'] ?? 'DINE-IN',
           tipAmount: 0,
         ),
-        payments: [
-          Payments(
-            order: orderId,
-            paymentMethod: orderData['payments']?[0]?['method'] ?? 'CASH',
-            amount: billingSession.total ?? 0.0,
-            balanceAmount: 0.0,
-            status: 'COMPLETED',
-            createdAt: createdAt,
-            id: 'pay_offline_${DateTime.now().millisecondsSinceEpoch}',
-          )
-        ],
-      );
+      ));
 
-      debugPrint("✅ Offline order created successfully with ID: $orderId");
-      debugPrint("🏪 Using businessName: '$businessName'");
-      debugPrint("📱 Using phone: '$phone'");
-      debugPrint("✅ ========== OFFLINE ORDER CREATION COMPLETED ==========\n");
-
-      emit(offlineResponse);
+      debugPrint("✅ OFFLINE ORDER CREATED SUCCESSFULLY");
     } catch (e, stackTrace) {
       debugPrint("❌ Failed to save offline order: $e");
       debugPrint("❌ Stack trace: $stackTrace");
+
       emit(PostGenerateOrderModel(
         errorResponse: ErrorResponse(
           message: 'Failed to save offline order: $e',
@@ -1080,6 +1082,8 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       ));
     }
   }
+
+
 
   // ========== FIXED OFFLINE ORDER UPDATE ==========
   Future<void> _handleOfflineOrderUpdate(

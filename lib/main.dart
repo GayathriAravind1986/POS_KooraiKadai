@@ -13,6 +13,7 @@ import 'package:simple/Reusable/color.dart';
 import 'package:simple/UI/SplashScreen/splash_screen.dart';
 
 import 'Api/apiProvider.dart';
+import 'Offline/Hive_helper/localStorageHelper/hive_service_table_stock.dart';
 import 'Offline/sync/background_sync_service.dart';
 
 // Hive models
@@ -49,6 +50,9 @@ Future<void> main() async {
     final dir = await getApplicationDocumentsDirectory();
     Hive.init(dir.path);
   }
+
+
+
 
   // ===============================
   // 3️⃣ REGISTER HIVE ADAPTERS
@@ -92,15 +96,15 @@ Future<void> main() async {
   // ===============================
   await BackgroundSyncService().init(apiProvider);
 
+  // await HiveStockTableService.clearTablesData();
+
   // ===============================
   // 7️⃣ RUN APP (LAST STEP)
   // ===============================
   runApp(const App());
 }
 
-// =======================================================
-// APP WIDGETS (UNCHANGED)
-// =======================================================
+
 
 class App extends StatelessWidget {
   const App({super.key});

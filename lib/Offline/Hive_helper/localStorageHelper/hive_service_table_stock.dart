@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:simple/ModelClass/Table/Get_table_model.dart' as table;
 import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart'
@@ -43,21 +44,26 @@ class HiveStockTableService {
   // Updated Table Methods with proper type conversion
   static Future<void> saveTables(List<table.Data> tablesData) async {
     final box = Hive.box<HiveTable>(_tablesBox);
-    await box.clear(); // Clear existing tables
+    await box.clear();
 
-    for (int i = 0; i < tablesData.length; i++) {
-      final hiveTable = HiveTable.fromApiModel(tablesData[i]);
-      await box.put('table_$i', hiveTable);
+    for (final tableData in tablesData) {
+      final hiveTable = HiveTable.fromApiModel(tableData);
+
+      if (hiveTable.id!.isNotEmpty) {
+        await box.put(hiveTable.id, hiveTable); // ✅ KEY = TABLE ID
+      }
     }
 
-    // Save metadata
     final appStateBox = Hive.box(_appStateBox);
     await appStateBox.put(
-        'tables_last_updated', DateTime.now().toIso8601String());
+      'tables_last_updated',
+      DateTime.now().toIso8601String(),
+    );
     await appStateBox.put('tables_count', tablesData.length);
 
-    print('Saved ${tablesData.length} tables to Hive');
+    debugPrint('✅ Saved ${tablesData.length} tables with ID as key');
   }
+
 
   static Future<List<HiveTable>> getTables() async {
     final box = Hive.box<HiveTable>(_tablesBox);
@@ -76,14 +82,23 @@ class HiveStockTableService {
 
   static Future<HiveTable?> getTableById(String tableId) async {
     final box = Hive.box<HiveTable>(_tablesBox);
-    try {
-      return box.values.firstWhere(
-        (table) => table.id == tableId,
-      );
-    } catch (e) {
-      return null;
+
+    // 1️⃣ Try direct ID match
+    final direct = box.get(tableId);
+    if (direct != null) return direct;
+
+    // 2️⃣ Try match by tableNo or name
+    for (final table in box.values) {
+      if (table.id.toString() == tableId ||
+          table.name?.toString() == tableId) {
+        return table;
+      }
     }
+
+    debugPrint("❌ TABLE NOT FOUND FOR: $tableId");
+    return null;
   }
+
 
   static Future<void> updateTableStatus(String tableId, String status) async {
     final box = Hive.box<HiveTable>(_tablesBox);
