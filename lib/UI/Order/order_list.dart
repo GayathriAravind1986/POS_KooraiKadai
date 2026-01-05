@@ -213,7 +213,6 @@ class OrderViewViewState extends State<OrderViewView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

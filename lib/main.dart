@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +14,11 @@ import 'package:simple/Reusable/color.dart';
 import 'package:simple/UI/SplashScreen/splash_screen.dart';
 
 import 'Api/apiProvider.dart';
+import 'Offline/Hive_helper/localStorageHelper/connection.dart';
+import 'Offline/Hive_helper/localStorageHelper/hive-pending_delete_service.dart';
+import 'Offline/Hive_helper/localStorageHelper/hive_service.dart';
 import 'Offline/Hive_helper/localStorageHelper/hive_service_table_stock.dart';
+import 'Offline/Network_status/NetworkStatusService.dart';
 import 'Offline/sync/background_sync_service.dart';
 
 // Hive models
@@ -86,25 +91,25 @@ Future<void> main() async {
   await Hive.openBox<HiveWaiter>('waiters_box');
   await Hive.openBox<HiveUser>('users_box');
 
-  // ===============================
-  // 5️⃣ INIT API PROVIDER
-  // ===============================
   final apiProvider = ApiProvider();
 
-  // ===============================
-  // 6️⃣ START BACKGROUND SYNC (ONCE)
-  // ===============================
   await BackgroundSyncService().init(apiProvider);
 
   // await HiveStockTableService.clearTablesData();
 
-  // ===============================
-  // 7️⃣ RUN APP (LAST STEP)
-  // ===============================
+  initConnectivityListener(apiProvider);
+  await HiveServicedelete.initDeleteBox();
+  Connectivity().onConnectivityChanged.listen((result) async {
+    if (result != ConnectivityResult.none) {
+      await HiveService.syncPendingOrders(ApiProvider());
+      // await HiveStockService.syncPendingStock(ApiProvider());
+      await HiveServicedelete.syncPendingDeletes(ApiProvider());
+    }
+  });
+
+  await NetworkManager().initialize();
   runApp(const App());
 }
-
-
 
 class App extends StatelessWidget {
   const App({super.key});

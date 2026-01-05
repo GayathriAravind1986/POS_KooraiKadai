@@ -9,7 +9,7 @@ import 'package:simple/Offline/Hive_helper/LocalClass/Home/product_model.dart';
 import 'package:uuid/uuid.dart';
 import '../LocalClass/Home/category_model.dart';
 
-class HiveService  {
+class HiveService {
   static const String CART_BOX = 'cart_items';
   static const String ORDERS_BOX = 'orders';
   static const String BILLING_SESSION_BOX = 'billing_session';
@@ -419,6 +419,7 @@ class HiveService  {
     List<Map<String, dynamic>>? kotItems,
     List<Map<String, dynamic>>? finalTaxes,
     String? tableName,
+    String? waiterId,
   }) async {
     try {
       if (!Hive.isAdapterRegistered(HiveOrderAdapter().typeId)) {
@@ -473,7 +474,7 @@ class HiveService  {
         }
       }
 
-
+      // Create HiveOrder object with all fields
       final order = HiveOrder(
         id: orderId,
         orderPayloadJson: orderPayloadJson,
@@ -563,12 +564,15 @@ class HiveService  {
     }
   }
 
+  // Add this method to force offline mode for testing
   static Future<void> setOfflineMode(bool isOffline) async {
     final box = await Hive.openBox('app_state');
     if (isOffline) {
+      // Set last online to 1 hour ago to force offline mode
       final oneHourAgo = DateTime.now().subtract(const Duration(hours: 1));
       await box.put('last_online', oneHourAgo.millisecondsSinceEpoch);
-    } else {
+    }
+    else {
       await box.put('last_online', DateTime.now().millisecondsSinceEpoch);
     }
   }
@@ -582,6 +586,7 @@ class HiveService  {
       try {
         debugPrint("Syncing order ${order.id} (${order.syncAction})...");
 
+        // Decode JSON and sanitize it before sending
         Map<String, dynamic> payload = {};
         try {
           payload = Map<String, dynamic>.from(
@@ -649,7 +654,8 @@ class HiveService  {
 
   static Future<void> markOrderAsSynced(String orderId) async {
     final ordersBox = await Hive.openBox<HiveOrder>(ORDERS_BOX);
-    debugPrint("Unsynced orders left: ${ordersBox.values.where((o) => o.isSynced == false).length}");
+    debugPrint(
+        "Unsynced orders left: ${ordersBox.values.where((o) => o.isSynced == false).length}");
     final order = ordersBox.get(orderId);
     if (order != null) {
       order.isSynced = true;

@@ -81,6 +81,9 @@ class HiveOrder {
   @HiveField(24)
   final String? tableName;
 
+  @HiveField(25)
+  final String? waiterId;
+
   HiveOrder({
     this.id,
     this.orderPayloadJson,
@@ -107,6 +110,7 @@ class HiveOrder {
     this.kotItems,
     this.finalTaxes,
     this.tableName,
+    this.waiterId,
   });
 
   Map<String, dynamic> toMap() {
@@ -136,6 +140,7 @@ class HiveOrder {
       'kotItems': kotItems,
       'finalTaxes': finalTaxes,
       'tableName': tableName,
+      'waiterId':waiterId
     };
   }
 
@@ -174,6 +179,7 @@ class HiveOrder {
           ? List<Map<String, dynamic>>.from(map['finalTaxes'])
           : null,
       tableName: map['tableName'],
+      waiterId: map['waiterId']
     );
   }
 }

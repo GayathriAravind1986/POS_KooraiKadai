@@ -22,6 +22,7 @@ import 'package:simple/ModelClass/Order/Post_generate_order_model.dart';
 import 'package:simple/ModelClass/Order/Update_generate_order_model.dart';
 import 'package:simple/ModelClass/Table/Get_table_model.dart';
 import 'package:simple/ModelClass/Waiter/getWaiterModel.dart';
+import 'package:simple/Offline/ConnectivityChecking/wifiOn/Off.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/image.dart';
 import 'package:simple/Reusable/space.dart';
@@ -118,7 +119,7 @@ extension OrderTypeX on OrderType {
   }
 }
 
-class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> {
+class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> with ConnectivityMixin {
   GetCategoryModel getCategoryModel = GetCategoryModel();
   GetProductByCatIdModel getProductByCatIdModel = GetProductByCatIdModel();
   PostAddToBillingModel postAddToBillingModel = PostAddToBillingModel();

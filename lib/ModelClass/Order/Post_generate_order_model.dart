@@ -206,6 +206,7 @@ class Invoice {
     String? waiterName,
     String? orderType,
     num? tipAmount,
+    String? waiterId,
   }) {
     _businessName = businessName;
     _address = address;
