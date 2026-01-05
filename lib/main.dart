@@ -93,7 +93,7 @@ Future<void> main() async {
 
   final apiProvider = ApiProvider();
 
-  await BackgroundSyncService().init(apiProvider);
+  // await BackgroundSyncService().init(apiProvider);
 
   // await HiveStockTableService.clearTablesData();
 
@@ -101,7 +101,7 @@ Future<void> main() async {
   await HiveServicedelete.initDeleteBox();
   Connectivity().onConnectivityChanged.listen((result) async {
     if (result != ConnectivityResult.none) {
-      await HiveService.syncPendingOrders(ApiProvider());
+      // await HiveService.syncPendingOrders(ApiProvider());
       // await HiveStockService.syncPendingStock(ApiProvider());
       await HiveServicedelete.syncPendingDeletes(ApiProvider());
     }
