@@ -35,10 +35,6 @@ import 'Offline/Hive_helper/LocalClass/Order/hive_pending_delete.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ===============================
-  // 1️⃣ SYSTEM CONFIG
-  // ===============================
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -46,9 +42,6 @@ Future<void> main() async {
 
   Bloc.observer = AppBlocObserver();
 
-  // ===============================
-  // 2️⃣ INIT HIVE PATH
-  // ===============================
   if (kIsWeb) {
     await Hive.initFlutter();
   } else {
@@ -56,13 +49,6 @@ Future<void> main() async {
     Hive.init(dir.path);
   }
 
-
-
-
-  // ===============================
-  // 3️⃣ REGISTER HIVE ADAPTERS
-  // ⚠️ BEFORE openBox()
-  // ===============================
   Hive.registerAdapter(HiveCategoryAdapter());
   Hive.registerAdapter(HiveProductAdapter());
   Hive.registerAdapter(HiveAddonAdapter());
@@ -75,9 +61,6 @@ Future<void> main() async {
   Hive.registerAdapter(HiveWaiterAdapter());
   Hive.registerAdapter(HiveUserAdapter());
 
-  // ===============================
-  // 4️⃣ OPEN HIVE BOXES (ONCE)
-  // ===============================
   await Hive.openBox('app_state');
   await Hive.openBox('appConfigBox');
 
