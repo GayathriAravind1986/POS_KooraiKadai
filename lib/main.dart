@@ -21,7 +21,6 @@ import 'Offline/Hive_helper/localStorageHelper/hive_service_table_stock.dart';
 import 'Offline/Network_status/NetworkStatusService.dart';
 import 'Offline/sync/background_sync_service.dart';
 
-// Hive models
 import 'Offline/Hive_helper/LocalClass/Home/category_model.dart';
 import 'Offline/Hive_helper/LocalClass/Home/product_model.dart';
 import 'Offline/Hive_helper/LocalClass/Home/hive_cart_model.dart';
