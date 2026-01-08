@@ -43,6 +43,7 @@ dependencies:
   intl:
   provider: ^6.0.5
   dio: ^5.1.1
+  http:
   qr_flutter: ^4.0.0
   another_imin_printer: ^0.6.0
   print_bluetooth_thermal: ^1.0.8
@@ -52,6 +53,7 @@ dependencies:
   connectivity_plus: ^6.1.5
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  internet_connection_checker_plus: ^2.0.0
 
 dev_dependencies:
   flutter_test:

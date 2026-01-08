@@ -18,12 +18,11 @@ import 'package:simple/UI/Order/order_tab_page.dart';
 import 'package:simple/UI/StockIn/stock_in.dart';
 import '../../Bloc/Report/accounts_report_bloc.dart';
 import '../Accounts/accounts_report.dart';
-
 import '../Accounts/return_screen.dart';
 import '../Report/report_order.dart';
 import 'package:simple/Bloc/Accounts/credit_bloc.dart';
-
-import 'package:simple/Bloc/Accounts/return_bloc.dart'; // Add this import
+import 'package:simple/Bloc/Accounts/return_bloc.dart';
+import 'package:simple/services/connectivity_service.dart'; // ← Add this import
 
 class DashBoardScreen extends StatelessWidget {
   final int? selectTab;
@@ -82,12 +81,10 @@ class _DashBoardState extends State<DashBoard> {
   GlobalKey<ReturnReportViewState>();
   final GlobalKey<CreditViewViewState> creditKey =
   GlobalKey<CreditViewViewState>();
-  // Add Return key
   final GlobalKey<ReturnViewViewState> returnKey =
   GlobalKey<ReturnViewViewState>();
 
   int selectedIndex = 0;
-  bool orderLoad = false;
   bool hasRefreshedOrder = false;
   bool hasRefreshedReport = false;
   bool hasRefreshedStock = false;
@@ -96,13 +93,59 @@ class _DashBoardState extends State<DashBoard> {
   bool hasRefreshedCateringBooking = false;
   bool hasRefreshedReturnReport = false;
   bool hasRefreshedCredit = false;
-  bool hasRefreshedReturn = false; // Add this
+  bool hasRefreshedReturn = false;
+
+  late final ConnectivityService _connectivityService;
 
   @override
   void initState() {
     super.initState();
     if (widget.selectTab != null) {
       selectedIndex = widget.selectTab!;
+    }
+
+    _connectivityService = ConnectivityService();
+    _connectivityService.init(_refreshCurrentTabOnRestore);
+  }
+
+  @override
+  void dispose() {
+    _connectivityService.dispose();
+    super.dispose();
+  }
+
+  void _refreshCurrentTabOnRestore() {
+    if (!mounted) return;
+
+    switch (selectedIndex) {
+      case 0:
+        _refreshHome();
+        break;
+      case 1:
+        _refreshOrders();
+        _resetOrderTab();
+        break;
+      case 2:
+        _refreshReport();
+        break;
+      case 3:
+        _refreshStock();
+        break;
+      case 4:
+        _refreshCustomer();
+        break;
+      case 5:
+        _refreshCateringBooking();
+        break;
+      case 6:
+        _refreshCredit();
+        break;
+      case 7:
+        _refreshReturn();
+        break;
+      case 8:
+        _refreshReturnReport();
+        break;
     }
   }
 
@@ -176,7 +219,6 @@ class _DashBoardState extends State<DashBoard> {
     }
   }
 
-  // Add this function for Return
   void _refreshReturn() {
     final returnKeyState = returnKey.currentState;
     if (returnKeyState != null) {
@@ -195,7 +237,6 @@ class _DashBoardState extends State<DashBoard> {
               selectedIndex = index;
             });
 
-            // Reset all refresh flags
             hasRefreshedOrder = false;
             hasRefreshedReport = false;
             hasRefreshedStock = false;
@@ -204,62 +245,54 @@ class _DashBoardState extends State<DashBoard> {
             hasRefreshedCateringBooking = false;
             hasRefreshedReturnReport = false;
             hasRefreshedCredit = false;
-            hasRefreshedReturn = false; // Reset return flag
+            hasRefreshedReturn = false;
 
-            // Set the appropriate flag and trigger refresh
             switch (index) {
-              case 0: // Home
+              case 0:
                 hasRefreshedOrder = true;
                 WidgetsBinding.instance
                     .addPostFrameCallback((_) => _refreshHome());
                 break;
-              case 1: // Orders
+              case 1:
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _refreshOrders();
                   _resetOrderTab();
                 });
                 break;
-              case 2: // Report
+              case 2:
                 hasRefreshedReport = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _refreshReport();
-                });
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _refreshReport());
                 break;
-              case 3: // Stockin
+              case 3:
                 hasRefreshedStock = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _refreshStock();
-                });
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _refreshStock());
                 break;
-              case 4: // Customers (Changed from Catering Main to Customers)
+              case 4:
                 hasRefreshedCustomer = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _refreshCustomer();
-                });
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _refreshCustomer());
                 break;
-              case 5: // Catering Booking (Changed from Customers to Catering Booking)
+              case 5:
                 hasRefreshedCateringBooking = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _refreshCateringBooking();
-                });
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _refreshCateringBooking());
                 break;
-              case 6: // Credit (Changed from 7 to 6)
+              case 6:
                 hasRefreshedCredit = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _refreshCredit();
-                });
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _refreshCredit());
                 break;
-              case 7: // Return (Changed from 8 to 7)
+              case 7:
                 hasRefreshedReturn = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _refreshReturn();
-                });
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _refreshReturn());
                 break;
-              case 8: // Credit & Return Report (Changed from 9 to 8)
+              case 8:
                 hasRefreshedReturnReport = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _refreshReturnReport();
-                });
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _refreshReturnReport());
                 break;
             }
           },
@@ -270,7 +303,6 @@ class _DashBoardState extends State<DashBoard> {
         body: IndexedStack(
           index: selectedIndex,
           children: [
-            // Index 0: Home
             hasRefreshedOrder == true
                 ? BlocProvider(
                 create: (_) => FoodCategoryBloc(),
@@ -290,14 +322,12 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 1: Orders
             OrdersTabbedScreen(
-              key: PageStorageKey('OrdersTabbedScreen'),
+              key: const PageStorageKey('OrdersTabbedScreen'),
               orderAllKey: orderAllTabKey,
               orderResetKey: orderTabKey,
             ),
 
-            // Index 2: Report
             hasRefreshedReport == true
                 ? BlocProvider(
                 create: (_) => ReportTodayBloc(),
@@ -313,7 +343,6 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 3: Stockin
             hasRefreshedStock == true
                 ? BlocProvider(
                 create: (_) => StockInBloc(),
@@ -329,7 +358,6 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 4: Customers (CHANGED from Catering Main to Customers)
             hasRefreshedCustomer == true
                 ? BlocProvider(
                 create: (_) => CustomerBloc(),
@@ -345,7 +373,6 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 5: Catering Booking (CHANGED from Customers to Catering Booking)
             hasRefreshedCateringBooking == true
                 ? BlocProvider(
                 create: (_) => CateringBloc(),
@@ -361,7 +388,6 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 6: Credit (CHANGED from 7 to 6)
             hasRefreshedCredit == true
                 ? BlocProvider(
                 create: (_) => CreditBloc(),
@@ -377,7 +403,6 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 7: Return (CHANGED from 8 to 7)
             hasRefreshedReturn == true
                 ? BlocProvider(
                 create: (_) => ReturnBloc(),
@@ -393,18 +418,13 @@ class _DashBoardState extends State<DashBoard> {
               ),
             ),
 
-            // Index 8: Credit & Return Report (CHANGED from 9 to 8)
             hasRefreshedReturnReport == true
                 ? BlocProvider(
                 create: (_) => ReportBloc(),
-                child: ReturnReportView(
-                  key: returnReportKey,
-                ))
+                child: ReturnReportView(key: returnReportKey))
                 : BlocProvider(
               create: (_) => ReportBloc(),
-              child: ReturnReportView(
-                key: returnReportKey,
-              ),
+              child: ReturnReportView(key: returnReportKey),
             ),
           ],
         ),
@@ -415,9 +435,7 @@ class _DashBoardState extends State<DashBoard> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DemoBloc, dynamic>(
-      buildWhen: (previous, current) {
-        return false;
-      },
+      buildWhen: (previous, current) => false,
       builder: (context, state) {
         return mainContainer();
       },

@@ -6780,12 +6780,12 @@ class FoodOrderingScreenViewState extends State<FoodOrderingScreenView> with Con
               final errorMessage =
                   getProductByCatIdModel.errorResponse?.message ??
                       'Failed to load products';
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(errorMessage),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   SnackBar(
+              //     content: Text(errorMessage),
+              //     backgroundColor: Colors.red,
+              //   ),
+              // );
             }
           }
           return true;
