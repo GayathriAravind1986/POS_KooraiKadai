@@ -148,7 +148,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
               errorResponse: null,
             ));
           } else {
-            // Only show loading if no local data
             emit(GetCategoryModel(
                 success: false, data: [], errorResponse: null));
           }
@@ -157,7 +156,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
             final value = await ApiProvider.getCategoryAPI();
 
             if (value.success == true && value.data != null) {
-              // FIXED: Check if data actually changed before saving/emitting
               final currentData = localData.map((cat) => cat.id).toSet();
               final newData = value.data!.map((cat) => cat.id).toSet();
 
@@ -921,14 +919,13 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
     on<LoadShopDetails>((event, emit) async {
       try {
-        // Load from cache first
+
         final offlineShop = await HiveShopDetailsService.getShopDetailsAsApiModel();
 
         if (offlineShop != null) {
           emit(offlineShop);
         }
 
-        // Check for fresh data
         final connectivityResult = await Connectivity().checkConnectivity();
         final hasNetworkConnectivity = connectivityResult
             .any((result) => result != ConnectivityResult.none);
