@@ -7,12 +7,10 @@ import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:overlay_support/overlay_support.dart';
-
 import 'package:simple/Bloc/observer/observer.dart';
 import 'package:simple/Bloc/theme_cubit.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/UI/SplashScreen/splash_screen.dart';
-
 import 'Api/apiProvider.dart';
 import 'Offline/Hive_helper/localStorageHelper/connection.dart';
 import 'Offline/Hive_helper/localStorageHelper/hive-pending_delete_service.dart';
@@ -75,7 +73,7 @@ Future<void> main() async {
 
   final apiProvider = ApiProvider();
 
-  // await BackgroundSyncService().init(apiProvider);
+  await BackgroundSyncService().init(apiProvider);
 
   // await HiveStockTableService.clearTablesData();
 

@@ -7,19 +7,19 @@ import 'package:simple/Api/apiProvider.dart';
 import 'package:simple/Bloc/Response/errorResponse.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart'
-    as category;
+as category;
 import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_table_model.dart';
 import 'package:simple/Offline/Hive_helper/LocalClass/Home/hive_waiter_model.dart';
 import 'package:simple/UI/Home_screen/Helper/appconfig.dart';
 import 'package:simple/UI/Home_screen/home_screen.dart';
 import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_product_by_catId_model.dart'
-    as product;
+as product;
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart'
-    as billing;
+as billing;
 import 'package:simple/ModelClass/Order/Post_generate_order_model.dart'
-    as generate;
+as generate;
 import 'package:simple/ModelClass/Order/Update_generate_order_model.dart'
-    as update;
+as update;
 import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import 'package:simple/ModelClass/Table/Get_table_model.dart';
 import 'package:simple/ModelClass/Waiter/getWaiterModel.dart';
@@ -34,7 +34,7 @@ import '../../ModelClass/Order/Post_generate_order_model.dart';
 import '../../ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import '../../Offline/Hive_helper/localStorageHelper/hive_shop_details_service.dart';
 
-// Add this helper method at the top of your CategoryBloc class, before any other methods
+// Helper method for safe double conversion
 double _safeToDouble(dynamic value) {
   if (value == null) return 0.0;
   if (value is double) return value;
@@ -42,6 +42,18 @@ double _safeToDouble(dynamic value) {
   if (value is String) return double.tryParse(value) ?? 0.0;
   if (value is num) return value.toDouble();
   return 0.0;
+}
+
+// Helper method to check actual internet reachability
+Future<bool> _hasActualInternetConnection() async {
+  try {
+
+    final response = await ApiProvider.checkInternetConnectivity();
+    return response;
+  } catch (e) {
+    debugPrint('Internet check failed: $e');
+    return false;
+  }
 }
 
 abstract class FoodCategoryEvent {}
@@ -69,14 +81,14 @@ class AddToBilling extends FoodCategoryEvent {
   final List<Map<String, dynamic>> billingItems;
   final bool? isDiscount;
   final OrderType? orderType;
-  final String? categoryId; // optional
+  final String? categoryId;
 
   AddToBilling(
-    this.billingItems,
-    this.isDiscount,
-    this.orderType,
-    this.categoryId, // can be null
-  );
+      this.billingItems,
+      this.isDiscount,
+      this.orderType,
+      this.categoryId,
+      );
 }
 
 class GenerateOrder extends FoodCategoryEvent {
@@ -111,6 +123,7 @@ class SyncCompleteState {
 
 class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
   FoodCategoryBloc() : super(null) {
+
     on<FoodCategory>((event, emit) async {
       try {
         final connectivityResult = await Connectivity().checkConnectivity();
@@ -127,10 +140,10 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
               success: true,
               data: localData
                   .map((cat) => category.Data(
-                        id: cat.id,
-                        name: cat.name,
-                        image: cat.image,
-                      ))
+                id: cat.id,
+                name: cat.name,
+                image: cat.image,
+              ))
                   .toList(),
               errorResponse: null,
             ));
@@ -163,7 +176,7 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
                 success: false,
                 data: [],
                 errorResponse:
-                    ErrorResponse(message: error.toString(), statusCode: 500),
+                ErrorResponse(message: error.toString(), statusCode: 500),
               ));
             }
           }
@@ -176,10 +189,10 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
             success: true,
             data: localData
                 .map((cat) => category.Data(
-                      id: cat.id,
-                      name: cat.name,
-                      image: cat.image,
-                    ))
+              id: cat.id,
+              name: cat.name,
+              image: cat.image,
+            ))
                 .toList(),
             errorResponse: null,
           ));
@@ -193,10 +206,10 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
             success: true,
             data: localData
                 .map((cat) => category.Data(
-                      id: cat.id,
-                      name: cat.name,
-                      image: cat.image,
-                    ))
+              id: cat.id,
+              name: cat.name,
+              image: cat.image,
+            ))
                 .toList(),
             errorResponse: null,
           ));
@@ -209,44 +222,15 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
     on<FoodProductItem>((event, emit) async {
       try {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        final hasConnection = connectivityResult
-            .any((result) => result != ConnectivityResult.none);
+        debugPrint('🔄 Loading products for category: ${event.catId}');
 
-        if (hasConnection) {
-          final value = await ApiProvider.getProductItemAPI(
-              event.catId, event.searchKey, event.searchCode);
+        final localProducts = await loadProductsFromHive(event.catId,
+            searchKey: event.searchKey ?? "",
+            searchCode: event.searchCode ?? "");
 
-          if (value.success == true && value.rows != null) {
-            await saveProductsToHive(event.catId, value.rows!);
-          }
-          emit(value);
-        } else {
-          // 🔄 FORCE REFRESH: Close and reopen the box to ensure fresh data
-          try {
-            await Hive.box('products_${event.catId}').close();
-          } catch (e) {
-            // Box might not be open, continue
-          }
+        debugPrint('📁 Found ${localProducts.length} cached products');
 
-          try {
-            await Hive.box('master_products').close();
-          } catch (e) {
-            // Box might not be open, continue
-          }
-
-          final localProducts = await loadProductsFromHive(event.catId,
-              searchKey: event.searchKey ?? "",
-              searchCode: event.searchCode ?? "");
-
-          // 🎯 DEBUG: Check if quantities are updated
-          debugPrint(
-              "🔄 Loading products from Hive for category: ${event.catId}");
-          for (var product in localProducts) {
-            debugPrint(
-                "   📦 ${product.name} - Available Qty: ${product.availableQuantity}");
-          }
-
+        if (localProducts.isNotEmpty) {
           final filteredProducts = localProducts.where((p) {
             if ((event.searchKey?.isEmpty ?? true) &&
                 (event.searchCode?.isEmpty ?? true)) {
@@ -254,18 +238,17 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
             }
 
             bool matches = false;
-
             if (event.searchKey?.isNotEmpty ?? false) {
               matches = p.name
-                      ?.toLowerCase()
-                      .contains(event.searchKey!.toLowerCase()) ??
+                  ?.toLowerCase()
+                  .contains(event.searchKey!.toLowerCase()) ??
                   false;
             }
             if (event.searchCode?.isNotEmpty ?? false) {
               matches = matches ||
                   (p.shortCode
-                          ?.toLowerCase()
-                          .contains(event.searchCode!.toLowerCase()) ??
+                      ?.toLowerCase()
+                      .contains(event.searchCode!.toLowerCase()) ??
                       false);
             }
             return matches;
@@ -273,44 +256,33 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
           final offlineProducts = filteredProducts
               .map((p) => product.Rows(
-                    id: p.id,
-                    name: p.name,
-                    image: p.image,
-                    basePrice: p.basePrice,
-                    availableQuantity: p
-                        .availableQuantity, // This should reflect updated quantity
-                    isStock: p.isStock ?? false,
-                    shortCode: p.shortCode,
-                    parcelPrice: p.parcelPrice,
-                    acPrice: p.acPrice,
-                    swiggyPrice: p.swiggyPrice,
-                    hdPrice: p.hdPrice,
-                    addons: p.addons
-                            ?.map((a) => product.Addons(
-                                  id: a.id,
-                                  name: a.name,
-                                  price: a.price,
-                                  isFree: a.isFree,
-                                  maxQuantity: a.maxQuantity,
-                                  isAvailable: a.isAvailable,
-                                  quantity: 0,
-                                  isSelected: false,
-                                ))
-                            .toList() ??
-                        [],
-                    counter: 0,
-                  ))
+            id: p.id,
+            name: p.name,
+            image: p.image,
+            basePrice: p.basePrice,
+            availableQuantity: p.availableQuantity,
+            isStock: p.isStock ?? false,
+            shortCode: p.shortCode,
+            parcelPrice: p.parcelPrice,
+            acPrice: p.acPrice,
+            swiggyPrice: p.swiggyPrice,
+            hdPrice: p.hdPrice,
+            addons: p.addons
+                ?.map((a) => product.Addons(
+              id: a.id,
+              name: a.name,
+              price: a.price,
+              isFree: a.isFree,
+              maxQuantity: a.maxQuantity,
+              isAvailable: a.isAvailable,
+              quantity: 0,
+              isSelected: false,
+            ))
+                .toList() ??
+                [],
+            counter: 0,
+          ))
               .toList();
-
-          // 🎯 DEBUG: Verify the final product quantities
-          debugPrint("✅ Final offline products with quantities:");
-          for (var product in offlineProducts) {
-            debugPrint(
-                "   📦 ${product.name} - Available Qty: ${product.availableQuantity}");
-          }
-
-          debugPrint(
-              "📦 Loaded ${offlineProducts.length} products from offline storage");
 
           emit(product.GetProductByCatIdModel(
             success: true,
@@ -318,191 +290,412 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
             stockMaintenance: true,
             errorResponse: null,
           ));
-        }
-      } catch (e) {
-        debugPrint("❌ Error in FoodProductItem event: $e");
-        emit(product.GetProductByCatIdModel(
-          success: false,
-          rows: [],
-          stockMaintenance: false,
-          errorResponse: ErrorResponse(message: e.toString(), statusCode: 500),
-        ));
-      }
-    });
-
-    on<AddToBilling>((event, emit) async {
-      try {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        bool hasConnection = false;
-
-        hasConnection = connectivityResult
-            .any((result) => result != ConnectivityResult.none);
-
-        if (hasConnection) {
-          try {
-            final value = await ApiProvider().postAddToBillingAPI(
-              event.billingItems,
-              event.isDiscount,
-              event.orderType?.apiValue,
-            );
-            if (event.orderType != null) {
-              await HiveService.saveOrderType(event.orderType!.apiValue);
-            }
-            if (event.categoryId != null) {
-              await HiveService.saveCartItems(
-                  event.billingItems, event.categoryId);
-            } else {
-              await HiveService.saveCartItems(event.billingItems);
-            }
-            final billingSession = await HiveService.calculateBillingTotals(
-              event.billingItems,
-              event.isDiscount ?? false,
-              orderType: event.orderType?.apiValue,
-              categoryId: event.categoryId,
-            );
-            await HiveService.saveBillingSession(billingSession);
-            await HiveService.saveLastOnlineTimestamp();
-            emit(value);
-          } catch (error) {
-            await _handleOfflineBilling(event, emit);
-          }
         } else {
-          await _handleOfflineBilling(event, emit);
+          // Show loading state if no cached data
+          emit(product.GetProductByCatIdModel(
+            success: false,
+            rows: [],
+            stockMaintenance: false,
+            errorResponse: null,
+          ));
         }
-      } catch (e) {
-        await _handleOfflineBilling(event, emit);
-      }
-    });
 
-    on<GenerateOrder>((event, emit) async {
-      try {
+        // Step 3: Check network connectivity
         final connectivityResult = await Connectivity().checkConnectivity();
-        bool hasConnection = false;
-        hasConnection = connectivityResult
-            .any((result) => result != ConnectivityResult.none);
-        if (hasConnection) {
-          try {
-            final value = await ApiProvider()
-                .postGenerateOrderAPI(event.orderPayloadJson);
-            await HiveService.clearCart();
-            await HiveService.clearBillingSession();
-            await HiveService.saveLastOnlineTimestamp();
-
-            emit(value);
-          } catch (error) {
-            await _handleOfflineOrderCreation(event, emit);
-          }
-        } else {
-          await _handleOfflineOrderCreation(event, emit);
-        }
-      } catch (e) {
-        await _handleOfflineOrderCreation(event, emit);
-      }
-    });
-
-    on<UpdateOrder>((event, emit) async {
-      try {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        bool hasConnection = false;
-
-        hasConnection = connectivityResult
+        final hasNetworkConnectivity = connectivityResult
             .any((result) => result != ConnectivityResult.none);
 
-        if (hasConnection) {
-          try {
-            final value = await ApiProvider()
-                .updateGenerateOrderAPI(event.orderPayloadJson, event.orderId);
+        if (hasNetworkConnectivity) {
+          // Step 4: Check actual internet reachability
+          final hasActualInternet = await _hasActualInternetConnection();
 
-            await HiveService.clearCart();
-            await HiveService.clearBillingSession();
-            await HiveService.saveLastOnlineTimestamp();
+          if (hasActualInternet) {
+            try {
+              debugPrint('🌐 Fetching fresh products from API...');
+              final value = await ApiProvider.getProductItemAPI(
+                  event.catId, event.searchKey, event.searchCode);
 
-            emit(value);
-          } catch (error) {
-            await _handleOfflineOrderUpdate(event, emit);
-          }
-        } else {
-          await _handleOfflineOrderUpdate(event, emit);
-        }
-      } catch (e) {
-        await _handleOfflineOrderUpdate(event, emit);
-      }
-    });
-
-    on<SyncPendingOrders>((event, emit) async {
-      try {
-        await HiveService.syncPendingOrders(ApiProvider());
-        emit(SyncCompleteState(success: true));
-      } catch (e) {
-        emit(SyncCompleteState(success: false, error: e.toString()));
-      }
-    });
-
-    on<TableDine>((event, emit) async {
-      try {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        bool hasConnection = false;
-
-        hasConnection = connectivityResult
-            .any((result) => result != ConnectivityResult.none);
-
-        if (hasConnection) {
-          try {
-            final value = await ApiProvider().getTableAPI();
-
-            if (value.success == true && value.data != null) {
-              await HiveStockTableService.saveTables(value.data!);
+              if (value.success == true && value.rows != null) {
+                await saveProductsToHive(event.catId, value.rows!);
+                debugPrint('💾 Saved fresh products to cache');
+                emit(value);
+              }
+            } catch (error) {
+              debugPrint('❌ API call failed: $error');
+              // API failed, stay with cached data
+              if (localProducts.isEmpty) {
+                emit(product.GetProductByCatIdModel(
+                  success: false,
+                  rows: [],
+                  stockMaintenance: false,
+                  errorResponse: ErrorResponse(
+                      message: error.toString(), statusCode: 500),
+                ));
+              }
             }
-            emit(value);
-          } catch (error) {
-            final offlineTables =
-                await HiveStockTableService.getTablesAsApiFormat();
-            if (offlineTables.isNotEmpty) {
-              final offlineResponse = GetTableModel(
-                success: true,
-                data: offlineTables,
-                errorResponse: null,
-              );
-              emit(offlineResponse);
-            } else {
-              emit(GetTableModel(
+          } else {
+            debugPrint('⚠️ Network connected but no internet access');
+            // No actual internet - stay with cached data
+            if (localProducts.isEmpty) {
+              emit(product.GetProductByCatIdModel(
                 success: false,
+                rows: [],
+                stockMaintenance: false,
                 errorResponse: ErrorResponse(
-                  message: error.toString(),
-                  statusCode: 500,
+                  message: 'Network connected but no internet access',
+                  statusCode: 503,
                 ),
               ));
             }
           }
         } else {
-          final offlineTables =
-              await HiveStockTableService.getTablesAsApiFormat();
-          if (offlineTables.isNotEmpty) {
-            debugPrint(
-                'Loading ${offlineTables.length} tables from offline storage');
-            final offlineResponse = GetTableModel(
-              success: true,
-              data: offlineTables,
-              errorResponse: null,
-            );
-            emit(offlineResponse);
-          } else {
-            // No offline data available
-            emit(GetTableModel(
+          debugPrint('📶 No network connection');
+          // No network - stay with cached data
+          if (localProducts.isEmpty) {
+            emit(product.GetProductByCatIdModel(
               success: false,
-              data: [],
+              rows: [],
+              stockMaintenance: false,
               errorResponse: ErrorResponse(
-                message: 'No offline table data available',
+                message: 'No network connection and no cached products',
                 statusCode: 503,
               ),
             ));
           }
         }
       } catch (e) {
-        debugPrint('Error in TableDine event: $e');
-        // Fallback to offline data
-        final offlineTables =
-            await HiveStockTableService.getTablesAsApiFormat();
+        debugPrint("❌ Error in FoodProductItem event: $e");
+        // Final fallback
+        try {
+          final localProducts = await loadProductsFromHive(event.catId,
+              searchKey: event.searchKey ?? "",
+              searchCode: event.searchCode ?? "");
+
+          if (localProducts.isNotEmpty) {
+            final offlineProducts = localProducts
+                .map((p) => product.Rows(
+              id: p.id,
+              name: p.name,
+              image: p.image,
+              basePrice: p.basePrice,
+              availableQuantity: p.availableQuantity,
+              isStock: p.isStock ?? false,
+              shortCode: p.shortCode,
+              parcelPrice: p.parcelPrice,
+              acPrice: p.acPrice,
+              swiggyPrice: p.swiggyPrice,
+              hdPrice: p.hdPrice,
+              addons: p.addons
+                  ?.map((a) => product.Addons(
+                id: a.id,
+                name: a.name,
+                price: a.price,
+                isFree: a.isFree,
+                maxQuantity: a.maxQuantity,
+                isAvailable: a.isAvailable,
+                quantity: 0,
+                isSelected: false,
+              ))
+                  .toList() ??
+                  [],
+              counter: 0,
+            ))
+                .toList();
+
+            emit(product.GetProductByCatIdModel(
+              success: true,
+              rows: offlineProducts,
+              stockMaintenance: true,
+              errorResponse: null,
+            ));
+          } else {
+            emit(product.GetProductByCatIdModel(
+              success: false,
+              rows: [],
+              stockMaintenance: false,
+              errorResponse:
+              ErrorResponse(message: e.toString(), statusCode: 500),
+            ));
+          }
+        } catch (cacheError) {
+          emit(product.GetProductByCatIdModel(
+            success: false,
+            rows: [],
+            stockMaintenance: false,
+            errorResponse:
+            ErrorResponse(message: e.toString(), statusCode: 500),
+          ));
+        }
+      }
+    });
+
+    on<AddToBilling>((event, emit) async {
+      try {
+        // Always save locally first
+        if (event.orderType != null) {
+          await HiveService.saveOrderType(event.orderType!.apiValue);
+        }
+        if (event.categoryId != null) {
+          await HiveService.saveCartItems(event.billingItems, event.categoryId);
+        } else {
+          await HiveService.saveCartItems(event.billingItems);
+        }
+
+        final billingSession = await HiveService.calculateBillingTotals(
+          event.billingItems,
+          event.isDiscount ?? false,
+          orderType: event.orderType?.apiValue,
+          categoryId: event.categoryId,
+        );
+        await HiveService.saveBillingSession(billingSession);
+
+        // Check if we can sync to server
+        final connectivityResult = await Connectivity().checkConnectivity();
+        final hasNetworkConnectivity = connectivityResult
+            .any((result) => result != ConnectivityResult.none);
+
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
+
+          if (hasActualInternet) {
+            try {
+              debugPrint('🌐 Syncing billing to server...');
+              final value = await ApiProvider().postAddToBillingAPI(
+                event.billingItems,
+                event.isDiscount,
+                event.orderType?.apiValue,
+              );
+
+              await HiveService.saveLastOnlineTimestamp();
+              emit(value);
+              return; // Exit early on success
+            } catch (error) {
+              debugPrint('❌ Online sync failed, using offline mode: $error');
+            }
+          } else {
+            debugPrint('⚠️ Network connected but no internet, using offline');
+          }
+        } else {
+          debugPrint('📶 No network, using offline mode');
+        }
+
+        // If we reach here, use offline response
+        await _handleOfflineBilling(event, emit);
+
+      } catch (e) {
+        debugPrint('💥 Error in AddToBilling event: $e');
+        await _handleOfflineBilling(event, emit);
+      }
+    });
+
+    on<GenerateOrder>((event, emit) async {
+      try {
+        // Parse order data
+        final orderData = jsonDecode(event.orderPayloadJson);
+        final billingSession = await HiveService.getBillingSession();
+
+        if (billingSession == null) {
+          throw Exception('No billing session found');
+        }
+
+        // Check connectivity
+        final connectivityResult = await Connectivity().checkConnectivity();
+        final hasNetworkConnectivity = connectivityResult
+            .any((result) => result != ConnectivityResult.none);
+
+        bool shouldGoOffline = true;
+
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
+
+          if (hasActualInternet) {
+            try {
+              debugPrint('🌐 Creating order via API...');
+              final value = await ApiProvider()
+                  .postGenerateOrderAPI(event.orderPayloadJson);
+              await HiveService.clearCart();
+              await HiveService.clearBillingSession();
+              await HiveService.saveLastOnlineTimestamp();
+              emit(value);
+              shouldGoOffline = false;
+            } catch (error) {
+              debugPrint('❌ API order creation failed: $error');
+            }
+          } else {
+            debugPrint('⚠️ Network connected but no internet');
+          }
+        } else {
+          debugPrint('📶 No network connection');
+        }
+
+        // If online failed or no connection, save offline
+        if (shouldGoOffline) {
+          debugPrint('💾 Saving order offline...');
+          await _handleOfflineOrderCreation(event, emit);
+        }
+      } catch (e) {
+        debugPrint('💥 Error in GenerateOrder event: $e');
+        await _handleOfflineOrderCreation(event, emit);
+      }
+    });
+
+    on<UpdateOrder>((event, emit) async {
+      try {
+        // Check connectivity
+        final connectivityResult = await Connectivity().checkConnectivity();
+        final hasNetworkConnectivity = connectivityResult
+            .any((result) => result != ConnectivityResult.none);
+
+        bool shouldGoOffline = true;
+
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
+
+          if (hasActualInternet) {
+            try {
+              debugPrint('🌐 Updating order via API...');
+              final value = await ApiProvider()
+                  .updateGenerateOrderAPI(event.orderPayloadJson, event.orderId);
+
+              await HiveService.clearCart();
+              await HiveService.clearBillingSession();
+              await HiveService.saveLastOnlineTimestamp();
+              emit(value);
+              shouldGoOffline = false;
+            } catch (error) {
+              debugPrint('❌ API order update failed: $error');
+            }
+          } else {
+            debugPrint('⚠️ Network connected but no internet');
+          }
+        } else {
+          debugPrint('📶 No network connection');
+        }
+
+        // If online failed or no connection, save offline
+        if (shouldGoOffline) {
+          debugPrint('💾 Saving order update offline...');
+          await _handleOfflineOrderUpdate(event, emit);
+        }
+      } catch (e) {
+        debugPrint('💥 Error in UpdateOrder event: $e');
+        await _handleOfflineOrderUpdate(event, emit);
+      }
+    });
+
+    on<SyncPendingOrders>((event, emit) async {
+      try {
+        debugPrint('🔄 Syncing pending orders...');
+        final connectivityResult = await Connectivity().checkConnectivity();
+        final hasNetworkConnectivity = connectivityResult
+            .any((result) => result != ConnectivityResult.none);
+
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
+
+          if (hasActualInternet) {
+            await HiveService.syncPendingOrders(ApiProvider());
+            emit(SyncCompleteState(success: true));
+          } else {
+            emit(SyncCompleteState(
+                success: false, error: 'No internet access'));
+          }
+        } else {
+          emit(SyncCompleteState(
+              success: false, error: 'No network connection'));
+        }
+      } catch (e) {
+        debugPrint('❌ Error syncing orders: $e');
+        emit(SyncCompleteState(success: false, error: e.toString()));
+      }
+    });
+
+    on<TableDine>((event, emit) async {
+      try {
+        debugPrint('🪑 Loading tables...');
+
+        // Load from cache first
+        final offlineTables = await HiveStockTableService.getTablesAsApiFormat();
+
+        if (offlineTables.isNotEmpty) {
+          debugPrint('📁 Found ${offlineTables.length} cached tables');
+          final offlineResponse = GetTableModel(
+            success: true,
+            data: offlineTables,
+            errorResponse: null,
+          );
+          emit(offlineResponse);
+        } else {
+          emit(GetTableModel(
+            success: false,
+            data: [],
+            errorResponse: null,
+          ));
+        }
+
+        // Check for fresh data
+        final connectivityResult = await Connectivity().checkConnectivity();
+        final hasNetworkConnectivity = connectivityResult
+            .any((result) => result != ConnectivityResult.none);
+
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
+
+          if (hasActualInternet) {
+            try {
+              debugPrint('🌐 Fetching fresh tables from API...');
+              final value = await ApiProvider().getTableAPI();
+
+              if (value.success == true && value.data != null) {
+                await HiveStockTableService.saveTables(value.data!);
+                debugPrint('💾 Saved fresh tables to cache');
+                emit(value);
+              }
+            } catch (error) {
+              debugPrint('❌ API error: $error');
+              // Stay with cached data
+              if (offlineTables.isEmpty) {
+                emit(GetTableModel(
+                  success: false,
+                  errorResponse: ErrorResponse(
+                    message: error.toString(),
+                    statusCode: 500,
+                  ),
+                ));
+              }
+            }
+          } else {
+            debugPrint('⚠️ Network connected but no internet access');
+            // Stay with cached data
+            if (offlineTables.isEmpty) {
+              emit(GetTableModel(
+                success: false,
+                data: [],
+                errorResponse: ErrorResponse(
+                  message: 'Network connected but no internet access',
+                  statusCode: 503,
+                ),
+              ));
+            }
+          }
+        } else {
+          debugPrint('📶 No network connection');
+          // Stay with cached data
+          if (offlineTables.isEmpty) {
+            emit(GetTableModel(
+              success: false,
+              data: [],
+              errorResponse: ErrorResponse(
+                message: 'No network connection and no cached tables',
+                statusCode: 503,
+              ),
+            ));
+          }
+        }
+      } catch (e) {
+        debugPrint('💥 Error in TableDine event: $e');
+        // Final fallback
+        final offlineTables = await HiveStockTableService.getTablesAsApiFormat();
         if (offlineTables.isNotEmpty) {
           final offlineResponse = GetTableModel(
             success: true,
@@ -522,82 +715,87 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         }
       }
     });
+
     on<WaiterDine>((event, emit) async {
       try {
+        debugPrint('🧑‍🍳 Loading waiters...');
+
+        // Load from cache first
+        final offlineWaiters = await HiveWaiterService.getWaitersAsApiFormat();
+
+        if (offlineWaiters.isNotEmpty) {
+          debugPrint('📁 Found ${offlineWaiters.length} cached waiters');
+          final offlineResponse = GetWaiterModel(
+            success: true,
+            data: offlineWaiters,
+            totalCount: offlineWaiters.length,
+            errorResponse: null,
+          );
+          emit(offlineResponse);
+        } else {
+          emit(GetWaiterModel(
+            success: false,
+            data: [],
+            totalCount: 0,
+            errorResponse: null,
+          ));
+        }
+
+        // Check for fresh data
         final connectivityResult = await Connectivity().checkConnectivity();
-        bool hasConnection = connectivityResult != ConnectivityResult.none;
+        bool hasNetworkConnectivity = connectivityResult != ConnectivityResult.none;
 
-        debugPrint('🌐 Connectivity: $hasConnection');
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
 
-        if (hasConnection) {
-          // Online: Try API first
-          try {
-            debugPrint('📡 Fetching waiters from API...');
-            final value = await ApiProvider().getWaiterAPI();
-            debugPrint(
-                '✅ API response - success: ${value.success}, data count: ${value.data?.length ?? 0}');
+          if (hasActualInternet) {
+            try {
+              debugPrint('🌐 Fetching fresh waiters from API...');
+              final value = await ApiProvider().getWaiterAPI();
 
-            if (value.success == true && value.data != null) {
-              debugPrint('💾 Saving ${value.data!.length} waiters to Hive...');
-              await HiveWaiterService.saveWaiters(value.data!);
-              debugPrint('✅ Waiters saved to Hive successfully');
+              if (value.success == true && value.data != null) {
+                await HiveWaiterService.saveWaiters(value.data!);
+                debugPrint('💾 Saved fresh waiters to cache');
+                emit(value);
+              }
+            } catch (error) {
+              debugPrint('❌ API error: $error');
+              // Stay with cached data
+              if (offlineWaiters.isEmpty) {
+                emit(GetWaiterModel(
+                  success: false,
+                  errorResponse: ErrorResponse(
+                    message: error.toString(),
+                    statusCode: 500,
+                  ),
+                ));
+              }
             }
-
-            emit(value);
-          } catch (error) {
-            debugPrint('❌ API failed: $error');
-            // API failed, load from Hive
-            final offlineWaiters =
-                await HiveWaiterService.getWaitersAsApiFormat();
-            debugPrint('📂 Offline waiters found: ${offlineWaiters.length}');
-
-            if (offlineWaiters.isNotEmpty) {
-              debugPrint('🔄 Loading from offline storage');
-              final offlineResponse = GetWaiterModel(
-                success: true,
-                data: offlineWaiters,
-                totalCount: offlineWaiters.length,
-                errorResponse: null,
-              );
-              emit(offlineResponse);
-            } else {
-              debugPrint('❌ No offline data available');
+          } else {
+            debugPrint('⚠️ Network connected but no internet access');
+            // Stay with cached data
+            if (offlineWaiters.isEmpty) {
               emit(GetWaiterModel(
                 success: false,
                 data: [],
                 totalCount: 0,
                 errorResponse: ErrorResponse(
-                  message: error.toString(),
-                  statusCode: 500,
+                  message: 'Network connected but no internet access',
+                  statusCode: 503,
                 ),
               ));
             }
           }
         } else {
-          // Offline: Load from Hive directly
-          debugPrint('📶 Offline mode - loading from Hive');
-          final offlineWaiters =
-              await HiveWaiterService.getWaitersAsApiFormat();
-          debugPrint('📂 Offline waiters found: ${offlineWaiters.length}');
-
-          if (offlineWaiters.isNotEmpty) {
-            debugPrint(
-                '✅ Loading ${offlineWaiters.length} waiters from offline storage');
-            final offlineResponse = GetWaiterModel(
-              success: true,
-              data: offlineWaiters,
-              totalCount: offlineWaiters.length,
-              errorResponse: null,
-            );
-            emit(offlineResponse);
-          } else {
-            debugPrint('❌ No offline waiter data available');
+          debugPrint('📶 No network connection');
+          // Stay with cached data
+          if (offlineWaiters.isEmpty) {
             emit(GetWaiterModel(
               success: false,
               data: [],
               totalCount: 0,
               errorResponse: ErrorResponse(
-                message: 'No offline waiter data available',
+                message: 'No network connection and no cached waiters',
                 statusCode: 503,
               ),
             ));
@@ -605,9 +803,8 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         }
       } catch (e) {
         debugPrint('💥 Error in WaiterDine event: $e');
+        // Final fallback
         final offlineWaiters = await HiveWaiterService.getWaitersAsApiFormat();
-        debugPrint('📂 Fallback offline waiters: ${offlineWaiters.length}');
-
         if (offlineWaiters.isNotEmpty) {
           final offlineResponse = GetWaiterModel(
             success: true,
@@ -632,62 +829,82 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
     on<StockDetails>((event, emit) async {
       try {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        bool hasConnection = false;
+        debugPrint('📊 Loading stock details...');
 
-        hasConnection = connectivityResult
+        // Load from cache first
+        final offlineStock = await HiveStockTableService.getStockMaintenanceAsApiModel();
+
+        if (offlineStock != null) {
+          debugPrint('📁 Found cached stock details');
+          emit(offlineStock);
+        } else {
+          emit(GetStockMaintanencesModel(
+            success: false,
+            errorResponse: null,
+          ));
+        }
+
+        // Check for fresh data
+        final connectivityResult = await Connectivity().checkConnectivity();
+        final hasNetworkConnectivity = connectivityResult
             .any((result) => result != ConnectivityResult.none);
 
-        if (hasConnection) {
-          // Online: Try to fetch from API first
-          try {
-            final value = await ApiProvider().getStockDetailsAPI();
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
 
-            if (value.success == true) {
-              // Save to Hive for offline use
-              await HiveStockTableService.saveStockMaintenance(value);
+          if (hasActualInternet) {
+            try {
+              debugPrint('🌐 Fetching fresh stock details from API...');
+              final value = await ApiProvider().getStockDetailsAPI();
+
+              if (value.success == true) {
+                await HiveStockTableService.saveStockMaintenance(value);
+                debugPrint('💾 Saved fresh stock details to cache');
+                emit(value);
+              }
+            } catch (error) {
+              debugPrint('❌ API error: $error');
+              // Stay with cached data
+              if (offlineStock == null) {
+                emit(GetStockMaintanencesModel(
+                  success: false,
+                  errorResponse: ErrorResponse(
+                    message: error.toString(),
+                    statusCode: 500,
+                  ),
+                ));
+              }
             }
-
-            emit(value);
-          } catch (error) {
-            // API failed, try to load from Hive as fallback
-            final offlineStock =
-                await HiveStockTableService.getStockMaintenanceAsApiModel();
-            if (offlineStock != null) {
-              emit(offlineStock);
-            } else {
+          } else {
+            debugPrint('⚠️ Network connected but no internet access');
+            // Stay with cached data
+            if (offlineStock == null) {
               emit(GetStockMaintanencesModel(
                 success: false,
                 errorResponse: ErrorResponse(
-                  message: error.toString(),
-                  statusCode: 500,
+                  message: 'Network connected but no internet access',
+                  statusCode: 503,
                 ),
               ));
             }
           }
         } else {
-          // Offline: Load from Hive directly
-          final offlineStock =
-              await HiveStockTableService.getStockMaintenanceAsApiModel();
-          if (offlineStock != null) {
-            debugPrint('Loading stock maintenance from offline storage');
-            emit(offlineStock);
-          } else {
-            // No offline data available
+          debugPrint('📶 No network connection');
+          // Stay with cached data
+          if (offlineStock == null) {
             emit(GetStockMaintanencesModel(
               success: false,
               errorResponse: ErrorResponse(
-                message: 'No offline stock data available',
+                message: 'No network connection and no cached stock data',
                 statusCode: 503,
               ),
             ));
           }
         }
       } catch (e) {
-        debugPrint('Error in StockDetails event: $e');
-        // Fallback to offline data
-        final offlineStock =
-            await HiveStockTableService.getStockMaintenanceAsApiModel();
+        debugPrint('💥 Error in StockDetails event: $e');
+        // Final fallback
+        final offlineStock = await HiveStockTableService.getStockMaintenanceAsApiModel();
         if (offlineStock != null) {
           emit(offlineStock);
         } else {
@@ -702,60 +919,70 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       }
     });
 
-    // ========== LOAD SHOP DETAILS EVENT (SILENT - NO LOGGING) ==========
     on<LoadShopDetails>((event, emit) async {
       try {
+        // Load from cache first
+        final offlineShop = await HiveShopDetailsService.getShopDetailsAsApiModel();
+
+        if (offlineShop != null) {
+          emit(offlineShop);
+        }
+
+        // Check for fresh data
         final connectivityResult = await Connectivity().checkConnectivity();
-        bool hasConnection = connectivityResult
+        final hasNetworkConnectivity = connectivityResult
             .any((result) => result != ConnectivityResult.none);
 
-        if (hasConnection) {
-          // Online: Try to fetch from API first
-          try {
-            final value = await ApiProvider().getShopDetailsAPI();
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
 
-            if (value.success == true) {
-              // Save to Hive for offline use
-              await HiveShopDetailsService.saveShopDetails(value);
+          if (hasActualInternet) {
+            try {
+              final value = await ApiProvider().getShopDetailsAPI();
+
+              if (value.success == true) {
+                await HiveShopDetailsService.saveShopDetails(value);
+                emit(value);
+              }
+            } catch (error) {
+              // Stay with cached data
+              if (offlineShop == null) {
+                emit(GetStockMaintanencesModel(
+                  success: false,
+                  errorResponse: ErrorResponse(
+                    message: error.toString(),
+                    statusCode: 500,
+                  ),
+                ));
+              }
             }
-
-            emit(value);
-          } catch (error) {
-            // API failed, try to load from Hive as fallback
-            final offlineShop =
-                await HiveShopDetailsService.getShopDetailsAsApiModel();
-            if (offlineShop != null) {
-              emit(offlineShop);
-            } else {
+          } else {
+            // Stay with cached data
+            if (offlineShop == null) {
               emit(GetStockMaintanencesModel(
                 success: false,
                 errorResponse: ErrorResponse(
-                  message: error.toString(),
-                  statusCode: 500,
+                  message: 'Network connected but no internet access',
+                  statusCode: 503,
                 ),
               ));
             }
           }
         } else {
-          // Offline: Load from Hive directly
-          final offlineShop =
-              await HiveShopDetailsService.getShopDetailsAsApiModel();
-          if (offlineShop != null) {
-            emit(offlineShop);
-          } else {
+          // Stay with cached data
+          if (offlineShop == null) {
             emit(GetStockMaintanencesModel(
               success: false,
               errorResponse: ErrorResponse(
-                message: 'No offline shop data available',
+                message: 'No network connection and no cached shop data',
                 statusCode: 503,
               ),
             ));
           }
         }
       } catch (e) {
-        // Fallback to offline data
-        final offlineShop =
-            await HiveShopDetailsService.getShopDetailsAsApiModel();
+        // Final fallback
+        final offlineShop = await HiveShopDetailsService.getShopDetailsAsApiModel();
         if (offlineShop != null) {
           emit(offlineShop);
         } else {
@@ -773,9 +1000,7 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
   // ========== HELPER METHODS ==========
 
-  // Get shop detail - use Hive value directly, only use fallback if null or empty
   String _getShopDetail(String? hiveValue, String fallbackValue) {
-    // Use Hive value if it exists and is not empty, otherwise use fallback
     if (hiveValue != null && hiveValue.trim().isNotEmpty) {
       return hiveValue.trim();
     }
@@ -792,9 +1017,11 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         await HiveService.saveOrderType(event.orderType!.apiValue);
       }
       if (event.categoryId != null) {
+        await HiveService.saveCartItems(event.billingItems, event.categoryId);
+      } else {
         await HiveService.saveCartItems(event.billingItems);
       }
-      // Calculate totals offline
+
       final billingSession = await HiveService.calculateBillingTotals(
         event.billingItems,
         event.isDiscount ?? false,
@@ -803,7 +1030,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       );
       await HiveService.saveBillingSession(billingSession);
 
-      // Create offline response model
       final offlineResponse = billing.PostAddToBillingModel(
         subtotal: double.parse(billingSession.subtotal!.toStringAsFixed(2)),
         totalTax: double.parse(billingSession.totalTax!.toStringAsFixed(2)),
@@ -811,23 +1037,22 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         totalDiscount: billingSession.totalDiscount,
         items: billingSession.items?.map((hiveItem) {
           double itemPrice =
-              hiveItem.getPriceByOrderType(event.orderType?.apiValue);
+          hiveItem.getPriceByOrderType(event.orderType?.apiValue);
           List<billing.SelectedAddons>? convertedAddons;
           if (hiveItem.selectedAddons != null &&
               hiveItem.selectedAddons!.isNotEmpty) {
             convertedAddons = hiveItem.selectedAddons!
                 .map((addon) => billing.SelectedAddons(
-                      id: addon['_id']?.toString(),
-                      name: addon['name']?.toString(),
-                      price: (addon['price'] ?? 0.0).toDouble(),
-                      quantity: addon['quantity'] ?? 0,
-                      isAvailable: addon['isAvailable'] ?? true,
-                      isFree: addon['isFree'] ?? false,
-                    ))
+              id: addon['_id']?.toString(),
+              name: addon['name']?.toString(),
+              price: (addon['price'] ?? 0.0).toDouble(),
+              quantity: addon['quantity'] ?? 0,
+              isAvailable: addon['isAvailable'] ?? true,
+              isFree: addon['isFree'] ?? false,
+            ))
                 .toList();
           }
 
-          // Calculate addon total
           double addonTotal = 0.0;
           if (hiveItem.selectedAddons != null) {
             for (var addon in hiveItem.selectedAddons!) {
@@ -864,226 +1089,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
     }
   }
 
-  // Future<void> _handleOfflineOrderCreation(
-  //     GenerateOrder event, Emitter emit) async {
-  //   try {
-  //     // print("🛒 ========== OFFLINE ORDER CREATION STARTED ==========");
-  //
-  //     final orderData = jsonDecode(event.orderPayloadJson);
-  //     final billingSession = await HiveService.getBillingSession();
-  //
-  //     if (billingSession == null) {
-  //       throw Exception('No billing session found');
-  //     }
-  //
-  //     // ---------------- SHOP DETAILS ----------------
-  //     final shopDetails =
-  //     await HiveShopDetailsService.getShopDetailsAsApiModel();
-  //     final shopData = shopDetails?.data;
-  //
-  //     final businessName = _getShopDetail(shopData?.name, 'Alagu Drive In');
-  //     final address = _getShopDetail(
-  //         shopData?.address,
-  //         'Tenkasi main road, Alangualam, Tamil Nadu 627851');
-  //     final phone =
-  //     _getShopDetail(shopData?.contactNumber, '+91 04676967245');
-  //     final gstNumber =
-  //     _getShopDetail(shopData?.gstNumber, '00000000000');
-  //
-  //     // ---------------- TABLE & WAITER SAFE LOGIC ----------------
-  //
-  //     final String tableId =
-  //         orderData['tableId']?.toString() ??
-  //             orderData['tableNo']?.toString() ??
-  //             '';
-  //     final String waiterId = orderData['waiter']?.toString() ?? '';
-  //
-  //     final HiveTable? hiveTable =
-  //     tableId.isNotEmpty
-  //         ? await HiveStockTableService.getTableById(tableId)
-  //         : null;
-  //
-  //     final HiveWaiter? hiveWaiter =
-  //     waiterId.isNotEmpty
-  //         ? await HiveWaiterService.getWaiterById(waiterId)
-  //         : null;
-  //
-  //     final String tableName =
-  //     hiveTable?.name?.isNotEmpty == true
-  //         ? hiveTable!.name!
-  //         : 'N/A';
-  //
-  //
-  //     final String? waiterName =
-  //     hiveWaiter?.name?.toString().isNotEmpty == true
-  //         ? hiveWaiter!.name
-  //         : 'N/A';
-  //
-  //     debugPrint("🪑 TABLE NAME: $tableName");
-  //     debugPrint("🧑‍🍳 WAITER NAME: $waiterName");
-  //
-  //     // ---------------- ITEMS ----------------
-  //
-  //     final normalizedItems = billingSession.items?.map((item) {
-  //       final map = item.toMap();
-  //       return {
-  //         "product": map["_id"] ?? map["product"] ?? 'unknown_product',
-  //         "name": map["name"]?.toString() ?? 'Unknown Item',
-  //         "image": map["image"]?.toString() ?? '',
-  //         "quantity": map["qty"] ?? map["quantity"] ?? 1,
-  //         "unitPrice":
-  //         _safeToDouble(map["unitPrice"] ?? map["basePrice"] ?? 0),
-  //         "subtotal": _safeToDouble(
-  //           ((map["qty"] ?? map["quantity"] ?? 1) *
-  //               (map["unitPrice"] ?? map["basePrice"] ?? 0)),
-  //         ),
-  //       };
-  //     }).toList() ??
-  //         [];
-  //
-  //     final orderNumber = 'OFF-${DateTime.now().millisecondsSinceEpoch}';
-  //
-  //     final kotItems = billingSession.items?.map((item) {
-  //       return {
-  //         "name": item.name?.toString() ?? 'Unknown Item',
-  //         "quantity": item.quantity ?? 1,
-  //       };
-  //     }).toList() ??
-  //         [];
-  //
-  //     final taxAmount = billingSession.totalTax ?? 0.0;
-  //     final subtotal = billingSession.subtotal ?? 0.0;
-  //     final taxPercentage =
-  //     subtotal > 0 ? (taxAmount / subtotal) * 100 : 0.0;
-  //
-  //     final finalTax = [
-  //       {
-  //         "name": "GST",
-  //         "percentage": taxPercentage,
-  //         "amt": taxAmount,
-  //       }
-  //     ];
-  //
-  //     final currentTime = DateTime.now();
-  //     final createdAt = currentTime.toIso8601String();
-  //     final formattedDate =
-  //         "${currentTime.day}/${currentTime.month}/${currentTime.year}, "
-  //         "${currentTime.hour}:${currentTime.minute}:${currentTime.second}";
-  //
-  //     final Map<String, dynamic> hiveOrderData = {
-  //       ...orderData,
-  //       "items": normalizedItems,
-  //       "orderStatus": orderData['orderStatus'] ?? 'PENDING_SYNC',
-  //       "orderType": orderData['orderType'] ?? 'DINE-IN',
-  //       "tableId": tableId,
-  //       "tableNo": tableName,
-  //       "waiter": waiterName,
-  //       "payments": orderData['payments'] ??
-  //           [
-  //             {
-  //               "method":
-  //               orderData['payments']?[0]?['method'] ?? 'CASH',
-  //               "amount": billingSession.total ?? 0.0
-  //             }
-  //           ],
-  //     };
-  //
-  //     // ---------------- SAVE OFFLINE ORDER ----------------
-  //     print("========================="+tableId);
-  //     print("========================="+waiterId);
-  //
-  //     final orderId = await HiveService.saveOfflineOrder(
-  //       orderPayloadJson: jsonEncode(hiveOrderData),
-  //       orderStatus: 'PENDING_SYNC',
-  //       orderType: orderData['orderType'] ?? 'DINE-IN',
-  //       tableId: tableId,
-  //       // waiterId:waiterId,
-  //       total: billingSession.total ?? 0.0,
-  //       items: normalizedItems,
-  //       syncAction: 'CREATE',
-  //       businessName: businessName,
-  //       address: address,
-  //       gst: gstNumber,
-  //       taxPercent: taxPercentage,
-  //       paymentMethod:
-  //       orderData['payments']?[0]?['method'] ?? 'CASH',
-  //       phone: phone,
-  //       waiterName: waiterId,
-  //       orderNumber: orderNumber,
-  //       subtotal: subtotal,
-  //       taxAmount: taxAmount,
-  //       discountAmount: billingSession.totalDiscount ?? 0.0,
-  //       kotItems: kotItems,
-  //       finalTaxes: finalTax,
-  //       tableName: tableName,
-  //     );
-  //
-  //     await HiveService.clearCart();
-  //     await HiveService.clearBillingSession();
-  //
-  //
-  //     emit(PostGenerateOrderModel(
-  //       message:
-  //       'Order saved offline. Will sync when connection is restored.',
-  //       order: Order(
-  //         id: orderId,
-  //         orderNumber: orderNumber,
-  //         items: normalizedItems.map((item) {
-  //           return Items(
-  //             product: item['product'].toString(),
-  //             name: item['name'].toString(),
-  //             quantity: item['quantity'],
-  //             unitPrice: _safeToDouble(item['unitPrice']),
-  //             subtotal: _safeToDouble(item['subtotal']),
-  //             addons: [],
-  //             tax: 0,
-  //             id: 'offline_${DateTime.now().millisecondsSinceEpoch}',
-  //           );
-  //         }).toList(),
-  //         subtotal: subtotal,
-  //         orderType: orderData['orderType'] ?? 'DINE-IN',
-  //         tax: taxAmount,
-  //         total: billingSession.total ?? 0.0,
-  //         createdAt: createdAt,
-  //       ),
-  //       invoice: Invoice(
-  //         businessName: businessName,
-  //         address: address,
-  //         phone: phone,
-  //         gstNumber: gstNumber,
-  //         currencySymbol: '₹',
-  //         printType: 'imin',
-  //         subtotal: subtotal,
-  //         salesTax: taxAmount,
-  //         total: billingSession.total ?? 0.0,
-  //         orderNumber: orderNumber,
-  //         orderStatus: 'PENDING_SYNC',
-  //         date: formattedDate,
-  //         paidBy:
-  //         orderData['payments']?[0]?['method'] ?? 'CASH',
-  //         transactionId:
-  //         'TXN-OFF-${DateTime.now().millisecondsSinceEpoch}',
-  //         tableNum: tableName,
-  //         tableName: tableName,
-  //         waiterName: waiterName,
-  //         orderType: orderData['orderType'] ?? 'DINE-IN',
-  //         tipAmount: 0,
-  //       ),
-  //     ));
-  //
-  //     debugPrint("✅ OFFLINE ORDER CREATED SUCCESSFULLY");
-  //   } catch (e, stackTrace) {
-  //     debugPrint("❌ Failed to save offline order: $e");
-  //     debugPrint("❌ Stack trace: $stackTrace");
-  //
-  //     emit(PostGenerateOrderModel(
-  //       errorResponse: ErrorResponse(
-  //         message: 'Failed to save offline order: $e',
-  //         statusCode: 500,
-  //       ),
-  //     ));
-  //   }
-  // }
 
   // ========== FIXED OFFLINE ORDER CREATION ==========
   Future<void> _handleOfflineOrderCreation(
@@ -1103,7 +1108,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       await HiveShopDetailsService.getShopDetailsAsApiModel();
       final shopData = shopDetails?.data;
 
-      // Use Hive values directly (even if they're placeholders like "s")
       final businessName = _getShopDetail(shopData?.name, 'Alagu Drive In');
       final address = _getShopDetail(shopData?.address,
           'Tenkasi main road, Alangualam, Tamil Nadu 627851');
@@ -1118,38 +1122,31 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       debugPrint("   - gstNumber: '$gstNumber'");
       debugPrint("   - thermalIp: '$thermalIp'");
 
-      // ---------------- TABLE & WAITER NAME FETCHING ----------------
-      // Extract tableId from orderData (it's stored in 'tableNo' field)
       final String tableId =
           orderData['tableNo']?.toString() ??
               orderData['tableId']?.toString() ??
               '';
 
-      // Extract waiterId from orderData
       final String waiterId = orderData['waiter']?.toString() ?? '';
 
       debugPrint("🔍 Raw tableId from orderData: '$tableId'");
       debugPrint("🔍 Raw waiterId from orderData: '$waiterId'");
 
-      // Fetch table name from Hive using tableId
       final HiveTable? hiveTable =
       tableId.isNotEmpty
           ? await HiveStockTableService.getTableById(tableId)
           : null;
 
-      // Fetch waiter name from Hive using waiterId
       final HiveWaiter? hiveWaiter =
       waiterId.isNotEmpty
           ? await HiveWaiterService.getWaiterById(waiterId)
           : null;
 
-      // Get table name (fallback to ID if name not found)
       final String tableName =
       hiveTable?.name?.isNotEmpty == true
           ? hiveTable!.name!
           : tableId.isNotEmpty ? "Table $tableId" : 'N/A';
 
-      // Get waiter name (fallback to ID if name not found)
       final String waiterName =
       hiveWaiter?.name?.toString().isNotEmpty == true
           ? hiveWaiter!.name!
@@ -1158,7 +1155,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       debugPrint("🪑 TABLE - ID: '$tableId', NAME: '$tableName'");
       debugPrint("🧑‍🍳 WAITER - ID: '$waiterId', NAME: '$waiterName'");
 
-      // Normalize items for offline payload with better null safety
       final normalizedItems = billingSession.items?.map((item) {
         final map = item.toMap();
         return {
@@ -1186,7 +1182,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       }).toList() ??
           [];
 
-      // Create final taxes array with proper calculation
       final taxAmount = billingSession.totalTax ?? 0.0;
       final subtotal = billingSession.subtotal ?? 0.0;
       final taxPercentage = subtotal > 0 ? (taxAmount / subtotal) * 100 : 0.0;
@@ -1199,23 +1194,21 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         }
       ];
 
-      // Get current timestamp
       final currentTime = DateTime.now();
       final createdAt = currentTime.toIso8601String();
       final formattedDate =
           "${currentTime.day}/${currentTime.month}/${currentTime.year}, ${currentTime.hour}:${currentTime.minute}:${currentTime.second}";
 
-      // Prepare order data for Hive - Save IDs in their original fields
       final Map<String, dynamic> hiveOrderData = {
         ...orderData,
         "items": normalizedItems,
         "orderStatus": orderData['orderStatus'] ?? 'PENDING_SYNC',
         "orderType": orderData['orderType'] ?? 'DINE-IN',
-        "tableId": tableId, // Save table ID (optional field)
-        "tableNo": tableId, // Keep original table ID in tableNo field
-        "tableName": tableName, // Add separate field for table name
-        "waiter": waiterId, // Keep waiter ID in original field
-        "waiterName": waiterName, // Add separate field for waiter name
+        "tableId": tableId,
+        "tableNo": tableId,
+        "tableName": tableName,
+        "waiter": waiterId,
+        "waiterName": waiterName,
         "payments": orderData['payments'] ??
             [
               {
@@ -1336,11 +1329,10 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
   }
 
 
-  // ========== FIXED OFFLINE ORDER UPDATE ==========
   Future<void> _handleOfflineOrderUpdate(
       UpdateOrder event, Emitter emit) async {
     try {
-      print("🔄 ========== OFFLINE ORDER UPDATE STARTED ==========");
+      debugPrint('💾 Starting offline order update...');
 
       final orderData = jsonDecode(event.orderPayloadJson);
       final billingSession = await HiveService.getBillingSession();
@@ -1349,46 +1341,37 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         throw Exception('No billing session found');
       }
 
-      // Get shop details from Hive
       final shopDetails =
-          await HiveShopDetailsService.getShopDetailsAsApiModel();
+      await HiveShopDetailsService.getShopDetailsAsApiModel();
       final shopData = shopDetails?.data;
 
-      // Use Hive values directly (even if they're placeholders like "s")
       final businessName = _getShopDetail(shopData?.name, 'Alagu Drive In');
       final address = _getShopDetail(shopData?.address,
           'Tenkasi main road, Alangualam, Tamil Nadu 627851');
       final phone = _getShopDetail(shopData?.contactNumber, '+91 0000000000');
       final gstNumber = _getShopDetail(shopData?.gstNumber, '00000000000');
-      // final thermalIp = shopData?.thermalIp ?? '';
 
-      print("\n📦 USING SHOP DETAILS FOR UPDATE:");
-      print("   - businessName: '$businessName'");
-      print("   - address: '$address'");
-      print("   - phone: '$phone'");
-
-      // Normalize items for offline payload
       final normalizedItems = billingSession.items?.map((item) {
-            final map = item.toMap();
-            return {
-              "product": map["_id"] ?? map["product"] ?? 'unknown_product',
-              "name": map["name"]?.toString() ?? 'Unknown Item',
-              "image": map["image"]?.toString() ?? '',
-              "quantity": map["qty"] ?? map["quantity"] ?? 1,
-              "unitPrice":
-                  _safeToDouble(map["unitPrice"] ?? map["basePrice"] ?? 0),
-              "subtotal": _safeToDouble(((map["qty"] ?? map["quantity"] ?? 1) *
-                  (map["unitPrice"] ?? map["basePrice"] ?? 0))),
-            };
-          }).toList() ??
+        final map = item.toMap();
+        return {
+          "product": map["_id"] ?? map["product"] ?? 'unknown_product',
+          "name": map["name"]?.toString() ?? 'Unknown Item',
+          "image": map["image"]?.toString() ?? '',
+          "quantity": map["qty"] ?? map["quantity"] ?? 1,
+          "unitPrice":
+          _safeToDouble(map["unitPrice"] ?? map["basePrice"] ?? 0),
+          "subtotal": _safeToDouble(((map["qty"] ?? map["quantity"] ?? 1) *
+              (map["unitPrice"] ?? map["basePrice"] ?? 0))),
+        };
+      }).toList() ??
           [];
 
       final kotItems = billingSession.items?.map((item) {
-            return {
-              "name": item.name?.toString() ?? 'Unknown Item',
-              "quantity": item.quantity ?? 1,
-            };
-          }).toList() ??
+        return {
+          "name": item.name?.toString() ?? 'Unknown Item',
+          "quantity": item.quantity ?? 1,
+        };
+      }).toList() ??
           [];
 
       final taxAmount = billingSession.totalTax ?? 0.0;
@@ -1411,7 +1394,7 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       final Map<String, dynamic> hiveOrderData = {
         ...orderData,
         "items": normalizedItems,
-        "orderStatus": orderData['orderStatus'] ?? 'PENDING_SYNC',
+        "orderStatus": 'PENDING_SYNC',
         "orderType": orderData['orderType'] ?? 'DINE-IN',
         "tableId": orderData['tableId'],
         "tableNo": orderData['tableNo']?.toString() ?? "",
@@ -1427,7 +1410,7 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
       final orderId = await HiveService.saveOfflineOrder(
         orderPayloadJson: jsonEncode(hiveOrderData),
-        orderStatus: orderData['orderStatus'] ?? 'PENDING_SYNC',
+        orderStatus: 'PENDING_SYNC',
         orderType: orderData['orderType'] ?? 'DINE-IN',
         tableId: orderData['tableId'],
         total: billingSession.total ?? 0.0,
@@ -1455,30 +1438,23 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
       final offlineResponse = update.UpdateGenerateOrderModel(
         message:
-            'Order update saved offline. Will sync when connection is restored.',
+        'Order update saved offline. Will sync when connection is restored.',
         order: update.Order(
           id: event.orderId,
           orderNumber: orderData['orderNumber'] ??
               'UPD-${DateTime.now().millisecondsSinceEpoch}',
           items: normalizedItems
               .map((item) => update.Items(
-                    product: item['product']?.toString() ?? 'unknown',
-                    name: item['name']?.toString() ?? 'Unknown Item',
-                    quantity: item['quantity'] ?? 1,
-                    unitPrice: _safeToDouble(item['unitPrice']),
-                    subtotal: _safeToDouble(item['subtotal']),
-                    addons: [],
-                    tax: 0,
-                    id: 'update_offline_${DateTime.now().millisecondsSinceEpoch}',
-                  ))
+            product: item['product']?.toString() ?? 'unknown',
+            name: item['name']?.toString() ?? 'Unknown Item',
+            quantity: item['quantity'] ?? 1,
+            unitPrice: _safeToDouble(item['unitPrice']),
+            subtotal: _safeToDouble(item['subtotal']),
+            addons: [],
+            tax: 0,
+            id: 'update_offline_${DateTime.now().millisecondsSinceEpoch}',
+          ))
               .toList(),
-          // finalTaxes: finalTax
-          //     .map((tax) => update.FinalTaxes(
-          //   name: tax['name']?.toString() ?? 'Tax',
-          //   percentage: _safeToDouble(tax['percentage']),
-          //   amount: _safeToDouble(tax['amt']),
-          // ))
-          //     .toList(),
           subtotal: subtotal,
           orderType: orderData['orderType'] ?? 'DINE-IN',
           tax: taxAmount,
@@ -1491,15 +1467,7 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
           gstNumber: gstNumber,
           currencySymbol: '₹',
           printType: 'imin',
-          // thermalIp: thermalIp,
           subtotal: subtotal,
-          // finalTaxes: finalTax
-          //     .map((tax) => update.FinalTaxes(
-          //   name: tax['name']?.toString() ?? 'Tax',
-          //   percentage: _safeToDouble(tax['percentage']),
-          //   amount: _safeToDouble(tax['amt']),
-          // ))
-          //     .toList(),
           salesTax: taxAmount,
           total: billingSession.total ?? 0.0,
           orderNumber: orderData['orderNumber'] ??
@@ -1526,13 +1494,10 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         ],
       );
 
-      print("✅ Offline order update saved with businessName: '$businessName'");
-      print("✅ ========== OFFLINE ORDER UPDATE COMPLETED ==========\n");
-
+      debugPrint('✅ Offline order update saved');
       emit(offlineResponse);
     } catch (e, stackTrace) {
-      print("❌ Failed to save offline order update: $e");
-      print("❌ Stack trace: $stackTrace");
+      debugPrint('❌ Failed to save offline order update: $e');
       emit(update.UpdateGenerateOrderModel(
         errorResponse: ErrorResponse(
           message: 'Failed to save offline order update: $e',

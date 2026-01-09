@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Bloc/Response/errorResponse.dart';
 import 'package:simple/ModelClass/Accounts/GetAllCreditsModel.dart';
@@ -669,6 +670,18 @@ class ApiProvider {
       return GetReportModel()..errorResponse = errorResponse;
     } catch (error) {
       return GetReportModel()..errorResponse = handleError(error);
+    }
+  }
+
+  static Future<bool> checkInternetConnectivity() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://www.google.com'),
+        headers: {'Accept': 'application/json'},
+      ).timeout(Duration(seconds: 5));
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
     }
   }
 

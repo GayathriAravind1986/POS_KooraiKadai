@@ -189,7 +189,6 @@ class OrderViewViewState extends State<OrderViewView> {
       return order.orderType?.toUpperCase() == type;
     }).toList();
 
-
     return [
       ...filteredOnlineOrders
           .map((order) => _OrderItem(order: order, isPendingSync: false)),
@@ -297,13 +296,13 @@ class OrderViewViewState extends State<OrderViewView> {
                       // ),
                       // const SizedBox(width: 4),
 
-                      // IconButton(
-                      //   padding: EdgeInsets.zero,
-                      //   constraints: const BoxConstraints(),
-                      //   icon: const Icon(Icons.delete,
-                      //       color: appPrimaryColor, size: 20),
-                      //   onPressed: () => _deletePendingOrder(hiveOrder),
-                      // ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.delete,
+                            color: appPrimaryColor, size: 20),
+                        onPressed: () => _deletePendingOrder(hiveOrder),
+                      ),
                     ],
                   ),
                 ],

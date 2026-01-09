@@ -26,8 +26,7 @@ Future<void> _initializeAppData(BuildContext context) async {
     final token = sharedPreferences.getString("token");
     print("🔑 Token available: ${token != null && token.isNotEmpty}");
 
-    // Load shop details first and wait for it to complete
-     print("📡 Calling getShopDetailsAPI...");
+    print("📡 Calling getShopDetailsAPI...");
     final shopDetails = await ApiProvider().getShopDetailsAPI();
     print("✅ API Response - success: ${shopDetails.success}");
 
