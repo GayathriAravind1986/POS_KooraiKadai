@@ -679,7 +679,6 @@ class ApiProvider {
         Uri.parse('https://www.google.com'),
         headers: {'Accept': 'application/json'},
       ).timeout(Duration(seconds: 5));
-
       return response.statusCode == 200;
     } catch (e) {
       return false;
