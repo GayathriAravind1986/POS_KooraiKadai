@@ -829,82 +829,62 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
     on<StockDetails>((event, emit) async {
       try {
-        debugPrint('📊 Loading stock details...');
-
-        // Load from cache first
-        final offlineStock = await HiveStockTableService.getStockMaintenanceAsApiModel();
-
-        if (offlineStock != null) {
-          debugPrint('📁 Found cached stock details');
-          emit(offlineStock);
-        } else {
-          emit(GetStockMaintanencesModel(
-            success: false,
-            errorResponse: null,
-          ));
-        }
-
-        // Check for fresh data
         final connectivityResult = await Connectivity().checkConnectivity();
-        final hasNetworkConnectivity = connectivityResult
+        bool hasConnection = false;
+
+        hasConnection = connectivityResult
             .any((result) => result != ConnectivityResult.none);
 
-        if (hasNetworkConnectivity) {
-          final hasActualInternet = await _hasActualInternetConnection();
+        if (hasConnection) {
+          // Online: Try to fetch from API first
+          try {
+            final value = await ApiProvider().getStockDetailsAPI();
 
-          if (hasActualInternet) {
-            try {
-              debugPrint('🌐 Fetching fresh stock details from API...');
-              final value = await ApiProvider().getStockDetailsAPI();
-
-              if (value.success == true) {
-                await HiveStockTableService.saveStockMaintenance(value);
-                debugPrint('💾 Saved fresh stock details to cache');
-                emit(value);
-              }
-            } catch (error) {
-              debugPrint('❌ API error: $error');
-              // Stay with cached data
-              if (offlineStock == null) {
-                emit(GetStockMaintanencesModel(
-                  success: false,
-                  errorResponse: ErrorResponse(
-                    message: error.toString(),
-                    statusCode: 500,
-                  ),
-                ));
-              }
+            if (value.success == true) {
+              // Save to Hive for offline use
+              await HiveStockTableService.saveStockMaintenance(value);
             }
-          } else {
-            debugPrint('⚠️ Network connected but no internet access');
-            // Stay with cached data
-            if (offlineStock == null) {
+
+            emit(value);
+          } catch (error) {
+            // API failed, try to load from Hive as fallback
+            final offlineStock =
+            await HiveStockTableService.getStockMaintenanceAsApiModel();
+            if (offlineStock != null) {
+              emit(offlineStock);
+            } else {
               emit(GetStockMaintanencesModel(
                 success: false,
                 errorResponse: ErrorResponse(
-                  message: 'Network connected but no internet access',
-                  statusCode: 503,
+                  message: error.toString(),
+                  statusCode: 500,
                 ),
               ));
             }
           }
         } else {
-          debugPrint('📶 No network connection');
-          // Stay with cached data
-          if (offlineStock == null) {
+          // Offline: Load from Hive directly
+          final offlineStock =
+          await HiveStockTableService.getStockMaintenanceAsApiModel();
+          if (offlineStock != null) {
+            debugPrint('Loading stock maintenance from offline storage');
+            emit(offlineStock);
+          } else {
+            // No offline data available
             emit(GetStockMaintanencesModel(
               success: false,
               errorResponse: ErrorResponse(
-                message: 'No network connection and no cached stock data',
+                message: 'No offline stock data available',
                 statusCode: 503,
               ),
             ));
           }
         }
       } catch (e) {
-        debugPrint('💥 Error in StockDetails event: $e');
-        // Final fallback
-        final offlineStock = await HiveStockTableService.getStockMaintenanceAsApiModel();
+        debugPrint('Error in StockDetails event: $e');
+        // Fallback to offline data
+        final offlineStock =
+        await HiveStockTableService.getStockMaintenanceAsApiModel();
         if (offlineStock != null) {
           emit(offlineStock);
         } else {
@@ -921,68 +901,57 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
     on<LoadShopDetails>((event, emit) async {
       try {
-        // Load from cache first
-        final offlineShop = await HiveShopDetailsService.getShopDetailsAsApiModel();
-
-        if (offlineShop != null) {
-          emit(offlineShop);
-        }
-
-        // Check for fresh data
         final connectivityResult = await Connectivity().checkConnectivity();
-        final hasNetworkConnectivity = connectivityResult
+        bool hasConnection = connectivityResult
             .any((result) => result != ConnectivityResult.none);
 
-        if (hasNetworkConnectivity) {
-          final hasActualInternet = await _hasActualInternetConnection();
+        if (hasConnection) {
+          // Online: Try to fetch from API first
+          try {
+            final value = await ApiProvider().getShopDetailsAPI();
 
-          if (hasActualInternet) {
-            try {
-              final value = await ApiProvider().getShopDetailsAPI();
-
-              if (value.success == true) {
-                await HiveShopDetailsService.saveShopDetails(value);
-                emit(value);
-              }
-            } catch (error) {
-              // Stay with cached data
-              if (offlineShop == null) {
-                emit(GetStockMaintanencesModel(
-                  success: false,
-                  errorResponse: ErrorResponse(
-                    message: error.toString(),
-                    statusCode: 500,
-                  ),
-                ));
-              }
+            if (value.success == true) {
+              // Save to Hive for offline use
+              await HiveShopDetailsService.saveShopDetails(value);
             }
-          } else {
-            // Stay with cached data
-            if (offlineShop == null) {
+
+            emit(value);
+          } catch (error) {
+            // API failed, try to load from Hive as fallback
+            final offlineShop =
+            await HiveShopDetailsService.getShopDetailsAsApiModel();
+            if (offlineShop != null) {
+              emit(offlineShop);
+            } else {
               emit(GetStockMaintanencesModel(
                 success: false,
                 errorResponse: ErrorResponse(
-                  message: 'Network connected but no internet access',
-                  statusCode: 503,
+                  message: error.toString(),
+                  statusCode: 500,
                 ),
               ));
             }
           }
         } else {
-          // Stay with cached data
-          if (offlineShop == null) {
+          // Offline: Load from Hive directly
+          final offlineShop =
+          await HiveShopDetailsService.getShopDetailsAsApiModel();
+          if (offlineShop != null) {
+            emit(offlineShop);
+          } else {
             emit(GetStockMaintanencesModel(
               success: false,
               errorResponse: ErrorResponse(
-                message: 'No network connection and no cached shop data',
+                message: 'No offline shop data available',
                 statusCode: 503,
               ),
             ));
           }
         }
       } catch (e) {
-        // Final fallback
-        final offlineShop = await HiveShopDetailsService.getShopDetailsAsApiModel();
+        // Fallback to offline data
+        final offlineShop =
+        await HiveShopDetailsService.getShopDetailsAsApiModel();
         if (offlineShop != null) {
           emit(offlineShop);
         } else {
@@ -997,8 +966,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
       }
     });
   }
-
-  // ========== HELPER METHODS ==========
 
   String _getShopDetail(String? hiveValue, String fallbackValue) {
     if (hiveValue != null && hiveValue.trim().isNotEmpty) {
@@ -1253,7 +1220,7 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
       // Create complete offline response
       final offlineResponse = PostGenerateOrderModel(
-        message: 'Order saved offline. Will sync when connection is restored.',
+        // message: 'Order saved offline. Will sync when connection is restored.',
         order: Order(
           id: orderId,
           orderNumber: orderNumber,
