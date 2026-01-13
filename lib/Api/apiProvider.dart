@@ -421,9 +421,7 @@ class ApiProvider {
           }
           return getUserResponse;
         } else {
-          // Handle cases where the status code is 200 but the API returns success: false
           debugPrint("API returned success: false");
-          // Try to load from Hive as fallback
           final offlineData = await HiveUserService.getUsersAsApiFormat();
           if (offlineData.isNotEmpty) {
             debugPrint("Using offline data as fallback");

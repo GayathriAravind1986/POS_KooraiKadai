@@ -72,7 +72,6 @@ Future<void> _loadShopDetailsManually() async {
   try {
     print("🔄 Manual shop details loading...");
 
-    // Check connectivity
     final connectivityResult = await Connectivity().checkConnectivity();
     bool hasConnection = connectivityResult != ConnectivityResult.none;
     print("📶 Connectivity: $hasConnection");
