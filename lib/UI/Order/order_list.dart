@@ -189,7 +189,6 @@ class OrderViewViewState extends State<OrderViewView> {
       return order.orderType?.toUpperCase() == type;
     }).toList();
 
-
     return [
       ...filteredOnlineOrders
           .map((order) => _OrderItem(order: order, isPendingSync: false)),
