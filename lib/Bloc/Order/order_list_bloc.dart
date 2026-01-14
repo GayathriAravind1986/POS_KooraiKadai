@@ -16,8 +16,6 @@ import '../Response/errorResponse.dart' as order;
 
 abstract class OrderTodayEvent {}
 
-
-// Delete Order State Classes
 class DeleteOrderInitial {
   const DeleteOrderInitial();
 }
@@ -27,8 +25,8 @@ class DeleteOrderLoadingState {
 }
 
 class DeleteOrderSuccessState {
-  final String orderId; // The deleted order's ID
-  final String message; // Success message
+  final String orderId;
+  final String message;
   DeleteOrderSuccessState({required this.orderId, required this.message});
 }
 
@@ -150,6 +148,7 @@ class OrderTodayBloc extends Bloc<OrderTodayEvent, dynamic> {
         }
       }
     });
+
     on<DeleteOrder>((event, emit) async {
       if (event.orderId == null || event.orderId!.isEmpty) {
         emit(DeleteOrderFailureState("Invalid Order ID"));

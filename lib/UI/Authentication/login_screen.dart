@@ -15,7 +15,10 @@ import 'package:simple/UI/DashBoard/custom_tabbar.dart';
 import 'package:simple/UI/Home_screen/Helper/appconfig.dart';
 
 import '../../Api/apiProvider.dart';
+import '../../Offline/Hive_helper/localStorageHelper/hive_service.dart';
 import '../../Offline/Hive_helper/localStorageHelper/hive_shop_details_service.dart';
+import '../../Offline/Hive_helper/localStorageHelper/local_storage_helper.dart';
+import '../../Offline/Hive_helper/localStorageHelper/local_storage_helper.dart' as HiveService;
 
 Future<void> _initializeAppData(BuildContext context) async {
   try {
@@ -29,6 +32,21 @@ Future<void> _initializeAppData(BuildContext context) async {
     print("📡 Calling getShopDetailsAPI...");
     final shopDetails = await ApiProvider().getShopDetailsAPI();
     print("✅ API Response - success: ${shopDetails.success}");
+    // ✅ SAVE CATEGORIES DURING LOGIN
+    print("📁 Fetching categories during login...");
+    try {
+      final categories = await ApiProvider.getCategoryAPI();
+      if (categories.success == true && categories.data != null) {
+        print("✅ Got ${categories.data!.length} categories from API");
+        await HiveService.saveCategoriesToHive(categories.data!);
+        print("💾 Categories saved to Hive during login");
+      } else {
+        print("❌ Failed to fetch categories during login");
+      }
+    } catch (e) {
+      print("⚠️ Could not fetch categories during login: $e");
+    }
+
 
     if (shopDetails.success == true && shopDetails.data != null) {
       print("💾 Saving shop details to Hive...");

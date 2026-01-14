@@ -126,63 +126,10 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
     on<FoodCategory>((event, emit) async {
       try {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        bool hasConnection = connectivityResult
-            .any((result) => result != ConnectivityResult.none);
+        final localData = await loadCategoriesFromHive();
+        debugPrint('📁 Loaded ${localData.length} categories from local cache');
 
-        if (hasConnection) {
-          // FIXED: Don't emit loading state if we already have local data
-          final localData = await loadCategoriesFromHive();
-
-          // Emit local data first if available (for immediate UI update)
-          if (localData.isNotEmpty) {
-            emit(GetCategoryModel(
-              success: true,
-              data: localData
-                  .map((cat) => category.Data(
-                id: cat.id,
-                name: cat.name,
-                image: cat.image,
-              ))
-                  .toList(),
-              errorResponse: null,
-            ));
-          } else {
-            emit(GetCategoryModel(
-                success: false, data: [], errorResponse: null));
-          }
-
-          try {
-            final value = await ApiProvider.getCategoryAPI();
-
-            if (value.success == true && value.data != null) {
-              final currentData = localData.map((cat) => cat.id).toSet();
-              final newData = value.data!.map((cat) => cat.id).toSet();
-
-              if (!setEquals(currentData, newData)) {
-                // Save categories to Hive only if data changed
-                await saveCategoriesToHive(value.data!);
-              }
-            }
-            // Always emit the latest API response
-            emit(value);
-          } catch (error) {
-            debugPrint('API error, keeping local data: $error');
-            // Don't emit error if we already have local data displayed
-            if (localData.isEmpty) {
-              emit(GetCategoryModel(
-                success: false,
-                data: [],
-                errorResponse:
-                ErrorResponse(message: error.toString(), statusCode: 500),
-              ));
-            }
-          }
-        } else {
-          // Offline: load from Hive directly
-          final localData = await loadCategoriesFromHive();
-          debugPrint('Offline data count: ${localData.length}');
-
+        if (localData.isNotEmpty) {
           emit(GetCategoryModel(
             success: true,
             data: localData
@@ -194,10 +141,69 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
                 .toList(),
             errorResponse: null,
           ));
+        } else {
+          emit(GetCategoryModel(success: false, data: [], errorResponse: null));
+        }
+
+        final connectivityResult = await Connectivity().checkConnectivity();
+        final hasNetworkConnectivity = connectivityResult
+            .any((result) => result != ConnectivityResult.none);
+
+        if (hasNetworkConnectivity) {
+          final hasActualInternet = await _hasActualInternetConnection();
+
+          if (hasActualInternet) {
+            try {
+              debugPrint('🌐 Fetching fresh categories from API...');
+              final value = await ApiProvider.getCategoryAPI();
+
+              if (value.success == true && value.data != null) {
+                // Save to cache for offline use
+                await saveCategoriesToHive(value.data!);
+                debugPrint('💾 Saved fresh categories to cache');
+                emit(value);
+              }
+            } catch (error) {
+              debugPrint('❌ API call failed: $error');
+              // API failed but we already showed cached data
+              // If no cached data was shown, emit error
+              if (localData.isEmpty) {
+                emit(GetCategoryModel(
+                  success: false,
+                  data: [],
+                  errorResponse: ErrorResponse(
+                      message: error.toString(), statusCode: 500),
+                ));
+              }
+            }
+          } else {
+            debugPrint('⚠️ Network connected but no internet access');
+            if (localData.isEmpty) {
+              emit(GetCategoryModel(
+                success: false,
+                data: [],
+                errorResponse: ErrorResponse(
+                  message: 'Network connected but no internet access',
+                  statusCode: 503,
+                ),
+              ));
+            }
+          }
+        } else {
+          debugPrint('📶 No network connection');
+          if (localData.isEmpty) {
+            emit(GetCategoryModel(
+              success: false,
+              data: [],
+              errorResponse: ErrorResponse(
+                message: 'No network connection and no cached data',
+                statusCode: 503,
+              ),
+            ));
+          }
         }
       } catch (e) {
-        debugPrint('Error in FoodCategory event: $e');
-        // Fallback logic remains the same
+        debugPrint('💥 Error in FoodCategory event: $e');
         final localData = await loadCategoriesFromHive();
         if (localData.isNotEmpty) {
           emit(GetCategoryModel(
@@ -211,9 +217,19 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
                 .toList(),
             errorResponse: null,
           ));
+        } else {
+          emit(GetCategoryModel(
+            success: false,
+            data: [],
+            errorResponse: ErrorResponse(
+              message: 'Failed to load categories: $e',
+              statusCode: 500,
+            ),
+          ));
         }
       }
     });
+
     on<FoodCategoryOffline>((event, emit) async {
       emit(event.offlineData);
     });
@@ -298,7 +314,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
           ));
         }
 
-        // Step 3: Check network connectivity
         final connectivityResult = await Connectivity().checkConnectivity();
         final hasNetworkConnectivity = connectivityResult
             .any((result) => result != ConnectivityResult.none);
@@ -348,7 +363,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
           }
         } else {
           debugPrint('📶 No network connection');
-          // No network - stay with cached data
           if (localProducts.isEmpty) {
             emit(product.GetProductByCatIdModel(
               success: false,
@@ -363,7 +377,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
         }
       } catch (e) {
         debugPrint("❌ Error in FoodProductItem event: $e");
-        // Final fallback
         try {
           final localProducts = await loadProductsFromHive(event.catId,
               searchKey: event.searchKey ?? "",
@@ -445,9 +458,9 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
           orderType: event.orderType?.apiValue,
           categoryId: event.categoryId,
         );
+
         await HiveService.saveBillingSession(billingSession);
 
-        // Check if we can sync to server
         final connectivityResult = await Connectivity().checkConnectivity();
         final hasNetworkConnectivity = connectivityResult
             .any((result) => result != ConnectivityResult.none);
@@ -786,7 +799,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
           }
         } else {
           debugPrint('📶 No network connection');
-          // Stay with cached data
           if (offlineWaiters.isEmpty) {
             emit(GetWaiterModel(
               success: false,
