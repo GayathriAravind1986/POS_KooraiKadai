@@ -116,7 +116,7 @@ class BulkDataService {
       }
       debugPrint(
           '📦 Found ${products.length} products for category: $categoryName');
-      // Debug first few products
+
       if (products.isNotEmpty) {
         for (int i = 0; i < Math.min(products.length, 3); i++) {
           final product = products[i];
@@ -127,7 +127,6 @@ class BulkDataService {
 
       // Save to Hive using your existing method
       await saveProductsToHive(categoryId, products);
-
 
       debugPrint('💾 Successfully saved ${products
           .length} products for category: $categoryName');

@@ -22,7 +22,7 @@ import '../Accounts/return_screen.dart';
 import '../Report/report_order.dart';
 import 'package:simple/Bloc/Accounts/credit_bloc.dart';
 import 'package:simple/Bloc/Accounts/return_bloc.dart';
-import 'package:simple/services/connectivity_service.dart'; // ← Add this import
+import 'package:simple/services/connectivity_service.dart';
 
 class DashBoardScreen extends StatelessWidget {
   final int? selectTab;

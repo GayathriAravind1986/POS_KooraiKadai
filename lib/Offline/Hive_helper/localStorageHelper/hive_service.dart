@@ -161,12 +161,11 @@ class HiveService {
     return box.get('current_order_type');
   }
 
-  // Calculate billing totals offline
   static Future<HiveBillingSession> calculateBillingTotals(
       List<Map<String, dynamic>> billingItems,
       bool isDiscount, {
         String? orderType,
-        String? categoryId, // Add categoryId parameter
+        String? categoryId,
       }) async {
     double subtotal = 0.0;
     double totalTax = 0.0;
@@ -174,103 +173,91 @@ class HiveService {
 
     List<HiveCartItem> hiveItems = [];
 
-    // Open the correct product box based on categoryId
-    Box<HiveProduct> productBox;
-    if (categoryId != null) {
-      productBox = await Hive.openBox<HiveProduct>('products_$categoryId');
-    } else {
-      productBox = await Hive.openBox<HiveProduct>('products');
+    final masterBox = await Hive.openBox<HiveProduct>('master_products');
+
+    Box<HiveProduct>? categoryBox;
+    if (categoryId != null && categoryId.isNotEmpty && categoryId != "null") {
+      categoryBox = await Hive.openBox<HiveProduct>('products_$categoryId');
     }
 
     for (int i = 0; i < billingItems.length; i++) {
       var item = billingItems[i];
 
-      final productId = item['id']?.toString() ??
+      final productId = item['_id']?.toString() ??
+          item['id']?.toString() ??
           item['product']?.toString() ??
-          item['productId']?.toString() ??
-          item['_id']?.toString();
+          item['productId']?.toString();
 
-      // Fetch product from Hive to get all prices
+      // 🔍 1. Try to fetch product from Hive to get the REAL prices
       HiveProduct? hiveProduct;
-      try {
-        hiveProduct = productBox.values.firstWhere(
-              (p) => p.id == productId,
-        );
-      } catch (e) {
-        hiveProduct = HiveProduct(
-          id: productId,
-          name: item['name'] ?? 'Unknown Product',
-          basePrice: (item['basePrice'] ?? 0.0).toDouble(),
-          parcelPrice: (item['parcelPrice'] ?? 0.0).toDouble(),
-          acPrice: (item['acPrice'] ?? 0.0).toDouble(),
-          swiggyPrice: (item['swiggyPrice'] ?? 0.0).toDouble(),
-          hdPrice: (item['hdPrice'] ?? 0.0).toDouble(),
-        );
+
+      // Try category box first
+      if (categoryBox != null) {
+        hiveProduct = categoryBox.get(productId);
       }
 
-      // Merge item data with product prices from Hive
-      final mergedItem = {
-        ...item,
-        'basePrice': hiveProduct.basePrice,
-        'acPrice': hiveProduct.acPrice,
-        'parcelPrice': hiveProduct.parcelPrice,
-        'swiggyPrice': hiveProduct.swiggyPrice,
-        'hdPrice': hiveProduct.hdPrice,
-      };
+      // Try master box second
+      if (hiveProduct == null) {
+        hiveProduct = masterBox.get(productId);
+      }
+
+      // 🧩 2. Create the merged item with fallbacks
+      // This ensures if acPrice is 0 in the UI map, we use the one from Hive
+      final mergedItem = Map<String, dynamic>.from(item);
+
+      if (hiveProduct != null) {
+        mergedItem['basePrice'] = hiveProduct.basePrice ?? item['basePrice'] ?? 0.0;
+        mergedItem['acPrice'] = hiveProduct.acPrice ?? item['acPrice'] ?? 0.0;
+        mergedItem['parcelPrice'] = hiveProduct.parcelPrice ?? item['parcelPrice'] ?? 0.0;
+        mergedItem['swiggyPrice'] = hiveProduct.swiggyPrice ?? item['swiggyPrice'] ?? 0.0;
+        mergedItem['hdPrice'] = hiveProduct.hdPrice ?? item['hdPrice'] ?? 0.0;
+      }
 
       final hiveItem = HiveCartItem.fromMap(mergedItem);
 
-      // ✅ Get correct price based on order type
+      // ✅ 3. Get correct price based on order type (This calls your getPriceByOrderType logic)
       double itemPrice = hiveItem.getPriceByOrderType(orderType);
+
+      // FALLBACK: If the order type price is STILL 0, use basePrice
+      if (itemPrice == 0) {
+        itemPrice = (hiveItem.basePrice ?? 0.0).toDouble();
+      }
+
       int itemQty = hiveItem.quantity ?? 1;
 
-      // 🧩 Calculate addon total
+      // Calculate addon total
       double addonTotal = 0.0;
       if (hiveItem.selectedAddons != null) {
         for (var addon in hiveItem.selectedAddons!) {
           if (!(addon['isFree'] ?? false)) {
             double addonPrice = (addon['price'] ?? 0.0).toDouble();
             int addonQty = addon['quantity'] ?? 0;
-            double addonSubtotal = addonPrice * addonQty;
-            addonTotal += addonSubtotal;
+            addonTotal += (addonPrice * addonQty);
           }
         }
       }
 
-      // 🧾 Calculate item subtotal (base price + addons) * quantity
       double itemSubtotal = (itemPrice + addonTotal) * itemQty;
 
-      // Update hiveItem with calculated values
       hiveItem.unitPrice = itemPrice;
-      hiveItem.basePrice = itemPrice;
       hiveItem.subtotal = itemSubtotal;
-
-      // 💰 Calculate tax (18%)
-      double itemTax = itemSubtotal * 0.0;
-      hiveItem.taxPrice = itemTax;
-
-      // 💵 Total per item
-      hiveItem.totalPrice = itemSubtotal + itemTax;
+      hiveItem.taxPrice = 0.0;
+      hiveItem.totalPrice = itemSubtotal;
 
       subtotal += itemSubtotal;
-      totalTax += itemTax;
-
       hiveItems.add(hiveItem);
     }
 
-    // 🎁 Apply discount if needed
     if (isDiscount) {
-      totalDiscount = subtotal * 0.1; // 10%
+      totalDiscount = subtotal * 0.1;
       subtotal -= totalDiscount;
     }
-
-    double total = subtotal + totalTax;
 
     return HiveBillingSession(
       isDiscountApplied: isDiscount,
       subtotal: subtotal,
-      totalTax: totalTax,
-      total: total,
+      totalTax: 0.0,
+      total: subtotal,
       totalDiscount: totalDiscount,
       items: hiveItems,
       orderType: orderType,

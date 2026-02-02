@@ -46,13 +46,14 @@ class HiveOrderAdapter extends TypeAdapter<HiveOrder> {
           ?.map((dynamic e) => (e as Map).cast<String, dynamic>())
           ?.toList(),
       tableName: fields[24] as String?,
+      waiterId: fields[25] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, HiveOrder obj) {
     writer
-      ..writeByte(25)
+      ..writeByte(26)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -102,7 +103,9 @@ class HiveOrderAdapter extends TypeAdapter<HiveOrder> {
       ..writeByte(23)
       ..write(obj.finalTaxes)
       ..writeByte(24)
-      ..write(obj.tableName);
+      ..write(obj.tableName)
+      ..writeByte(25)
+      ..write(obj.waiterId);
   }
 
   @override

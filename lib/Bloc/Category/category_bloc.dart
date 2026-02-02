@@ -29,12 +29,10 @@ import 'package:simple/Offline/Hive_helper/localStorageHelper/hive_waiter_servic
 import 'package:simple/Offline/Hive_helper/localStorageHelper/local_storage_helper.dart';
 import 'package:simple/Offline/Hive_helper/localStorageHelper/local_storage_product.dart';
 import 'package:simple/UI/Home_screen/home_screen.dart';
-
 import '../../ModelClass/Order/Post_generate_order_model.dart';
 import '../../ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import '../../Offline/Hive_helper/localStorageHelper/hive_shop_details_service.dart';
 
-// Helper method for safe double conversion
 double _safeToDouble(dynamic value) {
   if (value == null) return 0.0;
   if (value is double) return value;
@@ -123,7 +121,6 @@ class SyncCompleteState {
 
 class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
   FoodCategoryBloc() : super(null) {
-
     on<FoodCategory>((event, emit) async {
       try {
         final connectivityResult = await Connectivity().checkConnectivity();
@@ -131,10 +128,7 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
             .any((result) => result != ConnectivityResult.none);
 
         if (hasConnection) {
-          // FIXED: Don't emit loading state if we already have local data
           final localData = await loadCategoriesFromHive();
-
-          // Emit local data first if available (for immediate UI update)
           if (localData.isNotEmpty) {
             emit(GetCategoryModel(
               success: true,
@@ -431,59 +425,44 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
     on<AddToBilling>((event, emit) async {
       try {
-        // Always save locally first
-        if (event.orderType != null) {
-          await HiveService.saveOrderType(event.orderType!.apiValue);
-        }
-        if (event.categoryId != null) {
-          await HiveService.saveCartItems(event.billingItems, event.categoryId);
-        } else {
-          await HiveService.saveCartItems(event.billingItems);
-        }
-
-        final billingSession = await HiveService.calculateBillingTotals(
-          event.billingItems,
-          event.isDiscount ?? false,
-          orderType: event.orderType?.apiValue,
-          categoryId: event.categoryId,
-        );
-        await HiveService.saveBillingSession(billingSession);
-
-        // Check if we can sync to server
         final connectivityResult = await Connectivity().checkConnectivity();
-        final hasNetworkConnectivity = connectivityResult
+        bool hasConnection = false;
+
+        hasConnection = connectivityResult
             .any((result) => result != ConnectivityResult.none);
 
-        if (hasNetworkConnectivity) {
-          final hasActualInternet = await _hasActualInternetConnection();
-
-          if (hasActualInternet) {
-            try {
-              debugPrint('🌐 Syncing billing to server...');
-              final value = await ApiProvider().postAddToBillingAPI(
-                event.billingItems,
-                event.isDiscount,
-                event.orderType?.apiValue,
-              );
-
-              await HiveService.saveLastOnlineTimestamp();
-              emit(value);
-              return; // Exit early on success
-            } catch (error) {
-              debugPrint('❌ Online sync failed, using offline mode: $error');
+        if (hasConnection) {
+          try {
+            final value = await ApiProvider().postAddToBillingAPI(
+              event.billingItems,
+              event.isDiscount,
+              event.orderType?.apiValue,
+            );
+            if (event.orderType != null) {
+              await HiveService.saveOrderType(event.orderType!.apiValue);
             }
-          } else {
-            debugPrint('⚠️ Network connected but no internet, using offline');
+            if (event.categoryId != null) {
+              await HiveService.saveCartItems(
+                  event.billingItems, event.categoryId);
+            } else {
+              await HiveService.saveCartItems(event.billingItems);
+            }
+            final billingSession = await HiveService.calculateBillingTotals(
+              event.billingItems,
+              event.isDiscount ?? false,
+              orderType: event.orderType?.apiValue,
+              categoryId: event.categoryId,
+            );
+            await HiveService.saveBillingSession(billingSession);
+            await HiveService.saveLastOnlineTimestamp();
+            emit(value);
+          } catch (error) {
+            await _handleOfflineBilling(event, emit);
           }
         } else {
-          debugPrint('📶 No network, using offline mode');
+          await _handleOfflineBilling(event, emit);
         }
-
-        // If we reach here, use offline response
-        await _handleOfflineBilling(event, emit);
-
       } catch (e) {
-        debugPrint('💥 Error in AddToBilling event: $e');
         await _handleOfflineBilling(event, emit);
       }
     });
@@ -550,7 +529,6 @@ class FoodCategoryBloc extends Bloc<FoodCategoryEvent, dynamic> {
 
         if (hasNetworkConnectivity) {
           final hasActualInternet = await _hasActualInternetConnection();
-
           if (hasActualInternet) {
             try {
               debugPrint('🌐 Updating order via API...');

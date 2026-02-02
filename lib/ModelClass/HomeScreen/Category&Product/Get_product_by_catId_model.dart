@@ -140,6 +140,13 @@ class Rows {
     _swiggyPrice = swiggyPrice;
     _stockMaintenance = stockMaintenance;
   }
+  double? _forceDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
 
   Rows.fromJson(dynamic json) : counter = 0 {
     _id = json['_id'];
@@ -169,7 +176,7 @@ class Rows {
     _saleQuantity = json['saleQuantity'];
     _availableQuantity = json['availableQuantity'];
     _isStock = json['isStock'];
-    _acPrice = json['acPrice'];
+    _acPrice = _forceDouble(json['acPrice']);
     _hdPrice = json['hdPrice'];
     _parcelPrice = json['parcelPrice'];
     _shortCode = json['shortCode'];
